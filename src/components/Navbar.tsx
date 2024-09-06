@@ -1,12 +1,13 @@
 "use client";
-import { ConnectButton } from "@mysten/dapp-kit";
-import { ConnectButton as SuietWalletConnect } from "@suiet/wallet-kit";
 import LogoImage from "../assets/icons/logo.svg";
 import MenuIcon from "../assets/icons/menu.svg";
-import "@suiet/wallet-kit/style.css";
-import ZkLogin from "./ZkLogin";
+import { Wallet } from "lucide-react";
 
-export const Navbar = () => {
+interface NavbarProps {
+  setOpenModal: (open: boolean) => void;
+}
+
+export const Navbar: React.FC<NavbarProps> = ({ setOpenModal }) => {
   return (
     <div className="bg-black">
       <div className="px-4">
@@ -33,7 +34,7 @@ export const Navbar = () => {
               >
                 Features
               </a>
-              <div className="z-[100]">
+              {/* <div className="z-[100]">
                 <ZkLogin />
               </div>
               <div className="z-[100]">
@@ -41,7 +42,15 @@ export const Navbar = () => {
               </div>
               <div className="z-[100]">
                 <SuietWalletConnect />
-              </div>
+              </div> */}
+
+              <button
+                onClick={() => setOpenModal(true)}
+                className="flex justify-center items-center gap-x-4 px-4 py-2 bg-white text-black font-semibold rounded-md"
+              >
+                Connect
+                <Wallet />
+              </button>
             </nav>
           </div>
         </div>
