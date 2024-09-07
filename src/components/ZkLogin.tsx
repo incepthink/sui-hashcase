@@ -1,6 +1,7 @@
 "use client";
 import React from "react";
-import { useEnokiFlow, useZkLogin } from "@mysten/enoki/react";
+import { useEnokiFlow, useZkLogin, useZkLoginSession } from "@mysten/enoki/react";
+import { formatAddress } from "@mysten/sui/utils";
 
 interface ZkLoginProps {
   setOpenModal: (open: boolean) => void;
@@ -14,6 +15,7 @@ const ZkLogin = ({ setOpenModal }: ZkLoginProps) => {
 
   const enokiFlow = useEnokiFlow();
   const { address } = useZkLogin();
+  
   const handleSignIn = () => {
     setOpenModal(false);
     const protocol = window.location.protocol;
@@ -45,8 +47,9 @@ const ZkLogin = ({ setOpenModal }: ZkLoginProps) => {
         className="bg-[#2b2b2b] border-black/20 px-4 py-2 text-white font-semibold rounded-md w-full"
         onClick={handleSignIn}
       >
-        {address ? address.slice(0, 6) + "..." + address.slice(-4) : "ZkLogin"}
+         {address ? formatAddress(address) : "ZkLogin"}
       </button>
+      {address ? console.log(`https://suiexplorer.com/address/${address}?network=testnet`) : null}
     </>
   );
 };
