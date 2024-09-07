@@ -1,53 +1,48 @@
 "use client";
-import CursorImage from "../assets/images/cursor.png";
-import MessageImage from "../assets/images/message.png";
 import Image from "next/image";
-import { motion } from "framer-motion";
+import { Work_Sans } from "next/font/google";
+import { HashcaseText } from "../assets";
+import suiBg from "../assets/images/sui-bg.png";
 
+const workSans = Work_Sans({ subsets: ["latin"] });
 export const Hero = () => {
   return (
-    <div className="bg-black text-white bg-[linear-gradient(to_bottom,#000,#200D42_34%,#4F21A1_65%,#A46EDB_82%)] py-[72px] sm:py-24 relative overflow-clip">
-      <div className="absolute h-[375px] w-[800px] sm:w-[1536px] sm:h-[768px] lg:w-[2400px] llg:h-[800px] rounded-[100%] bg-black left-1/2 -translate-x-1/2 border border-[#B48CDE] bg-[radial-gradient(closest-side,#000_82%,#9560EB)] top-[calc(100%-96px)] sm:top-[calc(100%-120px)]"></div>
-      <div className="container relative">
-        <div className="flex justify-center mt-8 ">
-          <div className="flex">
-            <motion.div className="hidden sm:inline" drag dragSnapToOrigin>
-              <Image
-                src={CursorImage}
-                alt="cursor"
-                height={120}
-                width={120}
-                className="max-w-none"
-                draggable="false"
-              />
-            </motion.div>
-            <h1 className="text-5xl sm:text-6xl font-bold tracking-tightner text-center">
-              Turn Your Audience
-              <br /> into Superfans
-            </h1>
-            <motion.div className="hidden sm:inline" drag dragSnapToOrigin>
-              <Image
-                src={MessageImage}
-                alt="cursor"
-                height={120}
-                width={120}
-                className="max-w-none"
-                draggable="false"
-              />
-            </motion.div>
-          </div>
-        </div>
-        <div className="flex justify-center">
-          <p className="text-xl text-center mt-8 max-w-md">
-            Engage your audience with Better , Smarter Loyalty & Rewards
-            Campaigns. Integrate the power of Web2.5 into your application with
-            near-zero effect.
+    <div className="relative">
+      <Image
+        src={suiBg}
+        alt="Sui background"
+        layout="fill"
+        objectFit="cover"
+        quality={100}
+      />
+      <div className="flex flex-col justify-start items-center h-[75vh] pb-16 relative z-10 pt-20 mb-12">
+        <div className="flex flex-col items-center">
+          <p
+            className={`text-6xl font-bold tracking-wide text-white text-center my-4 ${workSans.className}`}
+          >
+            Turn your audience into <br /> Superfans!
+          </p>
+          <p className="text-xl text-white text-center my-4">
+            Engage your audience with better, smarter loyalty and rewards
+            campaigns. Integrate the <br /> power of Web 2.5 into your
+            application with near-zero effort.
           </p>
         </div>
-        <div className="flex justify-center mt-8">
-          <button className="bg-white text-black py-3 px-5 rounded-lg font-medium">
-            Get for free
-          </button>
+        <div className="border-[#4DA2FF]/15 border-2 border-b-4 hover:border-4 hover:border-b-2 transition duration-300 rounded-full px-[24px] py-[12px] my-4">
+          <HashcaseText />
+        </div>
+      </div>
+      <div className="relative rounded-tr-[100px] rounded-tl-[100px] bg-[#00041F] pt-[6rem] pb-[4rem]">
+        <div className="flex justify-center gap-x-[16rem]">
+          <p
+            className={`text-3xl font-semibold text-white ${workSans.className}`}
+          >
+            Create memorable browsing & <br /> Checkout Experience
+          </p>
+          <p className={`text-lg text-white ${workSans.className}`}>
+            Gamify your user journey and give your audience something <br />{" "}
+            unique that they actually own.
+          </p>
         </div>
       </div>
     </div>

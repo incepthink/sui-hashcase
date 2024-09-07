@@ -2,7 +2,11 @@
 import React from "react";
 import { useEnokiFlow, useZkLogin } from "@mysten/enoki/react";
 
-const ZkLogin = () => {
+interface ZkLoginProps {
+  setOpenModal: (open: boolean) => void;
+}
+
+const ZkLogin = ({ setOpenModal }: ZkLoginProps) => {
   const CLIENT_ID_GOOGLE =
     "899345727751-h3g8il9amouo0qqg9lk6cuijg5m6vjvq.apps.googleusercontent.com"; //todo pranav vinodan
   // const CLIENT_ID_GOOGLE =
@@ -11,6 +15,7 @@ const ZkLogin = () => {
   const enokiFlow = useEnokiFlow();
   const { address } = useZkLogin();
   const handleSignIn = () => {
+    setOpenModal(false);
     const protocol = window.location.protocol;
     const host = window.location.host;
 

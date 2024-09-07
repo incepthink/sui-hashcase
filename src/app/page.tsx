@@ -1,10 +1,10 @@
 "use client";
 import { Navbar } from "@/components/Navbar";
 import { Hero } from "@/components/Hero";
-import { Features } from "@/components/Features";
+import Features from "@/components/Features";
 import { ProductShowcase } from "@/components/ProductShowcase";
 import { CallToAction } from "@/components/CallToAction";
-import { Footer } from "@/components/Footer";
+import Footer from "@/components/Footer";
 import { Pricing } from "@/components/Pricingdemo";
 import ExploreSection from "@/components/ExploreSection";
 import "@mysten/dapp-kit/dist/index.css";
@@ -14,6 +14,7 @@ import ZkLogin from "@/components/ZkLogin";
 import { ConnectModal, useCurrentAccount } from "@mysten/dapp-kit";
 import { ConnectModal as SuietConnectModal } from "@suiet/wallet-kit";
 import "@suiet/wallet-kit/style.css";
+import Collectable from "@/components/Collectable";
 
 export default function Home() {
   const [openModal, setOpenModal] = useState<boolean>(false);
@@ -22,14 +23,14 @@ export default function Home() {
   const [open, setOpen] = useState(false);
   return (
     <>
-      <div className="overflow-x-hidden">
+      <div className="bg-[#00041F]">
         <Navbar setOpenModal={setOpenModal} />
         <Hero />
         <Features />
-        <ProductShowcase />
+        <hr className="m-[100px] bg-gradient-to-r from-transparent via-white to-transparent opacity-20" />
         <ExploreSection />
-        <Pricing />
-        <CallToAction />
+        <hr className="m-[100px] bg-gradient-to-r from-transparent via-white to-transparent opacity-20" />
+        <Collectable />
         <Modal openModal={openModal} onClose={() => setOpenModal(false)}>
           <div className="flex flex-col justify-center items-center gap-y-4 my-4 mx-4">
             <ConnectModal
@@ -37,6 +38,7 @@ export default function Home() {
                 <button
                   className="bg-[#2b2b2b] border-black/20 px-4 py-2 text-white font-semibold rounded-md w-full"
                   disabled={!!currentAccount}
+                  onClick={() => setOpenModal(false)}
                 >
                   {" "}
                   {currentAccount ? "Connected" : "Sui Wallet"}
@@ -49,15 +51,18 @@ export default function Home() {
               open={showModal}
               onOpenChange={(open) => setShowModal(open)}
             >
-              <button className="bg-[#2b2b2b] border-black/20 px-4 py-2 text-white font-semibold rounded-md w-full">
+              <button
+                onClick={() => setOpenModal(false)}
+                className="bg-[#2b2b2b] border-black/20 px-4 py-2 text-white font-semibold rounded-md w-full"
+              >
                 Suiet Wallet
               </button>
             </SuietConnectModal>
-            <ZkLogin />
+            <ZkLogin setOpenModal={setOpenModal} />
           </div>
         </Modal>
+        <Footer />
       </div>
-      <Footer />
     </>
   );
 }
