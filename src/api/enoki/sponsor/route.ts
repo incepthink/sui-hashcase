@@ -1,13 +1,6 @@
-import { EnokiNetwork } from "@mysten/enoki/dist/cjs/EnokiClient/type";
 import { NextRequest, NextResponse } from "next/server";
 import { enokiClient } from "../../EnokiClient";
 
-export interface SponsorTxRequestBody {
-    network: EnokiNetwork;
-    txBytes: string;
-    sender: string;
-    allowedAddresses?: string[];
-}
 
 /*
  - Right now any txBlock whose moveCall targets are whitelisted in the Enoki Portal can be sponsored
@@ -19,7 +12,7 @@ export interface SponsorTxRequestBody {
 */
 
 export const POST = async (request: NextRequest) => {
-    const { network, txBytes, sender, allowedAddresses }: SponsorTxRequestBody =
+    const { network, txBytes, sender, allowedAddresses } =
       await request.json();
   
     return enokiClient
