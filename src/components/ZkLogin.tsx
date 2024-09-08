@@ -2,6 +2,8 @@
 import React from "react";
 import { useEnokiFlow, useZkLogin, useZkLoginSession } from "@mysten/enoki/react";
 import { formatAddress } from "@mysten/sui/utils";
+import Google from "../assets/icons/google.png";
+import Image from "next/image";
 
 interface ZkLoginProps {
   setOpenModal: (open: boolean) => void;
@@ -44,10 +46,13 @@ const ZkLogin = ({ setOpenModal }: ZkLoginProps) => {
   return (
     <>
       <button
-        className="bg-[#2b2b2b] border-black/20 px-4 py-2 text-white font-semibold rounded-md w-full"
+        className="bg-[#ffffff] border-black/20 px-6 py-2 text-black font-semibold rounded-full w-full flex items-center gap-x-8"
         onClick={handleSignIn}
       >
-         {address ? formatAddress(address) : "ZkLogin"}
+        <Image src={Google} alt="Google" width={30} height={30} />
+        {address
+          ? address.slice(0, 6) + "..." + address.slice(-4)
+          : "Login with Google"}
       </button>
       {address ? console.log(`https://suiexplorer.com/address/${address}?network=testnet`) : null}
     </>

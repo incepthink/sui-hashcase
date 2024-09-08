@@ -15,6 +15,9 @@ import { ConnectModal, useCurrentAccount } from "@mysten/dapp-kit";
 import { ConnectModal as SuietConnectModal } from "@suiet/wallet-kit";
 import "@suiet/wallet-kit/style.css";
 import Collectable from "@/components/Collectable";
+import Logo from "../assets/icons/sui-sui-logo 1.png";
+import SuietLogo from "../assets/icons/suietlogo.png";
+import Image from "next/image";
 
 export default function Home() {
   const [openModal, setOpenModal] = useState<boolean>(false);
@@ -36,11 +39,12 @@ export default function Home() {
             <ConnectModal
               trigger={
                 <button
-                  className="bg-[#2b2b2b] border-black/20 px-4 py-2 text-white font-semibold rounded-md w-full"
+                  className="bg-[#ffffff] border-black/20 px-6 py-2 text-black font-semibold rounded-full w-full flex items-center gap-x-8"
                   disabled={!!currentAccount}
                   onClick={() => setOpenModal(false)}
                 >
                   {" "}
+                  <Image src={Logo} alt="Sui Logo" width={20} height={20} />
                   {currentAccount ? "Connected" : "Sui Wallet"}
                 </button>
               }
@@ -53,8 +57,14 @@ export default function Home() {
             >
               <button
                 onClick={() => setOpenModal(false)}
-                className="bg-[#2b2b2b] border-black/20 px-4 py-2 text-white font-semibold rounded-md w-full"
+                className="bg-[#ffffff] border-black/20 px-6 py-2 text-black font-semibold rounded-full w-full flex items-center gap-x-8"
               >
+                <Image
+                  src={SuietLogo}
+                  alt="Suiet Logo"
+                  width={20}
+                  height={20}
+                />
                 Suiet Wallet
               </button>
             </SuietConnectModal>
