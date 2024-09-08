@@ -8,14 +8,8 @@ const workSans = Work_Sans({ subsets: ["latin"] });
 export const Hero = () => {
   return (
     <div className="relative">
-      <Image
-        src={suiBg}
-        alt="Sui background"
-        layout="fill"
-        objectFit="cover"
-        quality={100}
-      />
-      <div className="flex flex-col justify-start items-center h-[75vh] pb-16 relative z-10 pt-20 mb-12">
+      <Image src={suiBg} alt="Sui background" layout="fill" objectFit="cover" />
+      <div className="flex flex-col justify-start items-center h-[75vh] pb-16 relative pt-20 mb-12">
         <div className="flex flex-col items-center">
           <p
             className={`text-6xl font-bold tracking-wide text-white text-center my-4 ${workSans.className}`}
