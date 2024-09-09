@@ -8,7 +8,7 @@ import Footer from "@/components/Footer";
 import { Pricing } from "@/components/Pricingdemo";
 import ExploreSection from "@/components/ExploreSection";
 import "@mysten/dapp-kit/dist/index.css";
-import { useState } from "react";
+import { useContext, useState } from "react";
 import Modal from "@/components/Modal";
 import ZkLogin from "@/components/ZkLogin";
 import { ConnectModal, useCurrentAccount } from "@mysten/dapp-kit";
@@ -18,16 +18,16 @@ import Collectable from "@/components/Collectable";
 import Logo from "../assets/icons/sui-sui-logo 1.png";
 import SuietLogo from "../assets/icons/suietlogo.png";
 import Image from "next/image";
+import { AppContext } from "@/context/AppContext";
 
 export default function Home() {
-  const [openModal, setOpenModal] = useState<boolean>(false);
+  const { openModal, setOpenModal } = useContext(AppContext);
   const [showModal, setShowModal] = useState(false);
   const currentAccount = useCurrentAccount();
   const [open, setOpen] = useState(false);
   return (
     <>
       <div className="bg-[#00041F]">
-        <Navbar setOpenModal={setOpenModal} />
         <Hero />
         <Features />
         <hr className="m-[100px] bg-gradient-to-r from-transparent via-white to-transparent opacity-20" />

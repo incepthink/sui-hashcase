@@ -2,6 +2,9 @@ import React from "react";
 import { Work_Sans } from "next/font/google";
 import Hand from "../assets/images/hand.svg";
 import Puzzle from "../assets/images/puzzle.svg";
+import Phone from "../assets/phone.gif";
+import Phone2 from "../assets/phone-2.gif";
+import Image from "next/image";
 
 const workSans = Work_Sans({ subsets: ["latin"] });
 
@@ -15,7 +18,9 @@ const Features = () => {
           >
             Design the perfect Campaign
           </p>
-          <div className="bg-white backdrop-blur-sm w-[541px] h-[300px] rounded-lg my-2"></div>
+          <div className="bg-white backdrop-blur-sm w-[541px] h-[300px] rounded-lg my-2 flex justify-center items-center">
+            <Image src={Phone} alt="Phone GIF" width={300} height={300} />
+          </div>
           <p className={`${workSans.className} my-2 text-black`}>
             Our Team of experts help design the product campaign choose from a
             suite of features ( Points, Badge, Etc)
@@ -27,7 +32,9 @@ const Features = () => {
           >
             In Depth Analytics
           </p>
-          <div className="bg-[#00041F]/30 backdrop-blur-sm w-[541px] h-[300px] rounded-lg my-2"></div>
+          <div className="bg-[#00041F]/30 backdrop-blur-sm w-[541px] h-[300px] rounded-lg my-2 overflow-hidden">
+            <Image src={Phone2} alt="Phone GIF" width={541} height={300} />
+          </div>
           <p className={`${workSans.className} my-2 text-white text-[14px]`}>
             Our AI tool generate unique assists and messaging loream ipsum your
             users gets personalized experience.

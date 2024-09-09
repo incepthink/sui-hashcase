@@ -3,6 +3,7 @@ import { DM_Sans } from "next/font/google";
 import clsx from "clsx";
 import "./globals.css";
 import { TanstackProvider } from "@/components/TanstackProvider";
+import { Navbar } from "@/components/Navbar";
 
 const dmSans = DM_Sans({ subsets: ["latin"] });
 
@@ -20,6 +21,7 @@ export default function RootLayout({
     <TanstackProvider>
       <html lang="en">
         <body className={clsx(dmSans.className, "antialiased")}>
+          <Navbar />
           {children}
         </body>
       </html>

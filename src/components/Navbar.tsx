@@ -7,17 +7,15 @@ import Link from "next/link";
 import { Work_Sans } from "next/font/google";
 import { Logo } from "../assets";
 import Image from "next/image";
-
+import { AppContext } from "@/context/AppContext";
+import { useContext } from "react";
 const workSans = Work_Sans({ subsets: ["latin"] });
 
-interface NavbarProps {
-  setOpenModal: (open: boolean) => void;
-}
-
-export const Navbar: React.FC<NavbarProps> = ({ setOpenModal }) => {
+export const Navbar = () => {
   const wallet = useWallet();
   const currentAccount = useCurrentAccount();
   const { address } = useZkLogin();
+  const { setOpenModal } = useContext(AppContext);
 
   const handleModal = () => {
     if (currentAccount || wallet.address || address) {
