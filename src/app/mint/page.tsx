@@ -15,6 +15,8 @@ import Eye from "../../assets/images/eye_Icon.png";
 import Nft from "../../assets/images/nft-image.png";
 import { Work_Sans } from "next/font/google";
 import Link from "next/link";
+import { notifyPromise, notifyResolve } from "@/utils/notify";
+import { Bounce, toast } from "react-toastify";
 
 const workSans = Work_Sans({ subsets: ["latin"] });
 
@@ -27,6 +29,7 @@ const MintPage = () => {
   const { sponsorSignAndExecute } = useSponsorSignAndExecute();
 
   const mintLoyalty = async () => {
+    const notifyId = notifyPromise("Minting loyalty...", "info");
     console.log("Minting loyalty...");
 
     const tx = new Transaction();
@@ -41,7 +44,7 @@ const MintPage = () => {
         tx,
         options: { showObjectChanges: true, showEffects: true },
       });
-
+      notifyResolve(notifyId, "Minted new loyalty", "success");
       console.log("Minted new loyalty, check the response");
       console.log(resp!.objectChanges);
       const createdLoyalty = resp!.objectChanges?.find(
@@ -50,12 +53,41 @@ const MintPage = () => {
           objectType === `${testnet_loyalty!}::loyalty_card::Loyalty`
       );
       if (!createdLoyalty) {
+        notifyResolve(
+          notifyId,
+          "Could not find loyalty in created objects",
+          "error"
+        );
         console.log("Could not find loyalty in created objects");
         throw new Error("Error minting new loyalty");
       }
       const loyaltyId = (createdLoyalty as any)?.objectId;
       console.log("Loyalty ID: ", loyaltyId);
+      toast(
+        <div
+          onClick={() =>
+            window.open(
+              `https://suiscan.xyz/testnet/object/${loyaltyId}`,
+              "_blank"
+            )
+          }
+        >
+          Click to view loyalty on Suiscan
+        </div>,
+        {
+          position: "top-center",
+          autoClose: false,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
+          theme: "light",
+          transition: Bounce,
+        }
+      );
     } catch (error) {
+      notifyResolve(notifyId, "Error minting loyalty", "error");
       console.error("Error minting loyalty:", error);
     }
   };

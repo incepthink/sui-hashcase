@@ -4,6 +4,8 @@ import clsx from "clsx";
 import "./globals.css";
 import { TanstackProvider } from "@/components/TanstackProvider";
 import { Navbar } from "@/components/Navbar";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const dmSans = DM_Sans({ subsets: ["latin"] });
 
@@ -21,6 +23,7 @@ export default function RootLayout({
     <TanstackProvider>
       <html lang="en">
         <body className={clsx(dmSans.className, "antialiased")}>
+          <ToastContainer />
           <Navbar />
           {children}
         </body>
