@@ -67,7 +67,7 @@ export default function Home() {
             <ZkLogin setOpenModal={setOpenModal} />
           </div>
         </Modal>
-        {/* <Footer /> */}
+        <Footer />
       </div>
     </>
   );

@@ -20,7 +20,7 @@ const ExploreSection = () => {
       <div className="container">
         <div className="flex flex-col gap-y-8 items-center justify-center my-4">
           <div className="flex flex-col md:flex-row items-center justify-center gap-x-[40px]">
-            <div className="md:w-[560px] w-[350px] md:h-[420px] h-[263px] bg-[#1A1D35] backdrop-blur-md rounded-md flex items-end justify-center">
+            <div className="md:w-[560px] w-[350px] md:h-[420px] h-[262.5px] bg-[#1A1D35] backdrop-blur-md rounded-md flex items-end justify-center">
               <Image
                 src={ClaimNftPhone}
                 alt="Claim Nft Phone"
@@ -40,14 +40,14 @@ const ExploreSection = () => {
                   happy and engaged <br /> communities
                 </p>
               </div>
-              <div className="my-4 px-4 flex items-center gap-x-8">
+              <div className="my-4 md:px-4 px-2 flex items-center gap-x-8">
                 <div className="flex flex-col items-start justify-center gap-y-8">
                   <div className="flex justify-center items-center gap-x-4">
                     <div className="w-[46px] h-[46px] bg-[#1A1D35] backdrop-blur-md rounded-full flex items-center justify-center">
                       <Fire />
                     </div>
                     <p
-                      className={`${workSans.className} text-white md:text-lg text-sm font-semibold`}
+                      className={`${workSans.className} text-white md:text-lg text-sm md:font-semibold font-normal`}
                     >
                       Loyalty Points
                     </p>
@@ -57,7 +57,7 @@ const ExploreSection = () => {
                       <Membership />
                     </div>
                     <p
-                      className={`${workSans.className} text-white md:text-lg text-sm font-semibold`}
+                      className={`${workSans.className} text-white md:text-lg text-sm md:font-semibold font-normal`}
                     >
                       Membership
                     </p>
@@ -67,7 +67,7 @@ const ExploreSection = () => {
                       <Image src={Badge} alt="Badge" />
                     </div>
                     <p
-                      className={`${workSans.className} text-white md:text-lg text-sm font-semibold`}
+                      className={`${workSans.className} text-white md:text-lg text-sm md:font-semibold font-normal`}
                     >
                       Badges
                     </p>
@@ -79,7 +79,7 @@ const ExploreSection = () => {
                       <Quest />
                     </div>
                     <p
-                      className={`${workSans.className} text-white md:text-lg text-sm font-semibold`}
+                      className={`${workSans.className} text-white md:text-lg text-sm md:font-semibold font-normal`}
                     >
                       Quests
                     </p>
@@ -89,7 +89,7 @@ const ExploreSection = () => {
                       <Collectibles />
                     </div>
                     <p
-                      className={`${workSans.className} text-white md:text-lg text-sm font-semibold`}
+                      className={`${workSans.className} text-white md:text-lg text-sm md:font-semibold font-normal`}
                     >
                       Collectibles
                     </p>
@@ -99,7 +99,7 @@ const ExploreSection = () => {
                       <Image src={Gift} alt="Badge" />
                     </div>
                     <p
-                      className={`${workSans.className} text-white md:text-lg text-sm font-semibold`}
+                      className={`${workSans.className} text-white md:text-lg text-sm md:font-semibold font-normal`}
                     >
                       Streaks & more..
                     </p>
@@ -112,19 +112,19 @@ const ExploreSection = () => {
             <div className="flex flex-col justify-center">
               <div className="my-4">
                 <p
-                  className={`${workSans.className} text-white md:text-3xl text-2xl font-bold my-2`}
+                  className={`${workSans.className} text-white md:text-3xl text-2xl font-bold m-2`}
                 >
                   Empower Customers to Become <br className="md:block hidden" />{" "}
                   Owners of your Brand
                 </p>
-                <p className={`${workSans.className} text-white text-md my-2`}>
+                <p className={`${workSans.className} text-white text-md m-2`}>
                   Get your customers involved with decisions that give them a
                   feeling of <br /> participation and pride in the brand&apos;s
                   identity.
                 </p>
               </div>
               <div className="my-4 flex flex-col md:flex-row justify-center items-center gap-x-6 gap-y-4">
-                <div className="bg-[#1A1D35] backdrop-blur-md rounded-2xl px-6 py-6 w-full md:w-auto">
+                <div className="bg-[#1A1D35] backdrop-blur-md rounded-2xl md:px-6 px-4 md:py-6 py-4 w-full md:w-auto">
                   <div className="w-[46px] h-[46px] bg-[#00041F] backdrop-blur-md rounded-full flex items-center justify-center mb-2">
                     <Lock />
                   </div>

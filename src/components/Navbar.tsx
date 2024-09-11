@@ -98,18 +98,10 @@ export const Navbar = () => {
               Home
             </p>
           </Link>
-          <Link
-            className="m-4 flex justify-start"
-            href={"https://x.com/swaydotfun"}
-            target="_blank"
-          >
+          <Link className="m-4 flex justify-start" href={"/mint"}>
             Mint
           </Link>
-          <Link
-            className="m-4 flex justify-start"
-            href={"https://x.com/swaydotfun"}
-            target="_blank"
-          >
+          <Link className="m-4 flex justify-start" href={"#"}>
             Contact Us
           </Link>
           <div className="flex w-full my-4">

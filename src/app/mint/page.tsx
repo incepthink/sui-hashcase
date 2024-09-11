@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useContext, useState } from "react";
 import { useZkLogin } from "@mysten/enoki/react";
 import { Transaction } from "@mysten/sui/transactions";
 import { useSponsorSignAndExecute } from "../hooks/useSponsorSignandExecute";
@@ -17,6 +17,14 @@ import { Work_Sans } from "next/font/google";
 import Link from "next/link";
 import { notifyPromise, notifyResolve } from "@/utils/notify";
 import { Bounce, toast } from "react-toastify";
+import { AppContext } from "@/context/AppContext";
+import { ConnectModal, useCurrentAccount } from "@mysten/dapp-kit";
+import Modal from "@/components/Modal";
+import Logo from "../../assets/icons/sui-sui-logo 1.png";
+import SuietLogo from "../../assets/icons/suietlogo.png";
+import ZkLogin from "@/components/ZkLogin";
+import { ConnectModal as SuietConnectModal } from "@suiet/wallet-kit";
+import "@suiet/wallet-kit/style.css";
 
 const workSans = Work_Sans({ subsets: ["latin"] });
 
@@ -92,6 +100,11 @@ const MintPage = () => {
     }
   };
 
+  const { openModal, setOpenModal } = useContext(AppContext);
+  const [showModal, setShowModal] = useState<boolean>(false);
+  const currentAccount = useCurrentAccount();
+  const [open, setOpen] = useState<boolean>(false);
+
   return (
     <div
       className={`flex flex-col h-screen bg-[#00041F] px-16 ${workSans.className}`}
@@ -166,6 +179,38 @@ const MintPage = () => {
           </div>
         </div>
       </div>
+      <Modal openModal={openModal} onClose={() => setOpenModal(false)}>
+        <div className="flex flex-col justify-center items-center gap-y-4 my-4 mx-4">
+          <ConnectModal
+            trigger={
+              <button
+                className="bg-[#ffffff] border-black/20 px-6 py-2 text-black font-semibold rounded-full w-full flex items-center gap-x-8"
+                disabled={!!currentAccount}
+                onClick={() => setOpenModal(false)}
+              >
+                {" "}
+                <Image src={Logo} alt="Sui Logo" width={20} height={20} />
+                {currentAccount ? "Connected" : "Sui Wallet"}
+              </button>
+            }
+            open={open}
+            onOpenChange={(isOpen: boolean) => setOpen(isOpen)}
+          />
+          <SuietConnectModal
+            open={showModal}
+            onOpenChange={(open: boolean) => setShowModal(open)}
+          >
+            <button
+              onClick={() => setOpenModal(false)}
+              className="bg-[#ffffff] border-black/20 px-6 py-2 text-black font-semibold rounded-full w-full flex items-center gap-x-8"
+            >
+              <Image src={SuietLogo} alt="Suiet Logo" width={20} height={20} />
+              Suiet Wallet
+            </button>
+          </SuietConnectModal>
+          <ZkLogin setOpenModal={setOpenModal} />
+        </div>
+      </Modal>
     </div>
   );
 };

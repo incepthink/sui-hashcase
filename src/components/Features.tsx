@@ -12,7 +12,7 @@ const Features = () => {
   return (
     <div className="bg-[#00041F] px-[100px] py-8 flex flex-row gap-x-8 justify-center items-center flex-wrap gap-4">
       <div className="flex flex-col items-center justify-center md:gap-y-8 gap-y-4">
-        <div className="bg-[#E9EAED] rounded-xl p-4 md:px-8 px-4 md:mx-2 mx-0 md:w-[605px] w-[350px]">
+        <div className="bg-[#E9EAED] rounded-xl p-4 md:px-8 px-4 md:mx-2 mx-0">
           <p
             className={`${workSans.className} my-2 text-black md:text-2xl text-[16px] font-semibold`}
           >
@@ -32,7 +32,7 @@ const Features = () => {
             suite of features ( Points, Badge, Etc)
           </p>
         </div>
-        <div className="bg-[#1A1D35] rounded-xl md:p-8 p-4 md:w-[605px] w-[350px]">
+        <div className="bg-[#1A1D35] rounded-xl md:p-8 p-4 ">
           <div className="my-4">
             <Hand />
             <p
@@ -52,17 +52,17 @@ const Features = () => {
         </div>
       </div>
       <div className="flex flex-wrap-reverse flex-col items-center justify-center md:gap-y-8 gap-y-4">
-        <div className="bg-[#1A1D35] rounded-xl p-4 px-8 md:mx-2 mx-0 md:w-[605px] w-[350px]">
+        <div className="bg-[#1A1D35] rounded-xl p-4 md:px-8 px-4 md:mx-2 mx-0">
           <p
             className={`${workSans.className} my-2 text-white md:text-2xl text-[16px] font-semibold`}
           >
             In Depth Analytics
           </p>
-          <div className="bg-[#00041F]/30 backdrop-blur-sm md:w-[541px] w-[310px] md:h-[300px] h-[173.55px] rounded-lg my-2 overflow-hidden">
+          <div className="backdrop-blur-sm md:w-[541px] w-[310px] md:h-[300px] h-[173.55px] rounded-lg my-2 overflow-hidden">
             <Image
               src={Phone2}
               alt="Phone GIF"
-              className="md:w-[541px] w-[300px] md:h-[300px] h-[173.55px]"
+              className="md:w-[541px] w-[310px] md:h-[300px] h-[173.55px]"
             />
           </div>
           <p
@@ -72,7 +72,7 @@ const Features = () => {
             users gets personalized experience.
           </p>
         </div>
-        <div className="bg-white rounded-xl p-8 md:w-[605px] w-[350px]">
+        <div className="bg-white rounded-xl md:p-8 p-4">
           <div className="my-4">
             <Puzzle />
             <p
