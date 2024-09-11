@@ -1,7 +1,7 @@
 "use client";
 import Image from "next/image";
 import { Work_Sans } from "next/font/google";
-import { HashcaseText } from "../assets";
+import ArrowB from "../assets/images/arrowB.svg";
 import suiBg from "../assets/images/sui-bg.png";
 
 const workSans = Work_Sans({ subsets: ["latin"] });
@@ -9,33 +9,40 @@ export const Hero = () => {
   return (
     <div className="relative">
       <Image src={suiBg} alt="Sui background" layout="fill" objectFit="cover" />
-      <div className="flex flex-col justify-start items-center h-[75vh] pb-16 relative pt-20 mb-12">
+      <div className="flex flex-col justify-start items-center md:h-[75vh] h-[50vh] pb-16 relative pt-20 mb-12">
         <div className="flex flex-col items-center">
           <p
-            className={`text-6xl font-bold tracking-wide text-white text-center my-4 ${workSans.className}`}
+            className={`md:text-6xl text-[28px] md:leading-[60px] leading-8 font-[1000] tracking-wide text-white text-center my-4 ${workSans.className}`}
           >
-            Turn your audience into <br /> Superfans!
+            Turn your audience <span className="text-white/30">into</span>{" "}
+            <br /> <span className="text-[#4DA2FF]"> Superfans! </span>
           </p>
-          <p className="text-xl text-white text-center my-4">
+          <p className="md:text-xl text-sm text-white text-center my-4">
             Engage your audience with better, smarter loyalty and rewards
-            campaigns. Integrate the <br /> power of Web 2.5 into your
-            application with near-zero effort.
+            campaigns. Integrate the <br className="hidden md:block" /> power of
+            Web 2.5 into your application with near-zero effort.
           </p>
         </div>
-        <div className="border-[#4DA2FF]/15 border-2 border-b-4 hover:border-4 hover:border-b-2 transition duration-300 rounded-full px-[24px] py-[12px] my-4">
-          <HashcaseText />
+        <div className="flex items-center justify-center my-4 w-full">
+          <button className="px-6 py-3 rounded-full md:text-xl text-sm bg-white text-black border-[1px] border-b-4 border-[#4DA2FF] flex items-center gap-x-2">
+            Claim Free NFT Now
+            <ArrowB />
+          </button>
         </div>
       </div>
-      <div className="relative rounded-tr-[100px] rounded-tl-[100px] bg-[#00041F] pt-[6rem] pb-[4rem]">
-        <div className="flex justify-center gap-x-[16rem]">
+      <div className="relative md:rounded-tr-full rounded-tr-xl md:rounded-tl-full rounded-tl-xl bg-[#00041F] pt-[6rem] pb-[4rem]">
+        <div className="flex flex-col md:flex-row justify-center md:gap-x-[16rem] gap-x-4">
           <p
-            className={`text-3xl font-semibold text-white ${workSans.className}`}
+            className={`md:text-3xl text-2xl md:mt-0 md:mb-0 mb-4 mt-4 px-3 font-semibold text-white ${workSans.className}`}
           >
-            Create memorable browsing & <br /> Checkout Experience
+            Create memorable browsing & <br className="hidden md:block" />{" "}
+            Checkout Experience
           </p>
-          <p className={`text-lg text-white ${workSans.className}`}>
-            Gamify your user journey and give your audience something <br />{" "}
-            unique that they actually own.
+          <p
+            className={`md:text-lg text-sm text-white px-3 ${workSans.className}`}
+          >
+            Gamify your user journey and give your audience something{" "}
+            <br className="hidden md:block" /> unique that they actually own.
           </p>
         </div>
       </div>

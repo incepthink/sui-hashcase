@@ -12,15 +12,15 @@ const Footer = () => {
   return (
     <div className="bg-[#1A1D35] rounded-tr-2xl rounded-tl-2xl pt-12 px-[100px]">
       {/* Add the Links */}
-      <div className="flex justify-between items-center px-8 py-4">
+      <div className="flex flex-col md:flex-row md:justify-between justify-start items-center px-8 py-4">
         <div
-          className={`flex gap-x-16 items-center justify-center text-white ${workSans.className}`}
+          className={`flex flex-col md:flex-row gap-x-16 items-center md:justify-center justify-start text-white ${workSans.className}`}
         >
           <Link href="#">About Us</Link>
           <Link href="#">Mint NFTs</Link>
           <Link href="#">Contact</Link>
         </div>
-        <div className="flex gap-x-16 items-center justify-center">
+        <div className="flex gap-x-16 items-center md:justify-center justify-start">
           <YT />
           <IG />
           <X />

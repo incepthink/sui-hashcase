@@ -1,11 +1,7 @@
 "use client";
-import { Navbar } from "@/components/Navbar";
 import { Hero } from "@/components/Hero";
 import Features from "@/components/Features";
-import { ProductShowcase } from "@/components/ProductShowcase";
-import { CallToAction } from "@/components/CallToAction";
 import Footer from "@/components/Footer";
-import { Pricing } from "@/components/Pricingdemo";
 import ExploreSection from "@/components/ExploreSection";
 import "@mysten/dapp-kit/dist/index.css";
 import { useContext, useState } from "react";
@@ -30,9 +26,9 @@ export default function Home() {
       <div className="bg-[#00041F]">
         <Hero />
         <Features />
-        <hr className="m-[100px] bg-gradient-to-r from-transparent via-white to-transparent opacity-20" />
+        <hr className="md:m-[100px] m-[20px] bg-gradient-to-r from-transparent via-white to-transparent opacity-20" />
         <ExploreSection />
-        <hr className="m-[100px] bg-gradient-to-r from-transparent via-white to-transparent opacity-20" />
+        <hr className="md:m-[100px] m-[20px] bg-gradient-to-r from-transparent via-white to-transparent opacity-20" />
         <Collectable />
         <Modal openModal={openModal} onClose={() => setOpenModal(false)}>
           <div className="flex flex-col justify-center items-center gap-y-4 my-4 mx-4">
@@ -71,7 +67,7 @@ export default function Home() {
             <ZkLogin setOpenModal={setOpenModal} />
           </div>
         </Modal>
-        <Footer />
+        {/* <Footer /> */}
       </div>
     </>
   );

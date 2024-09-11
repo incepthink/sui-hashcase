@@ -10,65 +10,81 @@ const workSans = Work_Sans({ subsets: ["latin"] });
 
 const Features = () => {
   return (
-    <div className="bg-[#00041F] px-[100px] py-8 flex flex-col gap-y-8 justify-center items-center">
-      <div className="flex justify-center gap-x-8">
-        <div className="bg-[#E9EAED] rounded-xl p-4 px-8 mx-2 w-[605px]">
+    <div className="bg-[#00041F] px-[100px] py-8 flex flex-row gap-x-8 justify-center items-center flex-wrap gap-4">
+      <div className="flex flex-col items-center justify-center md:gap-y-8 gap-y-4">
+        <div className="bg-[#E9EAED] rounded-xl p-4 md:px-8 px-4 md:mx-2 mx-0 md:w-[605px] w-[350px]">
           <p
-            className={`${workSans.className} my-2 text-black text-2xl font-semibold`}
+            className={`${workSans.className} my-2 text-black md:text-2xl text-[16px] font-semibold`}
           >
             Design the perfect Campaign
           </p>
-          <div className="bg-white backdrop-blur-sm w-[541px] h-[300px] rounded-lg my-2 flex justify-center items-center">
-            <Image src={Phone} alt="Phone GIF" width={300} height={300} />
+          <div className="bg-white backdrop-blur-sm md:w-[541px] w-[310px] md:h-300px h-[173.55px] rounded-lg my-2 flex justify-center items-center">
+            <Image
+              src={Phone}
+              alt="Phone GIF"
+              className="md:w-[541px] w-[310px] md:h-[300px] h-[173.55px]"
+            />
           </div>
-          <p className={`${workSans.className} my-2 text-black`}>
+          <p
+            className={`${workSans.className} my-2 text-black md:text-[16px] text-[14px]`}
+          >
             Our Team of experts help design the product campaign choose from a
             suite of features ( Points, Badge, Etc)
           </p>
         </div>
-        <div className="bg-[#1A1D35] rounded-xl p-4 px-8 mx-2 w-[605px]">
-          <p
-            className={`${workSans.className} my-2 text-white text-2xl font-semibold`}
-          >
-            In Depth Analytics
-          </p>
-          <div className="bg-[#00041F]/30 backdrop-blur-sm w-[541px] h-[300px] rounded-lg my-2 overflow-hidden">
-            <Image src={Phone2} alt="Phone GIF" width={541} height={300} />
-          </div>
-          <p className={`${workSans.className} my-2 text-white text-[14px]`}>
-            Our AI tool generate unique assists and messaging loream ipsum your
-            users gets personalized experience.
-          </p>
-        </div>
-      </div>
-      <div className="flex justify-center items-center gap-x-8">
-        <div className="bg-[#1A1D35] rounded-xl p-8 w-[605px]">
+        <div className="bg-[#1A1D35] rounded-xl md:p-8 p-4 md:w-[605px] w-[350px]">
           <div className="my-4">
             <Hand />
             <p
-              className={`${workSans.className} my-2 text-white text-2xl font-semibold`}
+              className={`${workSans.className} my-2 text-white md:text-2xl text-[16px] font-semibold`}
             >
               Hyper-Personalisation with Web3 AI
             </p>
           </div>
           <div className="my-4">
-            <p className={`${workSans.className} my-2 text-white`}>
+            <p
+              className={`${workSans.className} my-2 md:text-[16px] text-[14px] text-white`}
+            >
               AI enabled campaigns ensure a unique experience for each user
               journey.
             </p>
           </div>
         </div>
-        <div className="bg-white rounded-xl p-8 w-[605px]">
+      </div>
+      <div className="flex flex-wrap-reverse flex-col items-center justify-center md:gap-y-8 gap-y-4">
+        <div className="bg-[#1A1D35] rounded-xl p-4 px-8 md:mx-2 mx-0 md:w-[605px] w-[350px]">
+          <p
+            className={`${workSans.className} my-2 text-white md:text-2xl text-[16px] font-semibold`}
+          >
+            In Depth Analytics
+          </p>
+          <div className="bg-[#00041F]/30 backdrop-blur-sm md:w-[541px] w-[310px] md:h-[300px] h-[173.55px] rounded-lg my-2 overflow-hidden">
+            <Image
+              src={Phone2}
+              alt="Phone GIF"
+              className="md:w-[541px] w-[300px] md:h-[300px] h-[173.55px]"
+            />
+          </div>
+          <p
+            className={`${workSans.className} my-2 text-white md:text-[16px] text-[14px]`}
+          >
+            Our AI tool generate unique assists and messaging loream ipsum your
+            users gets personalized experience.
+          </p>
+        </div>
+        <div className="bg-white rounded-xl p-8 md:w-[605px] w-[350px]">
           <div className="my-4">
             <Puzzle />
             <p
-              className={`${workSans.className} my-2 text-black text-2xl font-semibold`}
+              className={`${workSans.className} my-2 text-black md:text-2xl text-[16px] font-semibold`}
             >
               Gamified User Journeys
             </p>
           </div>
           <div className="my-4">
-            <p className={`${workSans.className} my-2 text-black`}>
+            <p
+              className={`${workSans.className} my-2 text-black md:text-[16px] text-[14px]`}
+            >
               We help you track and analyse every session giving you a better
               understanding of your consumer&apos;s behaviour.
             </p>

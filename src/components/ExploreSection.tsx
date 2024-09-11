@@ -5,27 +5,39 @@ import Membership from "../assets/images/membership.svg";
 import Collectibles from "../assets/images/collectibles.svg";
 import Lock from "../assets/images/lock.svg";
 import Phygital from "../assets/images/phigtal.svg";
+import ClaimNftPhone from "../assets/claim-nft-phone.png";
+import ConnectPhone from "../assets/connect-phone.png";
+import Badge from "../assets/badge-icon.png";
+import Gift from "../assets/gift-icon.png";
 import React from "react";
+import Image from "next/image";
 
 const workSans = Work_Sans({ subsets: ["latin"] });
 
 const ExploreSection = () => {
   return (
-    <div className="bg-[#00041F] py-4">
+    <div className="bg-[#00041F] md:py-4 py-0">
       <div className="container">
         <div className="flex flex-col gap-y-8 items-center justify-center my-4">
-          <div className="flex items-center justify-center gap-x-[40px]">
-            <div className="w-[560px] h-[420px] bg-[#1A1D35] backdrop-blur-md rounded-md"></div>
+          <div className="flex flex-col md:flex-row items-center justify-center gap-x-[40px]">
+            <div className="md:w-[560px] w-[350px] md:h-[420px] h-[263px] bg-[#1A1D35] backdrop-blur-md rounded-md flex items-end justify-center">
+              <Image
+                src={ClaimNftPhone}
+                alt="Claim Nft Phone"
+                className="md:w-[483px] w-[301.88px]"
+              />
+            </div>
             <div className="flex flex-col justify-center">
               <div className="my-4 px-6">
                 <p
-                  className={`${workSans.className} text-white text-2xl font-semibold my-2`}
+                  className={`${workSans.className} text-white md:text-3xl text-2xl font-bold my-2`}
                 >
                   Up your game with Web3 Magic
                 </p>
-                <p className={`${workSans.className} text-white text-md my-2`}>
-                  Ut enim ad minim veniam, quis nostrud exercitation <br />{" "}
-                  ullamco laboris nisi ut aliquip ex ea commodo consequat.
+                <p className={`${workSans.className} text-white my-2`}>
+                  Elevate the perceived value of your rewars by giving users
+                  something <br /> they actually own. Better rewards make for
+                  happy and engaged <br /> communities
                 </p>
               </div>
               <div className="my-4 px-4 flex items-center gap-x-8">
@@ -35,7 +47,7 @@ const ExploreSection = () => {
                       <Fire />
                     </div>
                     <p
-                      className={`${workSans.className} text-white text-lg font-semibold`}
+                      className={`${workSans.className} text-white md:text-lg text-sm font-semibold`}
                     >
                       Loyalty Points
                     </p>
@@ -45,9 +57,19 @@ const ExploreSection = () => {
                       <Membership />
                     </div>
                     <p
-                      className={`${workSans.className} text-white text-lg font-semibold`}
+                      className={`${workSans.className} text-white md:text-lg text-sm font-semibold`}
                     >
                       Membership
+                    </p>
+                  </div>
+                  <div className="flex justify-center items-center gap-x-4">
+                    <div className="w-[46px] h-[46px] bg-[#1A1D35] backdrop-blur-md rounded-full flex items-center justify-center">
+                      <Image src={Badge} alt="Badge" />
+                    </div>
+                    <p
+                      className={`${workSans.className} text-white md:text-lg text-sm font-semibold`}
+                    >
+                      Badges
                     </p>
                   </div>
                 </div>
@@ -57,7 +79,7 @@ const ExploreSection = () => {
                       <Quest />
                     </div>
                     <p
-                      className={`${workSans.className} text-white text-lg font-semibold`}
+                      className={`${workSans.className} text-white md:text-lg text-sm font-semibold`}
                     >
                       Quests
                     </p>
@@ -67,47 +89,44 @@ const ExploreSection = () => {
                       <Collectibles />
                     </div>
                     <p
-                      className={`${workSans.className} text-white text-lg font-semibold`}
+                      className={`${workSans.className} text-white md:text-lg text-sm font-semibold`}
                     >
                       Collectibles
+                    </p>
+                  </div>
+                  <div className="flex justify-center items-center gap-x-4">
+                    <div className="w-[46px] h-[46px] bg-[#1A1D35] backdrop-blur-md rounded-full flex items-center justify-center">
+                      <Image src={Gift} alt="Badge" />
+                    </div>
+                    <p
+                      className={`${workSans.className} text-white md:text-lg text-sm font-semibold`}
+                    >
+                      Streaks & more..
                     </p>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-          <div className="flex items-center justify-center gap-x-[40px]">
+          <div className="flex flex-wrap-reverse items-center justify-center gap-x-[40px]">
             <div className="flex flex-col justify-center">
               <div className="my-4">
                 <p
-                  className={`${workSans.className} text-white text-2xl font-semibold my-2`}
+                  className={`${workSans.className} text-white md:text-3xl text-2xl font-bold my-2`}
                 >
-                  Text Up your game with Magic
+                  Empower Customers to Become <br className="md:block hidden" />{" "}
+                  Owners of your Brand
                 </p>
                 <p className={`${workSans.className} text-white text-md my-2`}>
-                  Ut enim ad minim veniam, quis nostrud exercitation <br />{" "}
-                  ullamco laboris nisi ut aliquip ex ea commodo consequat.
+                  Get your customers involved with decisions that give them a
+                  feeling of <br /> participation and pride in the brand&apos;s
+                  identity.
                 </p>
               </div>
-              <div className="my-4 flex justify-center items-center gap-x-6 ">
-                <div className="bg-[#1A1D35] backdrop-blur-md rounded-md px-6 py-6 w-[286px] h-[182px]">
+              <div className="my-4 flex flex-col md:flex-row justify-center items-center gap-x-6 gap-y-4">
+                <div className="bg-[#1A1D35] backdrop-blur-md rounded-2xl px-6 py-6 w-full md:w-auto">
                   <div className="w-[46px] h-[46px] bg-[#00041F] backdrop-blur-md rounded-full flex items-center justify-center mb-2">
                     <Lock />
-                  </div>
-                  <p
-                    className={`${workSans.className} text-white text-[20px] font-semibold my-2`}
-                  >
-                    Authenticate
-                  </p>
-                  <p
-                    className={`${workSans.className} text-white text-[14px] my-2`}
-                  >
-                    Upidatat non proident sunt in culpa qui official
-                  </p>
-                </div>
-                <div className="bg-[#1A1D35] backdrop-blur-md rounded-md px-6 py-6 w-[286px] h-[182px]">
-                  <div className="w-[46px] h-[46px] bg-[#00041F] backdrop-blur-md rounded-full flex items-center justify-center mb-2">
-                    <Phygital />
                   </div>
                   <p
                     className={`${workSans.className} text-white text-[20px] font-semibold my-2`}
@@ -117,13 +136,38 @@ const ExploreSection = () => {
                   <p
                     className={`${workSans.className} text-white text-[14px] my-2`}
                   >
-                    Excepteur sint occaecat <br /> cupidatat non proident,
+                    Add a new dimension to user{" "}
+                    <br className="md:block hidden" /> journeys by combining the{" "}
+                    <br className="md:block hidden" /> digital and physical.
+                  </p>
+                </div>
+                <div className="bg-[#1A1D35] backdrop-blur-md rounded-2xl px-6 py-6 w-full md:w-auto">
+                  <div className="w-[46px] h-[46px] bg-[#00041F] backdrop-blur-md rounded-full flex items-center justify-center mb-2">
+                    <Phygital />
+                  </div>
+                  <p
+                    className={`${workSans.className} text-white text-[20px] font-semibold my-2`}
+                  >
+                    Customer Acquisition
+                  </p>
+                  <p
+                    className={`${workSans.className} text-white text-[14px] my-2`}
+                  >
+                    Add community features: <br className="md:block hidden" />{" "}
+                    Raffles, Leaderboards,
+                    <br className="md:block hidden" /> Milestones, and more.
                   </p>
                 </div>
                 <div className="bg-[#1A1D35] backdrop-blur-md rounded-md"></div>
               </div>
             </div>
-            <div className="w-[560px] h-[420px] bg-[#1A1D35] backdrop-blur-md rounded-md"></div>
+            <div className="md:w-[560px] w-[350px] md:h-[420px] h-[263px] bg-[#1A1D35] backdrop-blur-md rounded-md flex items-end justify-center">
+              <Image
+                src={ConnectPhone}
+                alt="Connect Phone"
+                className="md:w-[400.7px] w-[250.44px]"
+              />
+            </div>
           </div>
         </div>
       </div>
