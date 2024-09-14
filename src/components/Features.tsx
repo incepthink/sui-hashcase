@@ -10,19 +10,19 @@ const workSans = Work_Sans({ subsets: ["latin"] });
 
 const Features = () => {
   return (
-    <div className="bg-[#00041F] px-[100px] py-8 flex flex-row gap-x-8 justify-center items-center flex-wrap gap-4">
-      <div className="flex flex-col items-center justify-center md:gap-y-8 gap-y-4">
-        <div className="bg-[#E9EAED] rounded-xl p-4 md:px-8 px-4 md:mx-2 mx-0">
+    <div className="bg-[#00041F] md:px-[100px] px-4 py-8 flex flex-col md:flex-row gap-x-8 justify-center items-center gap-4">
+      <div className="flex flex-col items-center justify-center md:gap-y-8 gap-y-4 w-full max-w-[541px]">
+        <div className="bg-[#E9EAED] rounded-xl p-4 md:px-8 px-4 md:mx-2 mx-0 w-full">
           <p
             className={`${workSans.className} my-2 text-black md:text-2xl text-[16px] font-semibold`}
           >
             Design the perfect Campaign
           </p>
-          <div className="bg-white backdrop-blur-sm md:w-[541px] w-[310px] md:h-300px h-[173.55px] rounded-lg my-2 flex justify-center items-center">
+          <div className="backdrop-blur-sm w-full md:h-[300px] h-[173.55px] rounded-lg my-2 overflow-hidden">
             <Image
               src={Phone}
               alt="Phone GIF"
-              className="md:w-[541px] w-[310px] md:h-[300px] h-[173.55px]"
+              className="w-full md:h-[300px] h-[173.55px] object-cover"
             />
           </div>
           <p
@@ -32,7 +32,7 @@ const Features = () => {
             suite of features ( Points, Badge, Etc)
           </p>
         </div>
-        <div className="bg-[#1A1D35] rounded-xl md:p-8 p-4 ">
+        <div className="bg-[#1A1D35] rounded-xl md:p-8 p-4 w-full">
           <div className="my-4">
             <Hand />
             <p
@@ -51,18 +51,18 @@ const Features = () => {
           </div>
         </div>
       </div>
-      <div className="flex flex-wrap-reverse flex-col items-center justify-center md:gap-y-8 gap-y-4">
-        <div className="bg-[#1A1D35] rounded-xl p-4 md:px-8 px-4 md:mx-2 mx-0">
+      <div className="flex flex-col items-center justify-center md:gap-y-8 gap-y-4 w-full max-w-[541px]">
+        <div className="bg-[#1A1D35] rounded-xl p-4 md:px-8 px-4 md:mx-2 mx-0 w-full">
           <p
             className={`${workSans.className} my-2 text-white md:text-2xl text-[16px] font-semibold`}
           >
             In Depth Analytics
           </p>
-          <div className="backdrop-blur-sm md:w-[541px] w-[310px] md:h-[300px] h-[173.55px] rounded-lg my-2 overflow-hidden">
+          <div className="backdrop-blur-sm w-full md:h-[300px] h-[173.55px] rounded-lg my-2 overflow-hidden">
             <Image
               src={Phone2}
               alt="Phone GIF"
-              className="md:w-[541px] w-[310px] md:h-[300px] h-[173.55px]"
+              className="w-full md:h-[300px] h-[173.55px] object-cover"
             />
           </div>
           <p
@@ -72,7 +72,7 @@ const Features = () => {
             users gets personalized experience.
           </p>
         </div>
-        <div className="bg-white rounded-xl md:p-8 p-4">
+        <div className="bg-white rounded-xl md:p-8 p-4 w-full">
           <div className="my-4">
             <Puzzle />
             <p

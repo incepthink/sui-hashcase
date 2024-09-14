@@ -93,10 +93,8 @@ export const Navbar = () => {
         <div
           className={`md:hidden absolute w-full text-right p-2 flex-col justify-center items-center bg-[#00041F]/10 backdrop-blur-md text-white gap-y-8  ml-auto z-10`}
         >
-          <Link className="my-4" href={"/"}>
-            <p className="text-[14px] py-2 mx-4 font-semibold flex justify-start">
-              Home
-            </p>
+          <Link className="m-4 flex justify-start" href={"/"}>
+            Home
           </Link>
           <Link className="m-4 flex justify-start" href={"/mint"}>
             Mint

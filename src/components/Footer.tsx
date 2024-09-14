@@ -11,7 +11,7 @@ const workSans = Work_Sans({ subsets: ["latin"] });
 const Footer = () => {
   return (
     <>
-      <div className="hidden md:block bg-[#1A1D35] rounded-tr-2xl rounded-tl-2xl pt-12 px-[100px]">
+      <div className="hidden md:block bg-[#1A1D35] rounded-tr-2xl rounded-tl-2xl pt-8 px-[100px]">
         <div className="flex flex-col md:flex-row md:justify-between justify-start items-center px-8 py-4">
           <div
             className={`flex flex-col md:flex-row gap-x-16 items-center md:justify-center justify-start text-white ${workSans.className}`}
@@ -42,6 +42,7 @@ const Footer = () => {
           @2024 HashCase. All rights reserved.
         </p>
       </div>
+      {/* Mobile Footer */}
       <div className="md:hidden bg-[#1A1D35] rounded-tr-lg rounded-tl-lg pt-6 px-4 flex flex-col justify-center items-center">
         <div className="flex justify-start w-full px-4">
           <Logo />
