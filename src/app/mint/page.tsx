@@ -30,9 +30,22 @@ import Footer from "@/components/Footer";
 
 const workSans = Work_Sans({ subsets: ["latin"] });
 
+// const tx2 = new Transaction();
+// tx2.moveCall({
+//   target: `${testnet_loyalty!}::loyalty_card::update_loyalty_points`,
+//   arguments: [tx.object(loyaltyId), tx.pure.u64(20)],
+// });
+// tx2.setSender(address!);
+// const resp2 = await sponsorSignAndExecute({
+//   tx: tx2,
+//   options: { showObjectChanges: true, showEffects: true },
+// });
+// console.log("Updated loyalty points");
+// console.log(resp2!.objectChanges);
+
 const testnet_loyalty =
   process.env.TESTNET_LOYALTY_PACKAGE_ID ||
-  "0x3917b73a25d0160ce7a40b8cbaa9f560124f4593c2e419094b019a4267ef74ad";
+  "0xb92dbbdb90ea755f8ea371d3e4658687fc4a1e9f6b13264e358c7d27da7514a7";
 
 const MintPage = () => {
   const { address } = useZkLogin();
