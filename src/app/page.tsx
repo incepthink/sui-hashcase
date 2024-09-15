@@ -30,7 +30,11 @@ export default function Home() {
         <ExploreSection />
         <hr className="md:m-[100px] m-[20px] bg-gradient-to-r from-transparent via-white to-transparent opacity-20" />
         <Collectable />
-        <Modal openModal={openModal} onClose={() => setOpenModal(false)}>
+        <Modal
+          context="Connect Your Wallet"
+          openModal={openModal}
+          onClose={() => setOpenModal(false)}
+        >
           <div className="flex flex-col justify-center items-center gap-y-4 my-4 mx-4">
             <ConnectModal
               trigger={

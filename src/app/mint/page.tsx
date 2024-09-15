@@ -5,13 +5,13 @@ import { useZkLogin } from "@mysten/enoki/react";
 import { Transaction } from "@mysten/sui/transactions";
 import { useSponsorSignAndExecute } from "../hooks/useSponsorSignandExecute";
 import Image from "next/image";
-import ArrowW from "../../assets/images/arrowW.svg";
-import ArrowB from "../../assets/images/arrowB.svg";
-import Heart from "../../assets/images/heart.svg";
-import HeartW from "../../assets/images/white_heart.svg";
-import Send from "../../assets/images/send-Regular.svg";
-import Eye from "../../assets/images/eye_Icon.png";
-import Nft from "../../assets/images/nft-image.png";
+import ArrowW from "@/assets/images/arrowW.svg";
+import ArrowB from "@/assets/images/arrowB.svg";
+import Heart from "@/assets/images/heart.svg";
+import HeartW from "@/assets/images/white_heart.svg";
+import Send from "@/assets/images/send-Regular.svg";
+import Eye from "@/assets/images/eye_Icon.png";
+import Nft from "@/assets/images/nft-image.png";
 import { Work_Sans } from "next/font/google";
 import Link from "next/link";
 import { notifyPromise, notifyResolve } from "@/utils/notify";
@@ -19,9 +19,9 @@ import { Bounce, toast } from "react-toastify";
 import { AppContext } from "@/context/AppContext";
 import { ConnectModal, useCurrentAccount } from "@mysten/dapp-kit";
 import Modal from "@/components/Modal";
-import Logo from "../../assets/icons/sui-sui-logo 1.png";
-import SuietLogo from "../../assets/icons/suietlogo.png";
-import EyeW from "../../assets/eye-white.svg";
+import Logo from "@/assets/icons/sui-sui-logo 1.png";
+import SuietLogo from "@/assets/icons/suietlogo.png";
+import EyeW from "@/assets/eye-white.svg";
 import ZkLogin from "@/components/ZkLogin";
 import { ConnectModal as SuietConnectModal } from "@suiet/wallet-kit";
 import "@suiet/wallet-kit/style.css";
@@ -85,6 +85,7 @@ const MintPage = () => {
         throw new Error("Error minting new loyalty");
       }
       const loyaltyId = (createdLoyalty as any)?.objectId;
+      setLoyaltyId(loyaltyId);
       console.log("Loyalty ID: ", loyaltyId);
       toast(
         <div
@@ -109,6 +110,7 @@ const MintPage = () => {
           transition: Bounce,
         }
       );
+      setIsMinted(true);
     } catch (error) {
       notifyResolve(notifyId, "Error minting loyalty", "error");
       console.error("Error minting loyalty:", error);
@@ -117,8 +119,28 @@ const MintPage = () => {
 
   const { openModal, setOpenModal } = useContext(AppContext);
   const [showModal, setShowModal] = useState<boolean>(false);
+  const [isMinted, setIsMinted] = useState<boolean>(false);
+  const [isUnlocked, setIsUnlocked] = useState<boolean>(false);
+  const [loyaltyId, setLoyaltyId] = useState<string>("");
   const currentAccount = useCurrentAccount();
   const [open, setOpen] = useState<boolean>(false);
+
+  const handleReveal = () => {
+    if (isMinted) {
+      setIsUnlocked(true);
+    } else {
+      toast.error("You need to mint this NFT first!", {
+        position: "top-center",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "light",
+      });
+    }
+  };
 
   return (
     <div className={`flex flex-col bg-[#00041F] ${workSans.className}`}>
@@ -178,12 +200,15 @@ const MintPage = () => {
             </div>
             <div className="flex items-center justify-start w-full">
               <div className="flex items-center md:w-auto w-full justify-between my-4 bg-[#4DA2FF] backdrop-blur-md rounded-lg px-3 py-3 gap-x-2">
-                <div className="flex items-center gap-x-2">
+                <button
+                  onClick={handleReveal}
+                  className="flex items-center gap-x-2"
+                >
                   <EyeW />
                   <p className="text-white md:text-lg text-sm">
                     Reveal the Content
                   </p>
-                </div>
+                </button>
                 <ArrowW className="rotate-180 ml-4" />
               </div>
             </div>
@@ -248,7 +273,26 @@ const MintPage = () => {
       </div>
       <Collectable />
       <Footer />
-      <Modal openModal={openModal} onClose={() => setOpenModal(false)}>
+      <Modal
+        context="Unlockable Content"
+        openModal={isUnlocked}
+        onClose={() => setIsUnlocked(false)}
+      >
+        <div className="flex flex-col justify-center items-center gap-y-4 my-4 mx-4">
+          <Link
+            href={`https://suiscan.xyz/testnet/object/${loyaltyId}`}
+            target="_blank"
+            className="bg-white border-black/20 px-3 py-2 text-black hover:text-blue-500 font-semibold rounded-full w-full overflow-hidden text-ellipsis whitespace-nowrap"
+          >
+            https://suiscan.xyz/testnet/object/...
+          </Link>
+        </div>
+      </Modal>
+      <Modal
+        context="Connect Your Wallet"
+        openModal={openModal}
+        onClose={() => setOpenModal(false)}
+      >
         <div className="flex flex-col justify-center items-center gap-y-4 my-4 mx-4">
           <ConnectModal
             trigger={

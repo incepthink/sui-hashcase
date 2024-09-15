@@ -1,6 +1,7 @@
 "use client";
 import { useAuthCallback } from "@mysten/enoki/react";
 import { useEffect } from "react";
+import { Loader2 } from "lucide-react";
 
 export default function AuthPage() {
   const { handled } = useAuthCallback();
@@ -12,8 +13,8 @@ export default function AuthPage() {
   }, [handled]);
 
   return (
-    <div className="flex justify-center items-center h-screen bg-black">
-      <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-white"></div>
+    <div className="flex justify-center items-center h-screen bg-[#00041F]">
+      <Loader2 className="animate-spin h-16 w-16 text-white" />
     </div>
   );
 }

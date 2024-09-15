@@ -3,6 +3,7 @@ import Image from "next/image";
 import { Work_Sans } from "next/font/google";
 import ArrowB from "../assets/images/arrowB.svg";
 import suiBg from "../assets/images/sui-bg.png";
+import Link from "next/link";
 
 const workSans = Work_Sans({ subsets: ["latin"] });
 export const Hero = () => {
@@ -20,8 +21,8 @@ export const Hero = () => {
           <p
             className={`md:text-6xl text-[28px] md:leading-[60px] leading-8 font-[1000] tracking-wide text-white text-center my-4 ${workSans.className}`}
           >
-            Turn your audience <span className="text-white/30">into</span>{" "}
-            <br /> <span className="text-[#4DA2FF]"> Superfans! </span>
+            Turn your audience into <br />{" "}
+            <span className="text-[#4DA2FF]"> Superfans! </span>
           </p>
           <p className="md:text-xl text-sm text-white text-center my-4">
             Engage your audience with better, smarter loyalty and rewards
@@ -30,10 +31,13 @@ export const Hero = () => {
           </p>
         </div>
         <div className="flex items-center justify-center my-4 w-full">
-          <button className="px-6 py-3 rounded-full md:text-xl text-sm bg-white text-black border-[1px] border-b-4 border-[#4DA2FF] flex items-center gap-x-2">
+          <Link
+            href="/mint"
+            className="px-6 py-3 rounded-full md:text-xl text-sm bg-white text-black border-[1px] border-b-4 border-[#4DA2FF] flex items-center gap-x-2"
+          >
             Claim Free NFT Now
             <ArrowB />
-          </button>
+          </Link>
         </div>
       </div>
       <div className="relative md:rounded-tr-[80px] rounded-tr-xl md:rounded-tl-[80px] rounded-tl-xl bg-[#00041F] pt-[6rem] pb-[4rem]">

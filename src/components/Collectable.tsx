@@ -3,6 +3,7 @@ import { Work_Sans } from "next/font/google";
 import CollBg from "../assets/coll_bg.png";
 import React from "react";
 import Image from "next/image";
+import Link from "next/link";
 
 const workSans = Work_Sans({ subsets: ["latin"] });
 
@@ -31,11 +32,12 @@ const Collectable = () => {
               Feel the rush and collect your
             </p>
           </div>
-          <button
+          <Link
+            href="/mint"
             className={`my-4 md:px-6 md:py-3 px-4 py-2 ${workSans.className} text-black bg-white border-2 border-t-0 border-b-4 border-[#4DA2FF] text-lg font-semibold rounded-full`}
           >
             Claim Now
-          </button>
+          </Link>
         </div>
       </div>
     </div>
