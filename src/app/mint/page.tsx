@@ -141,6 +141,65 @@ const MintPage = () => {
     }
   };
 
+  // ObjectId here is the loyalty id that you get from the response of minting the loyalty
+  const updateLoyaltyPoints = async (objectId: any, points: number) => {
+    if (!currentAccount || !wallet.address || !address) {
+      toast.error("Please connect your wallet first", {
+        position: "top-center",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+      });
+      return;
+    }
+
+    console.log("Updating loyalty points...");
+
+    const tx = new Transaction();
+    tx.moveCall({
+      target: `${testnet_loyalty!}::loyalty_card::update_loyalty_points`,
+      arguments: [tx.object(objectId), tx.pure.u64(points)],
+    });
+    tx.setSender(address!);
+
+    try {
+      const resp = await sponsorSignAndExecute({
+        tx,
+        options: { showObjectChanges: true, showEffects: true },
+      });
+      console.log("Updated loyalty points");
+      toast(
+        <div
+          onClick={() =>
+            window.open(
+              `https://suiscan.xyz/testnet/object/${loyaltyId}`,
+              "_blank"
+            )
+          }
+        >
+          Loyalty points updated
+        </div>,
+        {
+          position: "top-center",
+          autoClose: false,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
+          theme: "light",
+          transition: Bounce,
+        }
+      );
+      setIsMinted(true);
+    } catch (error) {
+      console.error("Error minting loyalty:", error);
+    }
+  };
+
   const mintSuiLoyalty = async () => {
     if (!currentAccount) {
       toast.error("Please connect your wallet first", {
