@@ -15,6 +15,7 @@ export const Hero = () => {
         layout="fill"
         objectFit="cover"
         objectPosition="center"
+        className="absolute top-0 left-0 w-full h-full"
       />
       <div className="flex flex-col justify-start items-center md:h-[75vh] h-[50vh] pb-16 relative pt-20 mb-12">
         <div className="flex flex-col items-center">
@@ -40,7 +41,7 @@ export const Hero = () => {
           </Link>
         </div>
       </div>
-      <div className="relative md:rounded-tr-[80px] rounded-tr-xl md:rounded-tl-[80px] rounded-tl-xl bg-[#00041F] pt-[6rem] pb-[4rem]">
+      <div className="relative md:rounded-tr-[80px] rounded-tr-xl md:rounded-tl-[80px] rounded-tl-xl bg-[#00041F] md:pt-[6rem] pt-[1.5rem] md:pb-[4rem] pb-[2rem]">
         <div className="flex flex-col md:flex-row justify-center md:gap-x-[16rem] gap-x-4">
           <p
             className={`md:text-3xl text-2xl md:mt-0 md:mb-0 mb-4 mt-4 px-3 font-semibold text-white ${workSans.className}`}

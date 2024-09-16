@@ -23,7 +23,10 @@ import Logo from "@/assets/icons/sui-sui-logo 1.png";
 import SuietLogo from "@/assets/icons/suietlogo.png";
 import EyeW from "@/assets/eye-white.svg";
 import ZkLogin from "@/components/ZkLogin";
-import { ConnectModal as SuietConnectModal } from "@suiet/wallet-kit";
+import {
+  ConnectModal as SuietConnectModal,
+  useWallet,
+} from "@suiet/wallet-kit";
 import "@suiet/wallet-kit/style.css";
 import Collectable from "@/components/Collectable";
 import Footer from "@/components/Footer";
@@ -49,9 +52,24 @@ const testnet_loyalty =
 
 const MintPage = () => {
   const { address } = useZkLogin();
+  const wallet = useWallet();
+  const currentAccount = useCurrentAccount();
   const { sponsorSignAndExecute } = useSponsorSignAndExecute();
 
   const mintLoyalty = async () => {
+    if (!currentAccount || !wallet.address || !address) {
+      toast.error("Please connect your wallet first", {
+        position: "top-center",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+      });
+      return;
+    }
+
     const notifyId = notifyPromise("Minting loyalty...", "info");
     console.log("Minting loyalty...");
 
@@ -122,7 +140,6 @@ const MintPage = () => {
   const [isMinted, setIsMinted] = useState<boolean>(false);
   const [isUnlocked, setIsUnlocked] = useState<boolean>(false);
   const [loyaltyId, setLoyaltyId] = useState<string>("");
-  const currentAccount = useCurrentAccount();
   const [open, setOpen] = useState<boolean>(false);
 
   const handleReveal = () => {

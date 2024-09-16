@@ -10,8 +10,8 @@ import "react-toastify/dist/ReactToastify.css";
 const dmSans = DM_Sans({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Saas Template - EldoraUI",
-  description: "Template for saas applications with dark theme",
+  title: "Sui Hashcase",
+  description: "Mint a unique digital asset on the Sui blockchain",
 };
 
 export default function RootLayout({
