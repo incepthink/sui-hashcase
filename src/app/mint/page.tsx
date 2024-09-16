@@ -17,7 +17,7 @@ import Link from "next/link";
 import { notifyPromise, notifyResolve } from "@/utils/notify";
 import { Bounce, toast } from "react-toastify";
 import { AppContext } from "@/context/AppContext";
-import { ConnectModal, useCurrentAccount } from "@mysten/dapp-kit";
+import { ConnectModal, useCurrentAccount, useSignAndExecuteTransaction } from "@mysten/dapp-kit";
 import Modal from "@/components/Modal";
 import Logo from "@/assets/icons/sui-sui-logo 1.png";
 import SuietLogo from "@/assets/icons/suietlogo.png";
@@ -55,6 +55,7 @@ const MintPage = () => {
   const wallet = useWallet();
   const currentAccount = useCurrentAccount();
   const { sponsorSignAndExecute } = useSponsorSignAndExecute();
+  const { mutateAsync: signAndExecuteTransaction } = useSignAndExecuteTransaction();
 
   const mintLoyalty = async () => {
     if (!currentAccount || !wallet.address || !address) {
@@ -110,6 +111,66 @@ const MintPage = () => {
           onClick={() =>
             window.open(
               `https://suiscan.xyz/testnet/object/${loyaltyId}`,
+              "_blank"
+            )
+          }
+        >
+          Click to view loyalty on Suiscan
+        </div>,
+        {
+          position: "top-center",
+          autoClose: false,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
+          theme: "light",
+          transition: Bounce,
+        }
+      );
+      setIsMinted(true);
+    } catch (error) {
+      notifyResolve(notifyId, "Error minting loyalty", "error");
+      console.error("Error minting loyalty:", error);
+    }
+  };
+
+  const mintSuiLoyalty = async () => {
+    if (!currentAccount) {
+      toast.error("Please connect your wallet first", {
+        position: "top-center",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+      });
+      return;
+    }
+
+    const notifyId = notifyPromise("Minting loyalty...", "info");
+    console.log("Minting loyalty...");
+
+    const tx = new Transaction();
+    tx.moveCall({
+      target: `${testnet_loyalty!}::loyalty_card::mint_loyalty`,
+      arguments: [tx.pure.address(currentAccount.address), tx.pure.u64(Date.now())],
+    });
+    tx.setSender(address!);
+
+    try {
+      await signAndExecuteTransaction({
+        transaction: tx as any,
+        chain: 'sui:testnet',
+      });
+      notifyResolve(notifyId, "Minted new loyalty", "success");
+      toast(
+        <div
+          onClick={() =>
+            window.open(
+              `https://suiscan.xyz/account/object/${currentAccount.address}`,
               "_blank"
             )
           }
