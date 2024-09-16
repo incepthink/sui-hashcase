@@ -11,13 +11,17 @@ import Heart from "@/assets/images/heart.svg";
 import HeartW from "@/assets/images/white_heart.svg";
 import Send from "@/assets/images/send-Regular.svg";
 import Eye from "@/assets/images/eye_Icon.png";
-import Nft from "@/assets/images/nft-image.png";
+import Nft from "@/assets/nft-token.jpeg";
 import { Work_Sans } from "next/font/google";
 import Link from "next/link";
 import { notifyPromise, notifyResolve } from "@/utils/notify";
 import { Bounce, toast } from "react-toastify";
 import { AppContext } from "@/context/AppContext";
-import { ConnectModal, useCurrentAccount, useSignAndExecuteTransaction } from "@mysten/dapp-kit";
+import {
+  ConnectModal,
+  useCurrentAccount,
+  useSignAndExecuteTransaction,
+} from "@mysten/dapp-kit";
 import Modal from "@/components/Modal";
 import Logo from "@/assets/icons/sui-sui-logo 1.png";
 import SuietLogo from "@/assets/icons/suietlogo.png";
@@ -55,7 +59,8 @@ const MintPage = () => {
   const wallet = useWallet();
   const currentAccount = useCurrentAccount();
   const { sponsorSignAndExecute } = useSponsorSignAndExecute();
-  const { mutateAsync: signAndExecuteTransaction } = useSignAndExecuteTransaction();
+  const { mutateAsync: signAndExecuteTransaction } =
+    useSignAndExecuteTransaction();
 
   const mintLoyalty = async () => {
     if (!currentAccount || !wallet.address || !address) {
@@ -156,14 +161,17 @@ const MintPage = () => {
     const tx = new Transaction();
     tx.moveCall({
       target: `${testnet_loyalty!}::loyalty_card::mint_loyalty`,
-      arguments: [tx.pure.address(currentAccount.address), tx.pure.u64(Date.now())],
+      arguments: [
+        tx.pure.address(currentAccount.address),
+        tx.pure.u64(Date.now()),
+      ],
     });
     tx.setSender(address!);
 
     try {
       await signAndExecuteTransaction({
         transaction: tx as any,
-        chain: 'sui:testnet',
+        chain: "sui:testnet",
       });
       notifyResolve(notifyId, "Minted new loyalty", "success");
       toast(
@@ -193,6 +201,24 @@ const MintPage = () => {
     } catch (error) {
       notifyResolve(notifyId, "Error minting loyalty", "error");
       console.error("Error minting loyalty:", error);
+    }
+  };
+
+  const handleClaimNFT = () => {
+    if (address) {
+      mintLoyalty();
+    } else if (currentAccount) {
+      mintSuiLoyalty();
+    } else if (!wallet.address) {
+      toast.error("Please connect your wallet first", {
+        position: "top-center",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+      });
     }
   };
 
@@ -231,7 +257,11 @@ const MintPage = () => {
           <p className="text-2xl text-white/70">back</p>
         </Link>
         <div className="my-4 flex flex-col md:flex-row items-center justify-around md:gap-y-0 gap-y-8">
-          <Image src={Nft} alt="nft" />
+          <Image
+            src={Nft}
+            alt="nft"
+            className="md:w-[400px] md:h-[433px] w-[350px] h-[378.88px] rounded-lg"
+          />
           <div className="flex flex-col items-center justify-center">
             <div className="flex items-center justify-between w-full">
               <div>
@@ -250,7 +280,7 @@ const MintPage = () => {
             </div>
             <div className="flex flex-col justify-start gap-y-2 my-4 w-full">
               <p className="text-white md:text-4xl text-2xl tracking-wide font-bold">
-                VR Visionary by Hashcase
+                HashCase Sui Loyalty NFT
               </p>
               <div className="flex justify-start gap-x-2">
                 <div className="flex items-center justify-center gap-x-2">
@@ -267,13 +297,9 @@ const MintPage = () => {
             </div>
             <div className="flex items-center justify-center my-4">
               <p className="md:text-xl text-sm text-white">
-                Introducing &apos;VR Visionary by Hashcase&apos;, an exclusive
-                NFT from Hashcase, <br className="hidden md:block" /> the web3
-                loyalty innovator. This animated artwork features a girl with a
-                VR set, <br className="hidden md:block" />
-                representing the future of digital experiences. Join the
-                Hashcase community and <br className="hidden md:block" />
-                explore the next level of web3 loyalty.
+                This is a NFT Loyalty Card Which Executes Onchain Loyalty using
+                Hashcase And <br className="hidden md:block" /> Sui
+                Infrastructure.
               </p>
             </div>
             <div className="flex items-center justify-start w-full">
@@ -292,7 +318,7 @@ const MintPage = () => {
             </div>
             <div className="flex items-center justify-start my-4 w-full">
               <button
-                onClick={mintLoyalty}
+                onClick={handleClaimNFT}
                 className="md:px-6 md:py-3 px-4 py-2 rounded-full md:text-xl text-sm bg-white text-black border-[1px] border-b-4 border-[#4DA2FF] flex items-center gap-x-2"
               >
                 Claim to Hashcase Wallet
