@@ -56,14 +56,13 @@ const testnet_loyalty =
 
 const MintPage = () => {
   const { address } = useZkLogin();
-  const wallet = useWallet();
   const currentAccount = useCurrentAccount();
   const { sponsorSignAndExecute } = useSponsorSignAndExecute();
   const { mutateAsync: signAndExecuteTransaction } =
     useSignAndExecuteTransaction();
 
   const mintLoyalty = async () => {
-    if (!currentAccount || !wallet.address || !address) {
+    if (!address) {
       toast.error("Please connect your wallet first", {
         position: "top-center",
         autoClose: 5000,
@@ -142,8 +141,8 @@ const MintPage = () => {
   };
 
   // ObjectId here is the loyalty id that you get from the response of minting the loyalty
-  const updateLoyaltyPoints = async (objectId: any, points: number) => {
-    if (!currentAccount || !wallet.address || !address) {
+  const updateLoyaltyPoints = async (points: number) => {
+    if (!address) {
       toast.error("Please connect your wallet first", {
         position: "top-center",
         autoClose: 5000,
@@ -161,7 +160,7 @@ const MintPage = () => {
     const tx = new Transaction();
     tx.moveCall({
       target: `${testnet_loyalty!}::loyalty_card::update_loyalty_points`,
-      arguments: [tx.object(objectId), tx.pure.u64(points)],
+      arguments: [tx.object(loyaltyId), tx.pure.u64(points)],
     });
     tx.setSender(address!);
 
@@ -266,9 +265,9 @@ const MintPage = () => {
   const handleClaimNFT = () => {
     if (address) {
       mintLoyalty();
-    } else if (currentAccount) {
+    } else if (currentAccount!.address) {
       mintSuiLoyalty();
-    } else if (!wallet.address) {
+    } else {
       toast.error("Please connect your wallet first", {
         position: "top-center",
         autoClose: 5000,
@@ -413,7 +412,7 @@ const MintPage = () => {
             </div>
             <div className="flex items-end justify-center">
               <div className="bg-[#FAD64A1A] p-2 rounded-full flex items-center justify-center md:text-lg text-sm text-[#F8924F]">
-                Pending
+              <button onClick={() => updateLoyaltyPoints(20)}>Claim</button>
               </div>
             </div>
           </div>
@@ -428,7 +427,7 @@ const MintPage = () => {
             </div>
             <div className="flex items-end justify-end">
               <div className="bg-[#FAD64A1A] p-2 rounded-full flex items-center justify-center md:text-lg text-sm text-[#F8924F]">
-                Pending
+              <button onClick={() => updateLoyaltyPoints(20)}>Claim</button>
               </div>
             </div>
           </div>
