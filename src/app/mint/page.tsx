@@ -63,7 +63,7 @@ const MintPage = () => {
     useSignAndExecuteTransaction();
 
   const mintLoyalty = async () => {
-    if (!currentAccount || !wallet.address || !address) {
+    if (!address) {
       toast.error("Please connect your wallet first", {
         position: "top-center",
         autoClose: 5000,
@@ -209,16 +209,6 @@ const MintPage = () => {
       mintLoyalty();
     } else if (currentAccount) {
       mintSuiLoyalty();
-    } else if (!wallet.address) {
-      toast.error("Please connect your wallet first", {
-        position: "top-center",
-        autoClose: 5000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
-      });
     }
   };
 
