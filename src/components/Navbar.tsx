@@ -60,10 +60,10 @@ export const Navbar = () => {
                 Mint
               </Link>
               <Link
-                href="/contact"
+                href="/profile"
                 className="hover:bg-white/10 hover:backdrop-blur-md rounded-full transition-colors duration-300 px-4 py-2"
               >
-                Contact Us
+                Profile
               </Link>
             </div>
           </div>

@@ -65,23 +65,6 @@ const MintPage = () => {
   const { mutateAsync: signAndExecuteTransaction } =
     useSignAndExecuteTransaction();
 
-  const uacount = "0xfa18c9f7d0168a9dc0c52665fc50c2a1d45de938b3fc2ac471264ea4bcbe0f7a"
-  const pid = "0x15a2fe781ae848c3f108eddc0298649ed9e76da4e9103b5e0bd6f363cca1d56d"
-    function FrensNFTList(address: string) {
-      const { data, isLoading, error } = useSuiClientQuery('getOwnedObjects', {
-        owner: address,
-        filter: {
-          Package: pid
-        },
-        options: {
-          showDisplay: true,
-          showType: true
-        }
-    })
-    if(error){console.log(Error)}else{console.log(data);}
-  }
-  FrensNFTList(uacount);
-
   const mintLoyalty = async () => {
     if (!address) {
       toast.error("Please connect your wallet first", {
