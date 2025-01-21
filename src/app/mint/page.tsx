@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useContext, useState } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import { useZkLogin } from "@mysten/enoki/react";
 import { Transaction } from "@mysten/sui/transactions";
 import { useSponsorSignAndExecute } from "../hooks/useSponsorSignandExecute";
@@ -35,6 +35,7 @@ import {
 import "@suiet/wallet-kit/style.css";
 import Collectable from "@/components/Collectable";
 import Footer from "@/components/Footer";
+import { createClient } from '@supabase/supabase-js';
 
 const workSans = Work_Sans({ subsets: ["latin"] });
 
@@ -55,16 +56,66 @@ const workSans = Work_Sans({ subsets: ["latin"] });
 
 const testnet_loyalty =
   process.env.TESTNET_LOYALTY_PACKAGE_ID ||
-  "0xb92dbbdb90ea755f8ea371d3e4658687fc4a1e9f6b13264e358c7d27da7514a7";
+  "0xa5a6b939c0393061a6248098aa6ac4f096d004ba0e3d761c5983780d4f80ad74";
 
 const MintPage = () => {
   const { address } = useZkLogin();
   const wallet = useWallet();
   const currentAccount = useCurrentAccount();
+  const [nftData, setnftData] = useState({
+      description : "",
+      name : "",
+      url : "",
+      username : "",
+  });
   const { sponsorSignAndExecute } = useSponsorSignAndExecute();
-  const { mutateAsync: signAndExecuteTransaction } =
-    useSignAndExecuteTransaction();
+  const { mutateAsync: signAndExecuteTransaction } = useSignAndExecuteTransaction();
 
+  const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
+  
+  useEffect(() => {
+      getDatabase();
+      //FrensNFTList();
+  }, []);
+  
+  const getDatabase = async() =>{
+    const { data, error } = await supabase
+      .from('test')
+      .select()
+      .eq('id', 1)
+    console.log(data);
+    console.log(error);
+    if(data){
+      const dd = data[0];
+      setnftData({
+        description : dd.description,
+        name: dd.name,
+        url : dd.url,
+        username : dd.username,
+      })
+    }
+  }
+
+  const createNFT = async() =>{
+    let userName = prompt("Please enter your username:");
+    let name = prompt("Please enter NFT name:");
+    let description = prompt("Please enter NFT Description:");
+    let url = prompt("Please enter image url:");
+    const { error } = await supabase
+      .from('test')
+      .update({ 
+        description : description,
+        name : name,
+        url : url,
+        username : userName, 
+      })
+      .eq('id', 1)
+    console.log(error);
+    console.log(userName,name,description,url);
+    window.location.reload()
+  }
+  
+  
   const mintLoyalty = async () => {
     if (!address) {
       toast.error("Please connect your wallet first", {
@@ -88,7 +139,7 @@ const MintPage = () => {
     const tx = new Transaction();
     tx.moveCall({
       target: `${testnet_loyalty!}::loyalty_card::mint_loyalty`,
-      arguments: [tx.pure.address(address!), tx.pure.u64(Date.now())],
+      arguments: [tx.pure.address(address!), tx.pure.u64(Date.now()), tx.pure.string(nftData.url),],
     });
     tx.setSender(address!);
 
@@ -170,6 +221,7 @@ const MintPage = () => {
       arguments: [
         tx.pure.address(currentAccount.address),
         tx.pure.u64(Date.now()),
+        tx.pure.string(nftData.url),
       ],
     });
     tx.setSender(address!);
@@ -184,7 +236,7 @@ const MintPage = () => {
         <div
           onClick={() =>
             window.open(
-              `https://suiscan.xyz/account/object/${currentAccount.address}`,
+              `https://suiscan.xyz/testnet/account/${currentAccount.address}`,
               "_blank"
             )
           }
@@ -253,16 +305,17 @@ const MintPage = () => {
           <p className="text-2xl text-white/70">back</p>
         </Link>
         <div className="my-4 flex flex-col md:flex-row items-center justify-around md:gap-y-0 gap-y-8">
-          <Image
-            src={Nft}
+          <img
+            src={nftData.url}
             alt="nft"
-            className="md:w-[400px] md:h-[433px] w-[350px] h-[378.88px] rounded-lg"
+            className="rounded-lg"
           />
+          
           <div className="flex flex-col items-center justify-center">
             <div className="flex items-center justify-between w-full">
               <div>
                 <p className="text-white md:text-2xl text-lg">
-                  By <span className="text-[#4DA2FF]">Hashcase</span>
+                  By <span className="text-[#4DA2FF]">{nftData.username}</span>
                 </p>
               </div>
               <div className="flex items-center justify-center">
@@ -276,7 +329,7 @@ const MintPage = () => {
             </div>
             <div className="flex flex-col justify-start gap-y-2 my-4 w-full">
               <p className="text-white md:text-4xl text-2xl tracking-wide font-bold">
-                HashCase Sui Loyalty NFT
+                {nftData.name}
               </p>
               <div className="flex justify-start gap-x-2">
                 <div className="flex items-center justify-center gap-x-2">
@@ -293,9 +346,7 @@ const MintPage = () => {
             </div>
             <div className="flex items-center justify-center my-4">
               <p className="md:text-xl text-sm text-white">
-                This is a NFT Loyalty Card Which Executes Onchain Loyalty using
-                Hashcase And <br className="hidden md:block" /> Sui
-                Infrastructure.
+                {nftData.description}
               </p>
             </div>
             <div className="flex items-center justify-start w-full">
@@ -323,6 +374,15 @@ const MintPage = () => {
             </div>
           </div>
         </div>
+        <div className="flex items-center justify-start my-4 w-full">
+        <button
+          onClick={createNFT}
+          className="md:px-6 md:py-3 px-4 py-2 rounded-full md:text-xl text-sm bg-white text-black border-[1px] border-b-4 border-[#4DA2FF] flex items-center gap-x-2"
+          >
+          {"Create NFT"}
+        </button>
+        </div>
+        
         <hr className="md:m-[100px] m-[20px] bg-gradient-to-r from-transparent via-white to-transparent opacity-20" />
         <div className="flex items-center justify-center mt-4 mb-8">
           <div className="bg-[#1A1D35] rounded-lg md:rounded-full p-4 w-full md:text-center text-left text-white md:text-2xl text-lg font-semibold">
