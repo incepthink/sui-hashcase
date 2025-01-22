@@ -1,9 +1,11 @@
 "use client";
-
-import React, { useContext, useState } from "react";
+import { createClient } from '@supabase/supabase-js';
+import { useParams } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import React, { useContext } from "react";
 import { useZkLogin } from "@mysten/enoki/react";
 import { Transaction } from "@mysten/sui/transactions";
-import { useSponsorSignAndExecute } from "../hooks/useSponsorSignandExecute";
+import { useSponsorSignAndExecute } from "../../hooks/useSponsorSignandExecute";
 import Image from "next/image";
 import ArrowW from "@/assets/images/arrowW.svg";
 import ArrowB from "@/assets/images/arrowB.svg";
@@ -36,35 +38,63 @@ import "@suiet/wallet-kit/style.css";
 import Collectable from "@/components/Collectable";
 import Footer from "@/components/Footer";
 
+interface NFTData {
+  id: string;
+  description: string;
+  name: string;
+  url: string;
+  username: string;
+}
+
 const workSans = Work_Sans({ subsets: ["latin"] });
-
-// const tx2 = new Transaction();
-// tx2.moveCall({
-//   target: `${testnet_loyalty!}::loyalty_card::update_loyalty_points`,
-//   arguments: [tx.object(loyaltyId), tx.pure.u64(20)],
-// });
-// tx2.setSender(address!);
-// const resp2 = await sponsorSignAndExecute({
-//   tx: tx2,
-//   options: { showObjectChanges: true, showEffects: true },
-// });
-// console.log("Updated loyalty points");
-// console.log(resp2!.objectChanges);
-
-
 
 const testnet_loyalty =
   process.env.TESTNET_LOYALTY_PACKAGE_ID ||
-  "0xb92dbbdb90ea755f8ea371d3e4658687fc4a1e9f6b13264e358c7d27da7514a7";
+  "0xa5a6b939c0393061a6248098aa6ac4f096d004ba0e3d761c5983780d4f80ad74";
 
-const MintPage = () => {
+export default function NFTPage() {
+  const params = useParams();
+  const [nftData, setNftData] = useState<NFTData | null>(null);
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
   const { address } = useZkLogin();
   const wallet = useWallet();
   const currentAccount = useCurrentAccount();
   const { sponsorSignAndExecute } = useSponsorSignAndExecute();
-  const { mutateAsync: signAndExecuteTransaction } =
-    useSignAndExecuteTransaction();
+  const { mutateAsync: signAndExecuteTransaction } = useSignAndExecuteTransaction();
+  const { openModal, setOpenModal } = useContext(AppContext);
+  const [showModal, setShowModal] = useState<boolean>(false);
+  const [isMinted, setIsMinted] = useState<boolean>(false);
+  const [isUnlocked, setIsUnlocked] = useState<boolean>(false);
+  const [loyaltyId, setLoyaltyId] = useState<string>("");
+  const [open, setOpen] = useState<boolean>(false);
 
+  useEffect(() => {
+    const fetchNFTData = async () => {
+      const { data, error } = await supabase
+        .from('test')
+        .select('*')
+        .eq('nft_id', params.id)
+        .single();
+
+      if (error) {
+        console.error('Error fetching NFT:', error);
+        return;
+      }
+
+      setNftData(data);
+    };
+
+    if (params.id) {
+      fetchNFTData();
+    }
+  }, [params.id]);
+
+  if (!nftData) {
+    return <div>Wrong URL</div>;
+  }
 
   const mintLoyalty = async () => {
     if (!address) {
@@ -80,16 +110,13 @@ const MintPage = () => {
       return;
     }
 
-    
-  
-
     const notifyId = notifyPromise("Minting loyalty...", "info");
     console.log("Minting loyalty...");
 
     const tx = new Transaction();
     tx.moveCall({
       target: `${testnet_loyalty!}::loyalty_card::mint_loyalty`,
-      arguments: [tx.pure.address(address!), tx.pure.u64(Date.now())],
+      arguments: [tx.pure.address(address!), tx.pure.u64(Date.now()), tx.pure.string(nftData.url),],
     });
     tx.setSender(address!);
 
@@ -171,6 +198,7 @@ const MintPage = () => {
       arguments: [
         tx.pure.address(currentAccount.address),
         tx.pure.u64(Date.now()),
+        tx.pure.string(nftData.url),
       ],
     });
     tx.setSender(address!);
@@ -185,7 +213,7 @@ const MintPage = () => {
         <div
           onClick={() =>
             window.open(
-              `https://suiscan.xyz/account/object/${currentAccount.address}`,
+              `https://suiscan.xyz/testnet/account/${currentAccount.address}`,
               "_blank"
             )
           }
@@ -219,13 +247,6 @@ const MintPage = () => {
     }
   };
 
-  const { openModal, setOpenModal } = useContext(AppContext);
-  const [showModal, setShowModal] = useState<boolean>(false);
-  const [isMinted, setIsMinted] = useState<boolean>(false);
-  const [isUnlocked, setIsUnlocked] = useState<boolean>(false);
-  const [loyaltyId, setLoyaltyId] = useState<string>("");
-  const [open, setOpen] = useState<boolean>(false);
-
   const handleReveal = () => {
     if (isMinted) {
       setIsUnlocked(true);
@@ -243,6 +264,7 @@ const MintPage = () => {
     }
   };
 
+
   return (
     <div className={`flex flex-col bg-[#00041F] ${workSans.className}`}>
       <div className="flex flex-col px-8 md:px-16">
@@ -254,16 +276,17 @@ const MintPage = () => {
           <p className="text-2xl text-white/70">back</p>
         </Link>
         <div className="my-4 flex flex-col md:flex-row items-center justify-around md:gap-y-0 gap-y-8">
-          <Image
-            src={Nft}
+          <img
+            src={nftData.url}
             alt="nft"
-            className="md:w-[400px] md:h-[433px] w-[350px] h-[378.88px] rounded-lg"
+            className="rounded-lg"
           />
+          
           <div className="flex flex-col items-center justify-center">
             <div className="flex items-center justify-between w-full">
               <div>
                 <p className="text-white md:text-2xl text-lg">
-                  By <span className="text-[#4DA2FF]">Hashcase</span>
+                  By <span className="text-[#4DA2FF]">{nftData.username}</span>
                 </p>
               </div>
               <div className="flex items-center justify-center">
@@ -277,7 +300,7 @@ const MintPage = () => {
             </div>
             <div className="flex flex-col justify-start gap-y-2 my-4 w-full">
               <p className="text-white md:text-4xl text-2xl tracking-wide font-bold">
-                HashCase Sui Loyalty NFT
+                {nftData.name}
               </p>
               <div className="flex justify-start gap-x-2">
                 <div className="flex items-center justify-center gap-x-2">
@@ -294,9 +317,7 @@ const MintPage = () => {
             </div>
             <div className="flex items-center justify-center my-4">
               <p className="md:text-xl text-sm text-white">
-                This is a NFT Loyalty Card Which Executes Onchain Loyalty using
-                Hashcase And <br className="hidden md:block" /> Sui
-                Infrastructure.
+                {nftData.description}
               </p>
             </div>
             <div className="flex items-center justify-start w-full">
@@ -324,6 +345,9 @@ const MintPage = () => {
             </div>
           </div>
         </div>
+        <div className="flex items-center justify-start my-4 w-full">
+        </div>
+        
         <hr className="md:m-[100px] m-[20px] bg-gradient-to-r from-transparent via-white to-transparent opacity-20" />
         <div className="flex items-center justify-center mt-4 mb-8">
           <div className="bg-[#1A1D35] rounded-lg md:rounded-full p-4 w-full md:text-center text-left text-white md:text-2xl text-lg font-semibold">
@@ -427,6 +451,7 @@ const MintPage = () => {
       </Modal>
     </div>
   );
-};
+}
 
-export default MintPage;
+
+

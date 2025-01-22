@@ -1,50 +1,45 @@
 "use client";
-import { getFullnodeUrl, SuiClient } from '@mysten/sui/client';
-import React, { useState,useEffect, ChangeEvent, FormEvent } from 'react';
-import { Transaction } from '@mysten/sui/transactions';
-import { useSignAndExecuteTransaction , useReportTransactionEffects,useCurrentAccount , useSuiClientQuery } from '@mysten/dapp-kit';
+import React, { useState,useEffect } from 'react';
+import { useCurrentAccount , useSuiClientQuery } from '@mysten/dapp-kit';
 import { createClient } from '@supabase/supabase-js'
 import { Bounce, toast } from "react-toastify";
 import { useZkLogin } from "@mysten/enoki/react";
+import { useRouter } from "next/navigation";
 import "./page.css"
 
-interface SUI_Frens{
-  image : string;
-  link : string;
-  name : string;
-  type : string;
-}
 
 const App: React.FC = () => {
-  const [nfts, setNfts] = useState([]);
   const [userData, setuserData] = useState({
     Logo : "",
     collection_id : "",
     description : "",
     user_id : "",
     username : "",
+    nfts: 0
+  });
+  const [activeTab, setActiveTab] = useState("Base_Assets");
+  const [formValues, setFormValues] = useState({
+    description: "",
+    name: "",
+    url: "",
   });
   const currentAccount = useCurrentAccount();
   const { address } = useZkLogin();
 
-  const {
-  	mutate: signAndExecute,
-  	isSuccess,
-  	isPending,
-  } = useSignAndExecuteTransaction();
+  const router = useRouter();
 
   const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 
-  // Initialize provider (you'll need to replace with your network)
-  const provider = new SuiClient({ url: getFullnodeUrl('testnet') });
-
   const Hashcase_Loyalty = "0xa5a6b939c0393061a6248098aa6ac4f096d004ba0e3d761c5983780d4f80ad74";
   const SUI_FRENS_Package_ID = "0x15a2fe781ae848c3f108eddc0298649ed9e76da4e9103b5e0bd6f363cca1d56d";
+  const base_loyalty = "0xb92dbbdb90ea755f8ea371d3e4658687fc4a1e9f6b13264e358c7d27da7514a7"
 
   useEffect(() => {
     getDatabase();
-    //FrensNFTList();
   }, []);
+  let imgurl:string[] = [];
+  let suiurl:string[] = [];
+  let baseurl:string[] = [];
 
   if(currentAccount || address){
     let adr:string;
@@ -62,8 +57,32 @@ const App: React.FC = () => {
         showType: true
       }
     })
+    
+      {const { data, isLoading, error } = useSuiClientQuery('getOwnedObjects', {
+        owner: adr,
+        filter: {
+          Package: base_loyalty
+        },
+        options: {
+          showDisplay: true,
+          showContent: true,
+          showType: true
+        }
+      })
+
+      console.log(data);
+      if(data){
+      const imageUrls = data?.data
+    ?.filter((item: any) => item?.data?.content?.fields?.image_url)
+    .map((item: any) => item.data.content.fields.image_url);
+    baseurl = imageUrls;}
+    }
+
     if(data){
-      console.log(data.data);
+      const imageUrls = data?.data
+    ?.filter((item: any) => item?.data?.content?.fields?.image_url)
+    .map((item: any) => item.data.content.fields.image_url);
+    imgurl = imageUrls;
     }
   }
   
@@ -90,10 +109,12 @@ const App: React.FC = () => {
           collection_id : "0x",
           description : "lorem Ipsum",
           user_id : adr,
-          username : adr, 
+          username : adr,
+          nfts: 0, 
         })
         console.log("no wallet");
         console.log(error);
+        return("done");
       }else{
         const dd = data![0];
         setuserData({
@@ -102,7 +123,9 @@ const App: React.FC = () => {
           description : dd.description,
           user_id : dd.user_id,
           username : dd.username,
+          nfts: dd.nfts,
         })
+        return("done");
       }
     }else{
       toast.error("Please connect your wallet first", {
@@ -117,10 +140,9 @@ const App: React.FC = () => {
       return;
     }
   }
-  
-  //Function Needs Work and Updation
+
   function FrensNFTList() {
-    if (!currentAccount) {
+    if (!currentAccount && !address) {
       toast.error("Please connect your wallet first", {
         position: "top-center",
         autoClose: 5000,
@@ -132,9 +154,12 @@ const App: React.FC = () => {
       });
       return;
     }
+
+    let adr:string;
+    if(currentAccount){adr = currentAccount.address}else{adr = address!};
     
     const { data, isLoading, error } = useSuiClientQuery('getOwnedObjects', {
-      owner: currentAccount.address,
+      owner: adr,
       filter: {
         Package: SUI_FRENS_Package_ID
       },
@@ -144,8 +169,49 @@ const App: React.FC = () => {
         showType: true
       }
     })
-    if(error){console.log(Error)}else{console.log(data);}
+
+    if(data){
+      const imageUrls = data?.data
+    ?.map((item: any) => item?.data?.display?.data?.image_url)
+    .filter((url: string | undefined) => url);
+    suiurl=imageUrls;
+    }
   }
+  FrensNFTList();
+
+  const createNFT = async(description:string,name:string,url:string) =>{
+    await getDatabase();
+    let nid = userData.username+`${userData.nfts+1}`
+    let adr:string;
+
+    if(currentAccount){adr = currentAccount.address}else{adr = address!};
+    const { error } = await supabase
+      .from('test')
+      .insert({ 
+        description : description,
+        name : name,
+        url : url,
+        username : userData.username,
+        nft_id : nid, 
+      })
+    const { error: err } = await supabase
+      .from('User')
+      .update({ nfts: userData.nfts+1 })
+      .eq('user_id', adr)
+    console.log(error,err);
+    router.push(`/pages/${nid}`);
+  }
+
+  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = event.target;
+    setFormValues({ ...formValues, [name]: value });
+  };
+
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const { description, name, url } = formValues;
+    createNFT(description, name, url);
+  };
   
 
   return (
@@ -175,23 +241,115 @@ const App: React.FC = () => {
       </div>
       {/* Tabs Section */}
       <div className="tabs">
-        <button className="tab">Assets</button>
-        <button className="tab">More</button>
+        <button
+          className={`tab ${activeTab === "Base_Assets" ? "active" : ""}`}
+          onClick={() => setActiveTab("Base_Assets")}
+        >
+          Base Assets
+        </button>
+        <button
+          className={`tab ${activeTab === "Assets" ? "active" : ""}`}
+          onClick={() => setActiveTab("Assets")}
+        >
+          Custom Assets
+        </button>
+        <button
+          className={`tab ${activeTab === "More" ? "active" : ""}`}
+          onClick={() => {setActiveTab("More");}}
+        >
+          SUI FRENS
+        </button>
+        <button
+          className={`tab ${activeTab === "Create" ? "active" : ""}`}
+          onClick={() => {setActiveTab("Create");}}
+        >
+          Create NFT
+        </button>
       </div>
 
       {/* NFT Collection Section */}
-      {/* <div className="nft-collection">
-        {nfts.map((nft) => (
-          <div key={nft.id} className="nft-card">
-            <img src={nft.image} alt={nft.name} className="nft-image" />
-            <h3 className="nft-name">{nft.name}</h3>
-            <div className="nft-actions">
-              <button onClick={() => handleSell(nft.id)} className="nft-button sell-button">Sell</button>
-              <button onClick={() => handleClaim(nft.id)} className="nft-button claim-button">Claim</button>
+      {activeTab === "Base_Assets" && (
+        <div className="nft-collection">
+          {baseurl.length > 0 ? (
+            baseurl?.map((url: string, index: number) => (
+              <div key={index} style={{ textAlign: 'center' }}>
+                <img src={url} alt={`Loyalty Card ${index + 1}`} style={{ maxWidth: '200px', height: 'auto' }} />
+              </div>
+            ))
+          ) : (
+            <p>No assets found.</p>
+          )}
+        </div>
+      )}
+      {activeTab === "Assets" && (
+        <div className="nft-collection">
+          {imgurl.length > 0 ? (
+            imgurl?.map((url: string, index: number) => (
+              <div key={index} style={{ textAlign: 'center' }}>
+                <img src={url} alt={`Loyalty Card ${index + 1}`} style={{ maxWidth: '200px', height: 'auto' }} />
+              </div>
+            ))
+          ) : (
+            <p>No assets found.</p>
+          )}
+        </div>
+      )}
+
+      {activeTab === "More" && (
+        <div className="nft-collection">
+          {suiurl.length>0 ? (
+            suiurl?.map((url: string, index: number) => (
+              <div key={index} style={{ textAlign: 'center' }}>
+                <img src={url} alt={`Loyalty Card ${index + 1}`} style={{ maxWidth: '200px', height: 'auto' }} />
+              </div>
+            ))
+          ) : (
+            <p>No assets found.</p>
+          )}
+        </div>
+      )}
+
+      {activeTab === "Create" && (
+        <div className="create-nft-form">
+          <h2>Create New NFT</h2>
+          <form onSubmit={handleSubmit}>
+            <div>
+              <label htmlFor="name">NFT Name:</label>
+              <input
+                type="text"
+                id="name"
+                name="name"
+                value={formValues.name}
+                onChange={handleInputChange}
+                required
+              />
             </div>
-          </div>
-        ))}
-      </div> */}
+            <div>
+              <label htmlFor="description">Description:</label>
+              <input
+                type="text"
+                id="description"
+                name="description"
+                value={formValues.description}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+            <div>
+              <label htmlFor="url">Image URL:</label>
+              <input
+                type="text"
+                id="url"
+                name="url"
+                value={formValues.url}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+            <button type="submit">Create NFT</button>
+          </form>
+        </div>
+      )}
     </div>
   );
 };
