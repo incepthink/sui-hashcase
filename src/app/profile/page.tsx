@@ -1,20 +1,19 @@
 "use client";
-import React, { useState,useEffect } from 'react';
-import { useCurrentAccount , useSuiClientQuery } from '@mysten/dapp-kit';
-import { createClient } from '@supabase/supabase-js'
+import React, { useState, useEffect } from 'react';
+import { useCurrentAccount, useSuiClientQuery } from '@mysten/dapp-kit';
+import { createClient } from '@supabase/supabase-js';
 import { Bounce, toast } from "react-toastify";
 import { useZkLogin } from "@mysten/enoki/react";
 import { useRouter } from "next/navigation";
-import "./page.css"
-
+import "./page.css";
 
 const App: React.FC = () => {
   const [userData, setuserData] = useState({
-    Logo : "",
-    collection_id : "",
-    description : "",
-    user_id : "",
-    username : "",
+    Logo: "",
+    collection_id: "",
+    description: "",
+    user_id: "",
+    username: "",
     nfts: 0
   });
   const [activeTab, setActiveTab] = useState("Base_Assets");
@@ -23,184 +22,142 @@ const App: React.FC = () => {
     name: "",
     url: "",
   });
+
   const currentAccount = useCurrentAccount();
   const { address } = useZkLogin();
-
   const router = useRouter();
-
-  const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_ANON_KEY!)
+  const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
 
   const Hashcase_Loyalty = "0xa5a6b939c0393061a6248098aa6ac4f096d004ba0e3d761c5983780d4f80ad74";
   const SUI_FRENS_Package_ID = "0x15a2fe781ae848c3f108eddc0298649ed9e76da4e9103b5e0bd6f363cca1d56d";
-  const base_loyalty = "0xb92dbbdb90ea755f8ea371d3e4658687fc4a1e9f6b13264e358c7d27da7514a7"
+  const base_loyalty = "0xb92dbbdb90ea755f8ea371d3e4658687fc4a1e9f6b13264e358c7d27da7514a7";
+
+  const userAddress = currentAccount?.address || address || '';
+
+  // Query objects only if we have a valid address
+  const { data: hashcaseData } = useSuiClientQuery('getOwnedObjects', {
+    owner: userAddress,
+    filter: {
+      Package: Hashcase_Loyalty
+    },
+    options: {
+      showDisplay: true,
+      showContent: true,
+      showType: true
+    }
+  });
+
+  const { data: baseLoyaltyData } = useSuiClientQuery('getOwnedObjects', {
+    owner: userAddress,
+    filter: {
+      Package: base_loyalty
+    },
+    options: {
+      showDisplay: true,
+      showContent: true,
+      showType: true
+    }
+  });
+
+  const { data: suiFrensData } = useSuiClientQuery('getOwnedObjects', {
+    owner: userAddress,
+    filter: {
+      Package: SUI_FRENS_Package_ID
+    },
+    options: {
+      showDisplay: true,
+      showContent: true,
+      showType: true
+    }
+  });
+
+  // Process the data outside of hooks
+  const imgurl = hashcaseData?.data
+    ?.filter((item: any) => item?.data?.content?.fields?.image_url)
+    .map((item: any) => item.data.content.fields.image_url) || [];
+
+  const baseurl = baseLoyaltyData?.data
+    ?.filter((item: any) => item?.data?.content?.fields?.image_url)
+    .map((item: any) => item.data.content.fields.image_url) || [];
+
+  const suiurl = suiFrensData?.data
+    ?.map((item: any) => item?.data?.display?.data?.image_url)
+    .filter((url: string | undefined) => url) || [];
 
   useEffect(() => {
-    getDatabase();
-  }, []);
-  let imgurl:string[] = [];
-  let suiurl:string[] = [];
-  let baseurl:string[] = [];
-
-  if(currentAccount || address){
-    let adr:string;
-
-    if(currentAccount){adr = currentAccount.address}else{adr = address!};
-
-    const { data, isLoading, error } = useSuiClientQuery('getOwnedObjects', {
-      owner: adr,
-      filter: {
-        Package: Hashcase_Loyalty
-      },
-      options: {
-        showDisplay: true,
-        showContent: true,
-        showType: true
-      }
-    })
-    
-      {const { data, isLoading, error } = useSuiClientQuery('getOwnedObjects', {
-        owner: adr,
-        filter: {
-          Package: base_loyalty
-        },
-        options: {
-          showDisplay: true,
-          showContent: true,
-          showType: true
-        }
-      })
-
-      console.log(data);
-      if(data){
-      const imageUrls = data?.data
-    ?.filter((item: any) => item?.data?.content?.fields?.image_url)
-    .map((item: any) => item.data.content.fields.image_url);
-    baseurl = imageUrls;}
+    if (userAddress) {
+      getDatabase();
     }
-
-    if(data){
-      const imageUrls = data?.data
-    ?.filter((item: any) => item?.data?.content?.fields?.image_url)
-    .map((item: any) => item.data.content.fields.image_url);
-    imgurl = imageUrls;
-    }
-  }
-  
+  }, [userAddress]);
 
   const getDatabase = async () => {
-    if (currentAccount || address) {
-      let adr:string;
+    if (!userAddress) {
+      toast.error("Please connect your wallet first", {
+        position: "top-center",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+      });
+      return;
+    }
 
-      if(currentAccount){adr = currentAccount.address}else{adr = address!};
-
-      const { data, error } = await supabase
+    const { data, error } = await supabase
       .from('User')
       .select()
-      .eq('user_id', adr)
-      console.log(data);
-      console.log(error);
+      .eq('user_id', userAddress);
 
-      if(data?.length == 0){
-        alert("Your Profile Does Not exists and we have created a new one");
-        const { error } = await supabase
+    if (data?.length === 0) {
+      alert("Your Profile Does Not exists and we have created a new one");
+      const { error } = await supabase
         .from('User')
-        .insert({ 
-          Logo : "https://www.hashcase.co/images/hashCase-metadata-image.jpeg",
-          collection_id : "0x",
-          description : "lorem Ipsum",
-          user_id : adr,
-          username : adr,
-          nfts: 0, 
-        })
-        console.log("no wallet");
-        console.log(error);
-        return("done");
-      }else{
-        const dd = data![0];
-        setuserData({
-          Logo : dd.Logo,
-          collection_id : dd.collection_id,
-          description : dd.description,
-          user_id : dd.user_id,
-          username : dd.username,
-          nfts: dd.nfts,
-        })
-        return("done");
-      }
-    }else{
-      toast.error("Please connect your wallet first", {
-        position: "top-center",
-        autoClose: 5000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
+        .insert({
+          Logo: "https://www.hashcase.co/images/hashCase-metadata-image.jpeg",
+          collection_id: "0x",
+          description: "lorem Ipsum",
+          user_id: userAddress,
+          username: userAddress,
+          nfts: 0,
+        });
+      console.log("no wallet");
+      console.log(error);
+    } else if (data) {
+      const dd = data[0];
+      setuserData({
+        Logo: dd.Logo,
+        collection_id: dd.collection_id,
+        description: dd.description,
+        user_id: dd.user_id,
+        username: dd.username,
+        nfts: dd.nfts,
       });
-      return;
     }
-  }
+  };
 
-  function FrensNFTList() {
-    if (!currentAccount && !address) {
-      toast.error("Please connect your wallet first", {
-        position: "top-center",
-        autoClose: 5000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
-      });
-      return;
-    }
-
-    let adr:string;
-    if(currentAccount){adr = currentAccount.address}else{adr = address!};
-    
-    const { data, isLoading, error } = useSuiClientQuery('getOwnedObjects', {
-      owner: adr,
-      filter: {
-        Package: SUI_FRENS_Package_ID
-      },
-      options: {
-        showDisplay: true,
-        showContent: true,
-        showType: true
-      }
-    })
-
-    if(data){
-      const imageUrls = data?.data
-    ?.map((item: any) => item?.data?.display?.data?.image_url)
-    .filter((url: string | undefined) => url);
-    suiurl=imageUrls;
-    }
-  }
-  FrensNFTList();
-
-  const createNFT = async(description:string,name:string,url:string) =>{
+  const createNFT = async (description: string, name: string, url: string) => {
     await getDatabase();
-    let nid = userData.username+`${userData.nfts+1}`
-    let adr:string;
+    let nid = userData.username + `${userData.nfts + 1}`;
 
-    if(currentAccount){adr = currentAccount.address}else{adr = address!};
     const { error } = await supabase
       .from('test')
-      .insert({ 
-        description : description,
-        name : name,
-        url : url,
-        username : userData.username,
-        nft_id : nid, 
-      })
+      .insert({
+        description: description,
+        name: name,
+        url: url,
+        username: userData.username,
+        nft_id: nid,
+      });
+
     const { error: err } = await supabase
       .from('User')
-      .update({ nfts: userData.nfts+1 })
-      .eq('user_id', adr)
-    console.log(error,err);
+      .update({ nfts: userData.nfts + 1 })
+      .eq('user_id', userAddress);
+
+    console.log(error, err);
     router.push(`/pages/${nid}`);
-  }
+  };
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
@@ -212,7 +169,6 @@ const App: React.FC = () => {
     const { description, name, url } = formValues;
     createNFT(description, name, url);
   };
-  
 
   return (
     <div className="profile-container">
@@ -239,6 +195,7 @@ const App: React.FC = () => {
           <p className="description">{userData.description}</p>
         </div>
       </div>
+
       {/* Tabs Section */}
       <div className="tabs">
         <button
@@ -255,13 +212,13 @@ const App: React.FC = () => {
         </button>
         <button
           className={`tab ${activeTab === "More" ? "active" : ""}`}
-          onClick={() => {setActiveTab("More");}}
+          onClick={() => setActiveTab("More")}
         >
           SUI FRENS
         </button>
         <button
           className={`tab ${activeTab === "Create" ? "active" : ""}`}
-          onClick={() => {setActiveTab("Create");}}
+          onClick={() => setActiveTab("Create")}
         >
           Create NFT
         </button>
@@ -281,6 +238,7 @@ const App: React.FC = () => {
           )}
         </div>
       )}
+
       {activeTab === "Assets" && (
         <div className="nft-collection">
           {imgurl.length > 0 ? (
@@ -297,7 +255,7 @@ const App: React.FC = () => {
 
       {activeTab === "More" && (
         <div className="nft-collection">
-          {suiurl.length>0 ? (
+          {suiurl.length > 0 ? (
             suiurl?.map((url: string, index: number) => (
               <div key={index} style={{ textAlign: 'center' }}>
                 <img src={url} alt={`Loyalty Card ${index + 1}`} style={{ maxWidth: '200px', height: 'auto' }} />
@@ -353,6 +311,5 @@ const App: React.FC = () => {
     </div>
   );
 };
-
 
 export default App;
