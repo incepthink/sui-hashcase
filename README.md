@@ -59,4 +59,4 @@ This project is licensed under the MIT License - see the LICENSE.md file for det
 
 - SUI blockchain team for their excellent documentation and tools.
 - Next.js community for the powerful React framework.
-- All contributors who have helped shape this project
+- All contributors who have helped shape this project.
