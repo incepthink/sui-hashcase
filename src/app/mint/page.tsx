@@ -20,7 +20,7 @@ import { AppContext } from "@/context/AppContext";
 import {
   ConnectModal,
   useCurrentAccount,
-  useSuiClientQuery,
+  useSuiClient,
   useSignAndExecuteTransaction,
 } from "@mysten/dapp-kit";
 import Modal from "@/components/Modal";
@@ -65,7 +65,7 @@ const MintPage = () => {
   const { mutateAsync: signAndExecuteTransaction } =
     useSignAndExecuteTransaction();
 
-
+  const suiClient = useSuiClient();
   const mintLoyalty = async () => {
     if (!address) {
       toast.error("Please connect your wallet first", {
@@ -141,7 +141,6 @@ const MintPage = () => {
           transition: Bounce,
         }
       );
-      setIsMinted(true);
     } catch (error) {
       notifyResolve(notifyId, "Error minting loyalty", "error");
       console.error("Error minting loyalty:", error);
@@ -204,7 +203,6 @@ const MintPage = () => {
           transition: Bounce,
         }
       );
-      setIsMinted(true);
     } catch (error) {
       notifyResolve(notifyId, "Error minting loyalty", "error");
       console.error("Error minting loyalty:", error);
@@ -221,13 +219,39 @@ const MintPage = () => {
 
   const { openModal, setOpenModal } = useContext(AppContext);
   const [showModal, setShowModal] = useState<boolean>(false);
-  const [isMinted, setIsMinted] = useState<boolean>(false);
   const [isUnlocked, setIsUnlocked] = useState<boolean>(false);
   const [loyaltyId, setLoyaltyId] = useState<string>("");
   const [open, setOpen] = useState<boolean>(false);
 
-  const handleReveal = () => {
-    if (isMinted) {
+  const handleReveal = async () => {
+    let hashcaseData = [];
+    try{
+      const { data } = await suiClient.getOwnedObjects({
+        owner: currentAccount?.address || address || '',
+        filter: {
+          StructType: "0xb92dbbdb90ea755f8ea371d3e4658687fc4a1e9f6b13264e358c7d27da7514a7::loyalty_card::Loyalty"
+        },
+        options: {
+          showDisplay: true,
+          showContent: true,
+          showType: true
+        }
+      });
+      if(data){hashcaseData = data;}
+    }catch(error){
+      toast.error("Error in Fetching NFT", {
+        position: "top-center",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "light",
+      });
+      console.log(error);
+    }
+    if (hashcaseData.length>0) {
       setIsUnlocked(true);
     } else {
       toast.error("You need to mint this NFT first!", {

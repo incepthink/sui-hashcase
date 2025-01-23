@@ -22,7 +22,7 @@ import { AppContext } from "@/context/AppContext";
 import {
   ConnectModal,
   useCurrentAccount,
-  useSuiClientQuery,
+  useSuiClient,
   useSignAndExecuteTransaction,
 } from "@mysten/dapp-kit";
 import Modal from "@/components/Modal";
@@ -39,7 +39,7 @@ import Collectable from "@/components/Collectable";
 import Footer from "@/components/Footer";
 
 interface NFTData {
-  id: string;
+  nft_id: string;
   description: string;
   name: string;
   url: string;
@@ -50,7 +50,7 @@ const workSans = Work_Sans({ subsets: ["latin"] });
 
 const testnet_loyalty =
   process.env.TESTNET_LOYALTY_PACKAGE_ID ||
-  "0xa5a6b939c0393061a6248098aa6ac4f096d004ba0e3d761c5983780d4f80ad74";
+  "0xbdfb6f8ad73a073b500f7ba1598ddaa59038e50697e2dc6e9dedb55af7ae5b49";
 
 export default function NFTPage() {
   const params = useParams();
@@ -70,6 +70,8 @@ export default function NFTPage() {
   const [isUnlocked, setIsUnlocked] = useState<boolean>(false);
   const [loyaltyId, setLoyaltyId] = useState<string>("");
   const [open, setOpen] = useState<boolean>(false);
+
+  const suiClient = useSuiClient();
 
   useEffect(() => {
     const fetchNFTData = async () => {
@@ -115,8 +117,8 @@ export default function NFTPage() {
 
     const tx = new Transaction();
     tx.moveCall({
-      target: `${testnet_loyalty!}::loyalty_card::mint_loyalty`,
-      arguments: [tx.pure.address(address!), tx.pure.u64(Date.now()), tx.pure.string(nftData.url),],
+      target: `0xbdfb6f8ad73a073b500f7ba1598ddaa59038e50697e2dc6e9dedb55af7ae5b49::loyalty_card::mint_loyalty`,
+      arguments: [tx.pure.address(address!),tx.pure.string(nftData.nft_id), tx.pure.u64(Date.now()), tx.pure.string(nftData.url),],
     });
     tx.setSender(address!);
 
@@ -131,7 +133,7 @@ export default function NFTPage() {
       const createdLoyalty = resp!.objectChanges?.find(
         ({ type, objectType }: any) =>
           type === "created" &&
-          objectType === `${testnet_loyalty!}::loyalty_card::Loyalty`
+          objectType === `0xbdfb6f8ad73a073b500f7ba1598ddaa59038e50697e2dc6e9dedb55af7ae5b49::loyalty_card::Loyalty`
       );
       if (!createdLoyalty) {
         notifyResolve(
@@ -247,8 +249,40 @@ export default function NFTPage() {
     }
   };
 
-  const handleReveal = () => {
-    if (isMinted) {
+  const handleReveal = async() => {
+    let hashcaseData = false;
+    try{
+      const { data } = await suiClient.getOwnedObjects({
+        owner: currentAccount?.address || address || '',
+        filter: {
+          StructType: "0xbdfb6f8ad73a073b500f7ba1598ddaa59038e50697e2dc6e9dedb55af7ae5b49::loyalty_card::Loyalty"
+        },
+        options: {
+          showDisplay: true,
+          showContent: true,
+          showType: true
+        }
+      });
+      if(data){
+        const nids = data?.filter((item: any) => item?.data?.content?.fields?.nId).map((item: any) => item.data.content.fields.nId) || [];
+        if(nids.includes(nftData.nft_id)){
+          hashcaseData = true;
+        }
+      }
+    }catch(error){
+      toast.error("Error in Fetching NFT", {
+        position: "top-center",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "light",
+      });
+      console.log(error);
+    }
+    if (hashcaseData) {
       setIsUnlocked(true);
     } else {
       toast.error("You need to mint this NFT first!", {
