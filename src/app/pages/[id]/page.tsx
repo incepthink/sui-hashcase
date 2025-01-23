@@ -199,6 +199,7 @@ export default function NFTPage() {
       target: `${testnet_loyalty!}::loyalty_card::mint_loyalty`,
       arguments: [
         tx.pure.address(currentAccount.address),
+        tx.pure.string(nftData.nft_id),
         tx.pure.u64(Date.now()),
         tx.pure.string(nftData.url),
       ],
