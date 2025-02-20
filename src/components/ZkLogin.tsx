@@ -1,23 +1,54 @@
 "use client";
-import React from "react";
-import { useEnokiFlow, useZkLogin, useZkLoginSession } from "@mysten/enoki/react";
+import React, { useContext, useEffect } from "react";
+import {
+  useEnokiFlow,
+  useZkLogin,
+  useZkLoginSession,
+} from "@mysten/enoki/react";
 import { formatAddress } from "@mysten/sui/utils";
 import Google from "../assets/icons/google.png";
 import Image from "next/image";
+import axiosInstance from "@/utils/axios";
+import { ActionKind } from "@/context/context-types";
+import { AppContext } from "@/context/AppContext";
 
 interface ZkLoginProps {
   setOpenModal: (open: boolean) => void;
 }
 
 const ZkLogin = ({ setOpenModal }: ZkLoginProps) => {
-  const CLIENT_ID_GOOGLE =
-    "899345727751-h3g8il9amouo0qqg9lk6cuijg5m6vjvq.apps.googleusercontent.com"; //todo pranav vinodan
-  // const CLIENT_ID_GOOGLE =
-  //   "1048172124002-m8at7os92r09enad8ldvffbnh0ie2gm9.apps.googleusercontent.com"; //? jas krrish singh
+  const { state, dispatch } = useContext(AppContext);
+
+  const clientGoogleId = process.env.NEXT_PUBLIC_CLIENT_ID_GOOGLE;
 
   const enokiFlow = useEnokiFlow();
   const { address } = useZkLogin();
-  
+
+  const handleUserCreation = async () => {
+    if (state.isUserVerified) return;
+
+    const res = await axiosInstance.post("auth/zk-login/login", {
+      address: address,
+    });
+
+    const token = res.data.token;
+    const user_instance = res.data.user_instance;
+
+    dispatch({
+      type: ActionKind.SET_USER,
+      payload: [user_instance, token],
+    });
+  };
+
+  useEffect(() => {
+    if (address) {
+      if (!state.user) {
+        console.log("call the user create server api for zklogin");
+        handleUserCreation();
+      }
+    }
+  }, [address]);
+
   const handleSignIn = () => {
     setOpenModal(false);
     const protocol = window.location.protocol;
@@ -29,7 +60,7 @@ const ZkLogin = ({ setOpenModal }: ZkLoginProps) => {
       .createAuthorizationURL({
         provider: "google",
         network: "testnet",
-        clientId: CLIENT_ID_GOOGLE!,
+        clientId: clientGoogleId!,
         redirectUrl,
         extraParams: {
           scope: ["openid", "email", "profile"],
@@ -43,6 +74,20 @@ const ZkLogin = ({ setOpenModal }: ZkLoginProps) => {
       });
   };
 
+  if (address) {
+    return (
+      <button
+        onClick={() => {
+          enokiFlow.logout();
+        }}
+        className="bg-[#ffffff] border-black/20 px-6 py-2 text-black font-semibold rounded-full w-full flex items-center gap-x-8"
+      >
+        <Image src={Google} alt="Google" width={30} height={30} />
+        Disconnect From ZkLogin
+      </button>
+    );
+  }
+
   return (
     <>
       <button
@@ -54,7 +99,11 @@ const ZkLogin = ({ setOpenModal }: ZkLoginProps) => {
           ? address.slice(0, 6) + "..." + address.slice(-4)
           : "Login with Google"}
       </button>
-      {address ? console.log(`https://suiexplorer.com/address/${address}?network=testnet`) : null}
+      {address
+        ? console.log(
+            `https://suiexplorer.com/address/${address}?network=testnet`
+          )
+        : null}
     </>
   );
 };

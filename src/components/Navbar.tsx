@@ -7,24 +7,35 @@ import Link from "next/link";
 import { Work_Sans } from "next/font/google";
 import { HashcaseText } from "../assets";
 import { AppContext } from "@/context/AppContext";
-import { useContext, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import Hamburger from "hamburger-react";
 
 const workSans = Work_Sans({ subsets: ["latin"] });
 
 export const Navbar = () => {
-  const wallet = useWallet();
   const currentAccount = useCurrentAccount();
   const { address } = useZkLogin();
-  const { setOpenModal } = useContext(AppContext);
+  const { openModal, setOpenModal } = useContext(AppContext);
   const [isOpen, setOpen] = useState<boolean>(false);
+  const [walletAddress, setWalletAddress] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (currentAccount?.address) {
+      setWalletAddress(
+        currentAccount.address.slice(0, 6) +
+          "..." +
+          currentAccount.address.slice(-4)
+      );
+    } else if (address) {
+      setWalletAddress(address.slice(0, 6) + "..." + address.slice(-4));
+    }
+  }, [address, currentAccount]);
 
   const handleModal = () => {
-    if (currentAccount || wallet.address || address) {
+    if (openModal) {
       setOpenModal(false);
     } else {
       setOpenModal(true);
-      setOpen(false);
     }
   };
   return (
@@ -54,10 +65,10 @@ export const Navbar = () => {
                 Home
               </Link>
               <Link
-                href="/mint"
+                href="/collections"
                 className="hover:bg-white/10 hover:backdrop-blur-md rounded-full transition-colors duration-300 px-4 py-2"
               >
-                Mint
+                Collections
               </Link>
               <Link
                 href="/profile"
@@ -72,14 +83,8 @@ export const Navbar = () => {
             onClick={handleModal}
             className="md:flex hidden justify-center items-center gap-x-4 px-4 py-2 border-2 border-b-4 border-[#4DA2FF] text-white font-semibold rounded-full"
           >
-            {currentAccount ? (
-              currentAccount.address.slice(0, 6) +
-              "..." +
-              currentAccount.address.slice(-4)
-            ) : wallet.address ? (
-              wallet.address.slice(0, 6) + "..." + wallet.address.slice(-4)
-            ) : address ? (
-              address.slice(0, 6) + "..." + address.slice(-4)
+            {walletAddress ? (
+              walletAddress
             ) : (
               <>
                 Connect
@@ -93,11 +98,11 @@ export const Navbar = () => {
         <div
           className={`md:hidden absolute w-full text-right p-2 flex-col justify-center items-center bg-[#00041F]/10 backdrop-blur-md text-white gap-y-8  ml-auto z-10`}
         >
-          <Link className="m-4 flex justify-start" href={"/"}>
+          <Link className="m-4 flex  justify-start" href={"/"}>
             Home
           </Link>
-          <Link className="m-4 flex justify-start" href={"/mint"}>
-            Mint
+          <Link className="m-4 flex justify-start" href={"/collections"}>
+            Collections
           </Link>
           <Link className="m-4 flex justify-start" href={"#"}>
             Contact Us
@@ -107,14 +112,8 @@ export const Navbar = () => {
               onClick={handleModal}
               className="flex justify-center items-center gap-x-4 px-4 py-2 border-2 border-b-4 border-[#4DA2FF] text-white font-semibold rounded-full w-full"
             >
-              {currentAccount ? (
-                currentAccount.address.slice(0, 6) +
-                "..." +
-                currentAccount.address.slice(-4)
-              ) : wallet.address ? (
-                wallet.address.slice(0, 6) + "..." + wallet.address.slice(-4)
-              ) : address ? (
-                address.slice(0, 6) + "..." + address.slice(-4)
+              {walletAddress ? (
+                walletAddress
               ) : (
                 <>
                   Connect
