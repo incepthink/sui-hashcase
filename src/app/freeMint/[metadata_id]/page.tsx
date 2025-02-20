@@ -1,9 +1,5 @@
 "use client";
 
-import React, { useContext, useState } from "react";
-import { useZkLogin } from "@mysten/enoki/react";
-import { Transaction } from "@mysten/sui/transactions";
-import { useSponsorSignAndExecute } from "../hooks/useSponsorSignandExecute";
 import Image from "next/image";
 import ArrowW from "@/assets/images/arrowW.svg";
 import ArrowB from "@/assets/images/arrowB.svg";
@@ -13,10 +9,21 @@ import Send from "@/assets/images/send-Regular.svg";
 import Eye from "@/assets/images/eye_Icon.png";
 import Nft from "@/assets/nft-token.jpeg";
 import { Work_Sans } from "next/font/google";
-import Link from "next/link";
 import { notifyPromise, notifyResolve } from "@/utils/notify";
 import { Bounce, toast } from "react-toastify";
+import EyeW from "@/assets/eye-white.svg";
+
+import { useParams } from "next/navigation";
+import { useEffect, useState } from "react";
+import React, { useContext } from "react";
+import Link from "next/link";
+
 import { AppContext } from "@/context/AppContext";
+import { useZkLogin } from "@mysten/enoki/react";
+import { Transaction } from "@mysten/sui/transactions";
+
+import { useSponsorSignAndExecute } from "../../hooks/useSponsorSignandExecute";
+
 import {
   ConnectModal,
   useCurrentAccount,
@@ -24,163 +31,145 @@ import {
   useSignAndExecuteTransaction,
 } from "@mysten/dapp-kit";
 import Modal from "@/components/Modal";
-import Logo from "@/assets/icons/sui-sui-logo 1.png";
-import SuietLogo from "@/assets/icons/suietlogo.png";
-import EyeW from "@/assets/eye-white.svg";
 import ZkLogin from "@/components/ZkLogin";
-import {
-  ConnectModal as SuietConnectModal,
-  useWallet,
-} from "@suiet/wallet-kit";
-import "@suiet/wallet-kit/style.css";
+
 import Collectable from "@/components/Collectable";
 import Footer from "@/components/Footer";
 import WalletConnectionModal from "@/components/WalletConnectionModal";
 
-const workSans = Work_Sans({ subsets: ["latin"] });
+import axiosInstance from "@/utils/axios";
+import {
+  claimNftHelper,
+  createCollectionHelper,
+  freeMintNftHelper,
+  mintLoyaltyHelper,
+  mintSuiLoyaltyHelper,
+} from "@/utils/contractHelperFunctions";
 
-// const tx2 = new Transaction();
-// tx2.moveCall({
-//   target: `${testnet_loyalty!}::loyalty_card::update_loyalty_points`,
-//   arguments: [tx.object(loyaltyId), tx.pure.u64(20)],
-// });
-// tx2.setSender(address!);
-// const resp2 = await sponsorSignAndExecute({
-//   tx: tx2,
-//   options: { showObjectChanges: true, showEffects: true },
-// });
-// console.log("Updated loyalty points");
-// console.log(resp2!.objectChanges);
+interface Metadata {
+  id: string;
+  title: string;
+  name: string;
+  description: string;
+  animation_url: string;
+  image_url: string;
+  collection_id: number;
+  token_uri: string;
+  attributes?: string;
+  collection_name?: string;
+  collection_address?: string;
+}
+
+interface EmittedNFTInfo {
+  collection_id: string;
+  creator: string;
+  mint_price: string;
+  nft_id: string;
+  recipient: string;
+  token_number: string;
+}
+
+const workSans = Work_Sans({ subsets: ["latin"] });
 
 const testnet_loyalty =
   process.env.TESTNET_LOYALTY_PACKAGE_ID ||
-  "0xb92dbbdb90ea755f8ea371d3e4658687fc4a1e9f6b13264e358c7d27da7514a7";
+  "0xbdfb6f8ad73a073b500f7ba1598ddaa59038e50697e2dc6e9dedb55af7ae5b49";
 
-const MintPage = () => {
+export default function NFTPage() {
+  const params = useParams();
+  const [nftData, setNftData] = useState<Metadata | null>(null);
+
   const { address } = useZkLogin();
-  const wallet = useWallet();
-  const currentAccount = useCurrentAccount();
   const { sponsorSignAndExecute } = useSponsorSignAndExecute();
+
+  const currentAccount = useCurrentAccount();
   const { mutateAsync: signAndExecuteTransaction } =
     useSignAndExecuteTransaction();
 
+  const [uniqueId, setUniqueId] = useState<string | null>(null);
+
+  const [mintedNftAddress, setMintedNftAddress] = useState("");
+
   const suiClient = useSuiClient();
-  const mintLoyalty = async () => {
-    if (!address) {
-      toast.error("Please connect your wallet first", {
-        position: "top-center",
-        autoClose: 5000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
+  // const { suiClient } = useSui();
+
+  useEffect(() => {
+    const fetchNFTData = async () => {
+      //we get the metadata instance using the id
+      //we extract the collection_id from it
+      //we use it to get the collection_instance
+      //we create the final NFT data by adding the collection name to the metadata
+      const itemData = await axiosInstance.get("/platform/metadata/by-id", {
+        params: {
+          metadata_id: params.metadata_id,
+        },
       });
-      return;
+
+      const { metadata_instance } = itemData.data;
+      const collectionData = await axiosInstance.get("/platform/collection", {
+        params: {
+          collection_id: metadata_instance.collection_id,
+        },
+      });
+      const { collection_instance } = collectionData.data;
+
+      // console.log(collection_instance);
+
+      const finalNftData = {
+        ...metadata_instance,
+        collection_id: collection_instance.id,
+        collection_name: collection_instance.name,
+        collection_address: collection_instance.contract_address,
+      };
+
+      setUniqueId(
+        `id${metadata_instance.id}collection${collection_instance.id}`
+      );
+
+      // console.log(finalNftData);
+
+      setNftData(finalNftData);
+    };
+
+    if (params.metadata_id) {
+      fetchNFTData();
     }
+  }, [params.metadata_id]);
 
-    const notifyId = notifyPromise("Minting loyalty...", "info");
-    console.log("Minting loyalty...");
+  if (!nftData) {
+    return <div>Wrong URL</div>;
+  }
 
-    const tx = new Transaction();
-    tx.moveCall({
-      target: `${testnet_loyalty!}::loyalty_card::mint_loyalty`,
-      arguments: [tx.pure.address(address!), tx.pure.u64(Date.now())],
-    });
-    tx.setSender(address!);
+  const createFreeMintNft = async () => {
+    const nftForm = {
+      collection_id: nftData.collection_address || "", // Replace with the actual Collection object ID
+      title: nftData.title,
+      description: nftData.description,
+      image_url: nftData.image_url,
+      attributes: nftData.attributes || "",
+    };
+
+    const tx = await freeMintNftHelper(nftForm);
+    tx.setSender(currentAccount?.address!);
+
+    const notifyId = notifyPromise("Minting free mint NFT...", "info");
+    //trying to mint the NFT
+
+    let txResult;
 
     try {
-      const resp = await sponsorSignAndExecute({
-        tx,
-        options: { showObjectChanges: true, showEffects: true },
-      });
-      notifyResolve(notifyId, "Minted new loyalty", "success");
-      console.log("Minted new loyalty, check the response");
-      console.log(resp!.objectChanges);
-      const createdLoyalty = resp!.objectChanges?.find(
-        ({ type, objectType }: any) =>
-          type === "created" &&
-          objectType === `${testnet_loyalty!}::loyalty_card::Loyalty`
-      );
-      if (!createdLoyalty) {
-        notifyResolve(
-          notifyId,
-          "Could not find loyalty in created objects",
-          "error"
-        );
-        console.log("Could not find loyalty in created objects");
-        throw new Error("Error minting new loyalty");
-      }
-      const loyaltyId = (createdLoyalty as any)?.objectId;
-      setLoyaltyId(loyaltyId);
-      console.log("Loyalty ID: ", loyaltyId);
-      toast(
-        <div
-          onClick={() =>
-            window.open(
-              `https://suiscan.xyz/testnet/object/${loyaltyId}`,
-              "_blank"
-            )
-          }
-        >
-          Click to view loyalty on Suiscan
-        </div>,
-        {
-          position: "top-center",
-          autoClose: false,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-          progress: undefined,
-          theme: "light",
-          transition: Bounce,
-        }
-      );
-    } catch (error) {
-      notifyResolve(notifyId, "Error minting loyalty", "error");
-      console.error("Error minting loyalty:", error);
-    }
-  };
-
-  const mintSuiLoyalty = async () => {
-    if (!currentAccount) {
-      toast.error("Please connect your wallet first", {
-        position: "top-center",
-        autoClose: 5000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
-      });
-      return;
-    }
-
-    const notifyId = notifyPromise("Minting loyalty...", "info");
-    console.log("Minting loyalty...");
-
-    const tx = new Transaction();
-    tx.moveCall({
-      target: `${testnet_loyalty!}::loyalty_card::mint_loyalty`,
-      arguments: [
-        tx.pure.address(currentAccount.address),
-        tx.pure.u64(Date.now()),
-      ],
-    });
-    tx.setSender(address!);
-
-    try {
-      await signAndExecuteTransaction({
+      txResult = await signAndExecuteTransaction({
         transaction: tx as any,
         chain: "sui:testnet",
       });
-      notifyResolve(notifyId, "Minted new loyalty", "success");
+
+      notifyResolve(notifyId, "Minted free mint NFT", "success");
+
       toast(
         <div
           onClick={() =>
             window.open(
-              `https://suiscan.xyz/account/object/${currentAccount.address}`,
+              `https://suiscan.xyz/testnet/account/${currentAccount?.address}`,
               "_blank"
             )
           }
@@ -199,70 +188,142 @@ const MintPage = () => {
           transition: Bounce,
         }
       );
+
+      // console.log("reached the end of the transaction");
     } catch (error) {
       notifyResolve(notifyId, "Error minting loyalty", "error");
       console.error("Error minting loyalty:", error);
     }
-  };
 
-  const handleClaimNFT = () => {
-    if (address) {
-      mintLoyalty();
-    } else if (currentAccount) {
-      mintSuiLoyalty();
+    //fetch the minted nft event
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    // console.log(txResult);
+    // console.log(txResult?.digest);
+
+    const digest = txResult?.digest || "";
+
+    const txDetails = await suiClient.getTransactionBlock({
+      digest,
+      options: { showEvents: true },
+    });
+
+    // console.log(txDetails);
+
+    if (!txDetails?.events?.length) {
+      throw new Error("No events found in transaction details.");
     }
+
+    const emittedNFTsInformation = txDetails.events[0]
+      ?.parsedJson as EmittedNFTInfo;
+
+    if (!emittedNFTsInformation) {
+      throw new Error("Invalid NFT data structure in transaction details.");
+    }
+
+    const { collection_id, mint_price, nft_id, token_number } =
+      emittedNFTsInformation;
+    //get the collection_instance with the collection address
+    // const response = await axiosInstance.get(
+    //   "/platform/collection-by-address",
+    //   {
+    //     params: {
+    //       contract_address: collection_id,
+    //     },
+    //   }
+    // );
+
+    // console.log("THE DATA THAT WE ARE GETTING BACK AFTER MINTING");
+    // console.log(collection_id);
+    // console.log("COMPARING THE DATAS");
+    // console.log(nftData.collection_id);
+    // console.log(nftData.collection_address);
+
+    // const { collection_instance } = response.data;
+
+    // console.log(collection_instance.id);
+
+    //constructing the item-listing to add to the items table
+    const itemToAdd = {
+      name: nftData.title,
+      description: nftData.description,
+      image_uri: nftData.image_url,
+      collection_id: nftData.collection_id,
+      token_id: parseInt(token_number),
+      type: "buyandclaim",
+      attributes: nftData.attributes || "",
+    };
+
+    //sending the request to add the item
+    const itemResponse = await axiosInstance.post("/platform/item/create", {
+      item: itemToAdd,
+    });
+
+    // console.log(itemResponse);
   };
 
-  const { openModal, setOpenModal } = useContext(AppContext);
-  const [showModal, setShowModal] = useState<boolean>(false);
-  const [isUnlocked, setIsUnlocked] = useState<boolean>(false);
-  const [loyaltyId, setLoyaltyId] = useState<string>("");
-  const [open, setOpen] = useState<boolean>(false);
+  const claimNFT = async () => {
+    const claimNFTForm = {
+      collection_id:
+        "0x39b9b9eeaff544e9ba514e82482f3ba507b96394ee180ef2926d426eac9e38d6", // Replace with the actual Collection object ID
+      nft_id:
+        "0x3ec3eb2399edab14bd299eb284e5943a26cab65a684fcde18f989f55c03ff480",
+    };
 
-  const handleReveal = async () => {
-    let hashcaseData = [];
+    const tx = await claimNftHelper(claimNFTForm);
+    tx.setSender(currentAccount?.address!);
+
+    const notifyId = notifyPromise("Claiming NFT...", "info");
+
     try {
-      const { data } = await suiClient.getOwnedObjects({
-        owner: currentAccount?.address || address || "",
-        filter: {
-          StructType:
-            "0xb92dbbdb90ea755f8ea371d3e4658687fc4a1e9f6b13264e358c7d27da7514a7::loyalty_card::Loyalty",
-        },
-        options: {
-          showDisplay: true,
-          showContent: true,
-          showType: true,
-        },
+      const txResult = await signAndExecuteTransaction({
+        transaction: tx as any,
+        chain: "sui:testnet",
       });
-      if (data) {
-        hashcaseData = data;
-      }
+
+      notifyResolve(notifyId, "NFT Claimed", "success");
+
+      toast(
+        <div
+          onClick={() =>
+            window.open(
+              `https://suiscan.xyz/testnet/account/${currentAccount?.address}`,
+              "_blank"
+            )
+          }
+        >
+          Click to view loyalty on Suiscan
+        </div>,
+        {
+          position: "top-center",
+          autoClose: false,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
+          theme: "light",
+          transition: Bounce,
+        }
+      );
+
+      // console.log(txResult);
+
+      // const digest = txResult.digest;
+
+      // await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      // const txDetails = await suiClient.getTransactionBlock({
+      //   digest,
+      //   options: { showEvents: true },
+      // });
+
+      // console.log(txDetails);
+
+      // console.log("reached the end of the transaction");
     } catch (error) {
-      toast.error("Error in Fetching NFT", {
-        position: "top-center",
-        autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
-        theme: "light",
-      });
-      console.log(error);
-    }
-    if (hashcaseData.length > 0) {
-      setIsUnlocked(true);
-    } else {
-      toast.error("You need to mint this NFT first!", {
-        position: "top-center",
-        autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
-        theme: "light",
-      });
+      notifyResolve(notifyId, "Error claiming NFT", "error");
+      console.error("Error minting loyalty:", error);
     }
   };
 
@@ -277,16 +338,21 @@ const MintPage = () => {
           <p className="text-2xl text-white/70">back</p>
         </Link>
         <div className="my-4 flex flex-col md:flex-row items-center justify-around md:gap-y-0 gap-y-8">
-          <Image
-            src={Nft}
+          <img
+            className="h-96 w-auto"
+            src={nftData.image_url}
             alt="nft"
-            className="md:w-[400px] md:h-[433px] w-[350px] h-[378.88px] rounded-lg"
+            // className="rounded-lg"
           />
+
           <div className="flex flex-col items-center justify-center">
             <div className="flex items-center justify-between w-full">
               <div>
                 <p className="text-white md:text-2xl text-lg">
-                  By <span className="text-[#4DA2FF]">Hashcase</span>
+                  By{" "}
+                  <span className="text-[#4DA2FF]">
+                    {nftData.collection_name}
+                  </span>
                 </p>
               </div>
               <div className="flex items-center justify-center">
@@ -300,7 +366,7 @@ const MintPage = () => {
             </div>
             <div className="flex flex-col justify-start gap-y-2 my-4 w-full">
               <p className="text-white md:text-4xl text-2xl tracking-wide font-bold">
-                HashCase Sui Loyalty NFT
+                {nftData.name}
               </p>
               <div className="flex justify-start gap-x-2">
                 <div className="flex items-center justify-center gap-x-2">
@@ -317,36 +383,30 @@ const MintPage = () => {
             </div>
             <div className="flex items-center justify-center my-4">
               <p className="md:text-xl text-sm text-white">
-                This is a NFT Loyalty Card Which Executes Onchain Loyalty using
-                Hashcase And <br className="hidden md:block" /> Sui
-                Infrastructure.
+                {nftData.description}
               </p>
             </div>
-            <div className="flex items-center justify-start w-full">
-              <div className="flex items-center md:w-auto w-full justify-between my-4 bg-[#4DA2FF] backdrop-blur-md rounded-lg px-3 py-3 gap-x-2">
-                <button
-                  onClick={handleReveal}
-                  className="flex items-center gap-x-2"
-                >
-                  <EyeW />
-                  <p className="text-white md:text-lg text-sm">
-                    Reveal the Content
-                  </p>
-                </button>
-                <ArrowW className="rotate-180 ml-4" />
-              </div>
-            </div>
-            <div className="flex items-center justify-start my-4 w-full">
+            <div className="flex items-center justify-start w-full"></div>
+            <div className="flex flex-col gap-4 items-center justify-start my-4 w-full">
               <button
-                onClick={handleClaimNFT}
+                onClick={createFreeMintNft}
                 className="md:px-6 md:py-3 px-4 py-2 rounded-full md:text-xl text-sm bg-white text-black border-[1px] border-b-4 border-[#4DA2FF] flex items-center gap-x-2"
               >
-                Claim to Hashcase Wallet
+                Mint the NFT
+                <ArrowB />
+              </button>
+              <button
+                onClick={claimNFT}
+                className="md:px-6 md:py-3 px-4 py-2 rounded-full md:text-xl text-sm bg-white text-black border-[1px] border-b-4 border-[#4DA2FF] flex items-center gap-x-2"
+              >
+                Claim the NFT
                 <ArrowB />
               </button>
             </div>
           </div>
         </div>
+        <div className="flex items-center justify-start my-4 w-full"></div>
+
         <hr className="md:m-[100px] m-[20px] bg-gradient-to-r from-transparent via-white to-transparent opacity-20" />
         <div className="flex items-center justify-center mt-4 mb-8">
           <div className="bg-[#1A1D35] rounded-lg md:rounded-full p-4 w-full md:text-center text-left text-white md:text-2xl text-lg font-semibold">
@@ -395,6 +455,8 @@ const MintPage = () => {
           </div>
         </div>
       </div>
+      <WalletConnectionModal />
+
       <Collectable />
       <Footer />
       {/* <Modal
@@ -412,17 +474,6 @@ const MintPage = () => {
           </Link>
         </div>
       </Modal> */}
-      <Modal
-        context="Connect Your Wallet"
-        openModal={openModal}
-        onClose={() => setOpenModal(false)}
-      >
-        <div className="flex flex-col justify-center items-center gap-y-4 my-4 mx-4">
-          <WalletConnectionModal />
-        </div>
-      </Modal>
     </div>
   );
-};
-
-export default MintPage;
+}
