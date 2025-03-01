@@ -9,4 +9,10 @@ enum ItemStatus {
   INACTIVE = "inactive",
 }
 
-export { ItemType, ItemStatus };
+enum LeaderboardPeriod {
+  DAILY = "daily",
+  WEEKLY = "weekly",
+  MONTHLY = "monthly",
+}
+
+export { ItemType, ItemStatus, LeaderboardPeriod };

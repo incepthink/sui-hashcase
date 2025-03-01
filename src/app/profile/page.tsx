@@ -9,6 +9,7 @@ import "./page.css";
 import axios from "axios";
 import axiosInstance from "@/utils/axios";
 import WalletConnectionModal from "@/components/WalletConnectionModal";
+import NFTModal from "./ClaimNFTModal";
 
 const App: React.FC = () => {
   const [userData, setUserData] = useState({
@@ -35,6 +36,26 @@ const App: React.FC = () => {
   const { address: zkloginaddress } = useZkLogin();
   const router = useRouter();
 
+  //needed for the NFT modal to function
+  const [selectedModalNft, setSelectedModalNft] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const openModal = (nft) => {
+    // setSelectedModalNft(imageUrl);
+
+    console.log("LOGGING FROM INSIDE THE OPEN MODAL FUNCTION");
+    console.log(nft);
+
+    setSelectedModalNft(nft);
+
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setSelectedModalNft(null);
+    setIsModalOpen(false);
+  };
+
   const Hashcase_Loyalty =
     "0xbdfb6f8ad73a073b500f7ba1598ddaa59038e50697e2dc6e9dedb55af7ae5b49";
   const SUI_FRENS_Package_ID =
@@ -43,97 +64,64 @@ const App: React.FC = () => {
     "0xb92dbbdb90ea755f8ea371d3e4658687fc4a1e9f6b13264e358c7d27da7514a7";
 
   const MY_PACKAGE_ID =
+    process.env.NEXT_PUBLIC_PACKAGE_ID ||
     "0x072920bb06baea0717fbeda59950b97a1205f0196d6ad33878d3120710fafe84";
 
   const userAddress = currentAccount?.address || zkloginaddress || "";
 
-  const { data: myLoyaltyData } = useSuiClientQuery("getOwnedObjects", {
-    owner: userAddress,
-    filter: {
-      Package: MY_PACKAGE_ID,
-    },
-
-    options: {
-      showDisplay: true,
-      showContent: true,
-      showType: true,
-    },
-  });
-
-  // console.log("LOGGING THE DATA WE'RE GETTING BACK FROM THE  CLIENT QUERY");
-  // console.log((myLoyaltyData?.data[0].data?.content as any)?.fields);
-
-  const { data: collectionData } = useSuiClientQuery("getObject", {
-    id: "0x39b9b9eeaff544e9ba514e82482f3ba507b96394ee180ef2926d426eac9e38d6",
-    options: {
-      showDisplay: true,
-      showContent: true,
-      showType: true,
-    },
-  });
-
-  // console.log("THESE ARE THE COLLECTIONS THAT WE ARE SUPPOSED TO BE FETCHING");
-  // console.log(collectionData);
-
-  const { data: nftsOfCollection } = useSuiClientQuery(
-    "queryTransactionBlocks",
+  const { data: myLoyaltyData, isLoading } = useSuiClientQuery(
+    "getOwnedObjects",
     {
+      owner: userAddress,
       filter: {
-        MoveFunction: {
-          package:
-            "0x072920bb06baea0717fbeda59950b97a1205f0196d6ad33878d3120710fafe84",
-          // module: "hashcase_module",
-          // function: "free_mint_nft",
-        },
+        Package: MY_PACKAGE_ID,
       },
-      cursor: null,
-      limit: 50,
-      order: "ascending",
+
+      options: {
+        showDisplay: true,
+        showContent: true,
+        showType: true,
+      },
     }
   );
 
-  // console.log("THIS IS US TRYING TO QUERY FOR ALL TRANSACTIONS");
-  // console.log(nftsOfCollection);
+  console.log(myLoyaltyData);
 
-  // async function getMintedNFTAddresses() {
-  //   let cursor: string | null = null;
-  //   const uniqueOwners: Set<string> = new Set();
-  //   let totalNFTs = 0;
-  //   do {
-  //     const result = await suiClient.queryTransactionBlocks({
-  //       filter: { MoveFunction: { package: ${MY_PACKAGE_ID}, module: "protocol", function: "mint" } },
-  //       options: {
-  //         showInput: true
-  //       },
-  //       cursor: cursor,
-  //       limit: 50, // Adjust limit for performance, e.g., 50, 100, etc.
-  //     }) as any;
+  const filteredNFTs = myLoyaltyData?.data.filter(
+    (item) =>
+      item.data.type ===
+      "0x072920bb06baea0717fbeda59950b97a1205f0196d6ad33878d3120710fafe84::hashcase_module::NFT"
+  );
 
-  //     totalNFTs += result.data.length
+  const otherThings = myLoyaltyData?.data.filter(
+    (item) =>
+      item.data.type !=
+      "0x072920bb06baea0717fbeda59950b97a1205f0196d6ad33878d3120710fafe84::hashcase_module::NFT"
+  );
 
-  //     // Iterate through each transaction block
-  //     for (const tx of result.data) {
-  //       if (tx.transaction && tx.transaction.data.sender) {
+  console.log(otherThings);
 
-  //         uniqueOwners.add(tx.transaction.data.sender);
-  //       }
-  //     }
-  //     if (result.data.length === 0) {
-  //       break;
-  //     }
+  console.log(filteredNFTs);
 
-  //     cursor = result.nextCursor;
+  const processedNFTs = filteredNFTs?.map((nft) => nft.data?.content.fields);
 
-  //   } while (cursor); // Continue until no more pages left
+  console.log(processedNFTs);
 
-  //   return Array.from(uniqueOwners);
-  // }
+  // const nftFieldsArray = filteredNFTs?.map((nft) => nft.data.content.fields);
+
+  // console.log("HELLO THERE");
+  // console.log(nftFieldsArray);
+
+  // console.log(JSON.stringify(processedNFTs, null, 2)); // Pretty-print as JSON
+  // processedNFTs?.forEach((nft, index) => {
+  //   console.log(`NFT ${index + 1}:`, nft);
+  // });
 
   // Query objects only if we have a valid address
   const { data: hashcaseData } = useSuiClientQuery("getOwnedObjects", {
     owner: userAddress,
     filter: {
-      Package: Hashcase_Loyalty,
+      Package: MY_PACKAGE_ID,
     },
     options: {
       showDisplay: true,
@@ -142,29 +130,29 @@ const App: React.FC = () => {
     },
   });
 
-  const { data: baseLoyaltyData } = useSuiClientQuery("getOwnedObjects", {
-    owner: userAddress,
-    filter: {
-      Package: base_loyalty,
-    },
-    options: {
-      showDisplay: true,
-      showContent: true,
-      showType: true,
-    },
-  });
+  // const { data: baseLoyaltyData } = useSuiClientQuery("getOwnedObjects", {
+  //   owner: userAddress,
+  //   filter: {
+  //     Package: base_loyalty,
+  //   },
+  //   options: {
+  //     showDisplay: true,
+  //     showContent: true,
+  //     showType: true,
+  //   },
+  // });
 
-  const { data: suiFrensData } = useSuiClientQuery("getOwnedObjects", {
-    owner: userAddress,
-    filter: {
-      Package: SUI_FRENS_Package_ID,
-    },
-    options: {
-      showDisplay: true,
-      showContent: true,
-      showType: true,
-    },
-  });
+  // const { data: suiFrensData } = useSuiClientQuery("getOwnedObjects", {
+  //   owner: userAddress,
+  //   filter: {
+  //     Package: SUI_FRENS_Package_ID,
+  //   },
+  //   options: {
+  //     showDisplay: true,
+  //     showContent: true,
+  //     showType: true,
+  //   },
+  // });
 
   // Process the data outside of hooks
   const imgurl =
@@ -172,15 +160,18 @@ const App: React.FC = () => {
       ?.filter((item: any) => item?.data?.content?.fields?.image_url)
       .map((item: any) => item.data.content.fields.image_url) || [];
 
-  const baseurl =
-    baseLoyaltyData?.data
-      ?.filter((item: any) => item?.data?.content?.fields?.image_url)
-      .map((item: any) => item.data.content.fields.image_url) || [];
+  // const baseurl =
+  //   baseLoyaltyData?.data
+  //     ?.filter((item: any) => item?.data?.content?.fields?.image_url)
+  //     .map((item: any) => item.data.content.fields.image_url) || [];
 
-  const suiurl =
-    suiFrensData?.data
-      ?.map((item: any) => item?.data?.display?.data?.image_url)
-      .filter((url: string | undefined) => url) || [];
+  // const suiurl =
+  //   suiFrensData?.data
+  //     ?.map((item: any) => item?.data?.display?.data?.image_url)
+  //     .filter((url: string | undefined) => url) || [];
+
+  // console.log("LOGGING ALL THE IMGURL DATA");
+  // console.log(imgurl);
 
   useEffect(() => {
     const getCollectionNames = async () => {
@@ -212,160 +203,92 @@ const App: React.FC = () => {
       nfts: 0,
     };
 
+    console.log("LOGGING THE USER DATA");
+    console.log(newUserData);
+
     setUserData(newUserData);
   };
 
-  const createNFT = async (metadata: FormData) => {
-    await getDatabase();
-
-    const collection_id = 17;
-    const amount = 1;
-
-    const res = await axiosInstance.post("/user/mint", metadata, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-      params: {
-        collection_id,
-        amount,
-      },
-    });
-    return {
-      res,
-      receipt: res.data.receipt,
-      message: res.data.message,
-    };
-    // // creating items listing
-    // let nid = userData.username + `${userData.nfts + 1}`;
-
-    // const { error } = await supabase.from("test").insert({
-    //   description: description,
-    //   name: name,
-    //   url: url,
-    //   username: userData.username,
-    //   nft_id: nid,
-    // });
-
-    // const { error: err } = await supabase
-    //   .from("User")
-    //   .update({ nfts: userData.nfts + 1 })
-    //   .eq("user_id", userAddress);
-
-    // console.log(error, err);
-    // router.push(`/pages/${nid}`);
-  };
-
-  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = event.target;
-    setFormValues({ ...formValues, [name]: value });
-  };
+  // if (isLoading) return <div>Loading...</div>;
 
   return (
-    <div className="profile-container">
+    <div className="bg-gradient-to-b from-[#00041f] to-[#030828] text-white">
       {/* Banner Section */}
-      <div className="banner">
-        <img src={userData.Logo} alt="Banner" className="banner-image" />
+      <div className="w-full h-[200px] overflow-hidden">
+        <img
+          src={
+            userData.Logo ||
+            "https://i.pinimg.com/564x/49/cc/10/49cc10386c922de5e2e3c0bb66956e65.jpg"
+          }
+          alt="Banner"
+          className="w-full h-auto"
+        />
       </div>
 
       {/* Profile Section */}
-      <div className="profile-section">
-        <div className="logo-container">
-          <img src={userData.Logo} alt="Logo" className="logo" />
+      <div className="flex items-center mt-[-50px] p-6  shadow-lg rounded-lg w-4/5 mx-auto">
+        <div className="flex-shrink-0">
+          <img
+            src={
+              userData.Logo ||
+              "https://i.pinimg.com/564x/49/cc/10/49cc10386c922de5e2e3c0bb66956e65.jpg"
+            }
+            alt="Logo"
+            className="w-24 h-24 rounded-full border-2 border-gray-300"
+          />
         </div>
-        <div className="profile-details">
-          <h2 className="username">{userData.username}</h2>
-          <p className="description">{userData.description}</p>
+        <div className="ml-6">
+          <h2 className="text-2xl font-semibold">{userData.username}</h2>
+          <p className="text-gray-600">{userData.description}</p>
         </div>
       </div>
 
-      {/* Tabs Section */}
-      <div className="tabs">
-        <button
-          className={`tab ${activeTab === "Base_Assets" ? "active" : ""}`}
-          onClick={() => setActiveTab("Base_Assets")}
-        >
-          Base Assets
-        </button>
-        <button
-          className={`tab ${activeTab === "Assets" ? "active" : ""}`}
-          onClick={() => setActiveTab("Assets")}
-        >
-          Custom Assets
-        </button>
-        <button
-          className={`tab ${activeTab === "More" ? "active" : ""}`}
-          onClick={() => setActiveTab("More")}
-        >
-          SUI FRENS
-        </button>
-        <button
-          className={`tab ${activeTab === "Create" ? "active" : ""}`}
-          onClick={() => setActiveTab("Create")}
-        >
-          Create NFT
-        </button>
+      <div className="p-8 max-w-[1600px] mx-auto">
+        <h1 className="text-4xl font-bold text-center mb-8">Collections</h1>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {processedNFTs?.map((nft) => (
+            <div
+              key={nft.id.id} // Using the correct ID field
+              onClick={() => openModal(nft)}
+              className="bg-[#0a0f3b] shadow-lg rounded-lg p-4 transform transition-transform duration-300 hover:scale-105 hover:bg-[#141a52] cursor-pointer"
+            >
+              <img
+                src={nft.image_url || "https://via.placeholder.com/300"}
+                alt={nft.name}
+                className="w-full h-48 object-cover rounded-md"
+              />
+              <h2 className="text-2xl font-semibold mt-4">{nft.name}</h2>
+              <p className="text-sm text-gray-300 mt-2">
+                {nft.description.length > 100
+                  ? `${nft.description.substring(0, 100)}...`
+                  : nft.description}
+              </p>
+              <div className="mt-4">
+                <p className="text-blue-200">Mint Price: {nft.mint_price}</p>
+                <p className="text-blue-300">
+                  Collection ID:{" "}
+                  {nft.collection_id.length > 15
+                    ? `${nft.collection_id.substring(0, 15)}...`
+                    : nft.collection_id}
+                </p>
+                <p className="text-blue-400">
+                  Token Number: {nft.token_number}
+                </p>
+              </div>
+              <div className="hidden hover:block text-gray-400 mt-2 text-sm">
+                <p>Metadata Version: {nft.metadata_version}</p>
+                <p>Creator: {nft.creator.slice(0, 10)}...</p>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
-      {/* NFT Collection Section */}
-      {activeTab === "Base_Assets" && (
-        <div className="nft-collection">
-          {baseurl.length > 0 ? (
-            baseurl?.map((url: string, index: number) => (
-              <div key={index} style={{ textAlign: "center" }}>
-                <img
-                  src={url}
-                  alt={`Loyalty Card ${index + 1}`}
-                  style={{ maxWidth: "200px", height: "auto" }}
-                />
-              </div>
-            ))
-          ) : (
-            <p>No assets found.</p>
-          )}
-        </div>
-      )}
-
-      {activeTab === "Assets" && (
-        <div className="nft-collection">
-          {imgurl.length > 0 ? (
-            imgurl?.map((url: string, index: number) => (
-              <div key={index} style={{ textAlign: "center" }}>
-                <img
-                  src={url}
-                  alt={`Loyalty Card ${index + 1}`}
-                  style={{ maxWidth: "200px", height: "auto" }}
-                />
-              </div>
-            ))
-          ) : (
-            <p>No assets found.</p>
-          )}
-        </div>
-      )}
-
-      {activeTab === "More" && (
-        <div className="nft-collection">
-          {suiurl.length > 0 ? (
-            suiurl?.map((url: string, index: number) => (
-              <div key={index} style={{ textAlign: "center" }}>
-                <img
-                  src={url}
-                  alt={`Loyalty Card ${index + 1}`}
-                  style={{ maxWidth: "200px", height: "auto" }}
-                />
-              </div>
-            ))
-          ) : (
-            <p>No assets found.</p>
-          )}
-        </div>
-      )}
-
-      {activeTab === "Create" && (
-        <div className="create-nft-form">
-          <h2>Create New NFT</h2>
-        </div>
-      )}
+      <NFTModal
+        isOpen={isModalOpen}
+        selectedNft={selectedModalNft!}
+        onClose={closeModal}
+      />
     </div>
   );
 };

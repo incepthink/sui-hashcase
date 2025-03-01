@@ -98,7 +98,7 @@ export default function NFTPage() {
       //we get the metadata instance using the id
       //we extract the collection_id from it
       //we use it to get the collection_instance
-      //we create the final NFT data by adding the collection name to the metadata
+      //we create the final NFT data by adding the (collection id, collection name & collection address) to the metadata
       const itemData = await axiosInstance.get("/platform/metadata/by-id", {
         params: {
           metadata_id: params.metadata_id,
@@ -137,7 +137,7 @@ export default function NFTPage() {
   }, [params.metadata_id]);
 
   if (!nftData) {
-    return <div>Wrong URL</div>;
+    return <div className="h-screen w-screen text-center">Loading</div>;
   }
 
   const createFreeMintNft = async () => {

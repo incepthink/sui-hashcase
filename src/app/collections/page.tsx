@@ -76,49 +76,56 @@ const CollectionsPage: React.FC = () => {
         <h1 className="text-4xl font-bold text-center mb-8">Collections</h1>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {collections.map((collection) => (
-            <Link key={collection.id} href={`/metadatas/${collection.id}`}>
-              <div className="bg-[#0a0f3b] shadow-lg rounded-lg p-4 transform transition-transform duration-300 hover:scale-105 hover:bg-[#141a52] cursor-pointer">
-                <img
-                  src={
-                    collection.image_uri || "https://via.placeholder.com/300"
-                  }
-                  alt={collection.name}
-                  className="w-full h-48 object-cover rounded-md"
-                />
-                <h2 className="text-2xl font-semibold mt-4">
-                  {collection.name}
-                </h2>
-                <p className="text-sm text-gray-300 mt-2">
-                  {collection.description.length > 100
-                    ? `${collection.description.substring(0, 100)}...`
-                    : collection.description}
+            <div
+              key={collection.id}
+              className="bg-[#0a0f3b] shadow-lg rounded-lg p-4 transform transition-transform duration-300 hover:scale-105 hover:bg-[#141a52] cursor-pointer"
+            >
+              <img
+                src={collection.image_uri || "https://via.placeholder.com/300"}
+                alt={collection.name}
+                className="w-full h-48 object-cover rounded-md"
+              />
+              <h2 className="text-2xl font-semibold mt-4">{collection.name}</h2>
+              <p className="text-sm text-gray-300 mt-2">
+                {collection.description.length > 100
+                  ? `${collection.description.substring(0, 100)}...`
+                  : collection.description}
+              </p>
+              <div className="mt-4">
+                <p className="text-blue-200">Chain: {collection.chain_type}</p>
+                <p className="text-blue-300">
+                  Contract:{" "}
+                  {collection.contract_address.length > 15
+                    ? `${collection.contract_address.substring(0, 15)}...`
+                    : collection.contract_address}
                 </p>
-                <div className="mt-4">
-                  <p className="text-blue-200">
-                    Chain: {collection.chain_type}
-                  </p>
-                  <p className="text-blue-300">
-                    Contract:{" "}
-                    {collection.contract_address.length > 15
-                      ? `${collection.contract_address.substring(0, 15)}...`
-                      : collection.contract_address}
-                  </p>
-                  <p className="text-blue-400">
-                    Priority: {collection.priority}
-                  </p>
-                </div>
-                <div className="hidden hover:block text-gray-400 mt-2 text-sm">
-                  <p>
-                    Created:{" "}
-                    {new Date(collection.createdAt).toLocaleDateString()}
-                  </p>
-                  <p>
-                    Updated:{" "}
-                    {new Date(collection.updatedAt).toLocaleDateString()}
-                  </p>
-                </div>
+                <p className="text-blue-400">Priority: {collection.priority}</p>
               </div>
-            </Link>
+              <div className="hidden hover:block text-gray-400 mt-2 text-sm">
+                <p>
+                  Created: {new Date(collection.createdAt).toLocaleDateString()}
+                </p>
+                <p>
+                  Updated: {new Date(collection.updatedAt).toLocaleDateString()}
+                </p>
+              </div>
+
+              {/* Buttons for Metadata & Loyalties */}
+              <div className="mt-4 flex gap-4">
+                <Link
+                  href={`/metadatas/${collection.id}`}
+                  className="bg-[#313197] text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-[#3e3eb7] transition"
+                >
+                  Metadata
+                </Link>
+                <Link
+                  href={`/loyalties/${collection.id}`}
+                  className="bg-[#313197] text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-[#3e3eb7] transition"
+                >
+                  Loyalties
+                </Link>
+              </div>
+            </div>
           ))}
         </div>
       </div>
