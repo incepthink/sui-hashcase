@@ -19,7 +19,15 @@ type LeaderboardEntry = {
   rank: number;
 };
 
-const LeaderboardDashboardOwner = () => {
+type Loyalty = {
+  id: number;
+  owner_id: number;
+  code: string;
+  value: number;
+  type: string;
+};
+
+const CollectionLoyaltiesPage = () => {
   const params = useParams();
   const currentAccount = useCurrentAccount();
 
@@ -32,7 +40,7 @@ const LeaderboardDashboardOwner = () => {
   );
 
   // to store the fetched data
-  const [loyaltyCodes, setLoyaltyCodes] = useState();
+  const [loyaltyCodes, setLoyaltyCodes] = useState<Loyalty[]>([]);
 
   //to track the number of loyalty points to be added or subtracted
   const [points, setPoints] = useState<string>();
@@ -134,7 +142,7 @@ const LeaderboardDashboardOwner = () => {
 
   const UserTokenData = fetchedTokenData.data[0];
 
-  const onChainPoints = UserTokenData?.data?.content?.fields?.balance;
+  const onChainPoints = (UserTokenData?.data?.content as any)?.fields?.balance;
 
   return (
     <>
@@ -151,7 +159,7 @@ const LeaderboardDashboardOwner = () => {
         <div className="w-1/2 flex flex-col items-start justify-center text-left space-y-6">
           <h1 className="text-5xl font-bold text-white">
             {onChainPoints
-              ? `On-Chain Loyalty Points : ${UserTokenData?.data?.content?.fields?.balance} `
+              ? `On-Chain Loyalty Points : ${onChainPoints} `
               : `Fetching Loyalty Points`}
           </h1>
           <p className="text-lg text-white/70">
@@ -272,4 +280,4 @@ const LeaderboardDashboardOwner = () => {
   );
 };
 
-export default LeaderboardDashboardOwner;
+export default CollectionLoyaltiesPage;

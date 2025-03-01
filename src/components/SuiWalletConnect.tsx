@@ -17,59 +17,15 @@ import { ActionKind } from "@/context/context-types";
 import { notifyPromise, notifyResolve } from "@/utils/notify";
 import axiosInstance from "@/utils/axios";
 
-// import { verifyPersonalMessageSignature } from "@mysten/sui/verify";
-
 export default function SuiWalletConnect() {
   const { state, dispatch, setOpenModal } = useContext(AppContext);
 
   const { mutate: signPersonalMessage } = useSignPersonalMessage();
-  // const { mutateAsync: signPersonalMessageAsync } = useSignPersonalMessage();
   const currentAccount = useCurrentAccount();
   const { mutate: disconnect } = useDisconnectWallet();
 
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
-
-  // const handleUserCreationTemp = async () => {
-  //   if (!currentAccount?.address) return;
-
-  //   try {
-  //     setLoading(true);
-
-  //     const message = "someStringThatIWantToUse";
-
-  //     const encodedMessage = new TextEncoder().encode(message);
-  //     console.log("ENCODED MESSAGE BEING USED TO SIGN THE SIGNATURE");
-  //     console.log(encodedMessage);
-
-  //     const signResponse = await signPersonalMessageAsync({
-  //       message: encodedMessage,
-  //     });
-
-  //     console.log(signResponse);
-
-  //     const signature = signResponse.signature;
-
-  //     console.log(signature);
-
-  //     const verifyResponse = await verifyPersonalMessageSignature(
-  //       encodedMessage,
-  //       signature
-  //     );
-
-  //     console.log(verifyResponse);
-  //   } catch (error) {
-  //     console.log(error);
-  //     //   return false;
-  //   } finally {
-  //     setOpenModal(false);
-  //   }
-  // };
-
-  // useEffect(() => {
-  //   console.log("calling the temp function");
-  //   handleUserCreationTemp();
-  // }, [currentAccount?.address]);
 
   const handleUserCreation = async () => {
     if (state.isUserVerified) return;
@@ -97,6 +53,10 @@ export default function SuiWalletConnect() {
 
               const token = res.data.token;
               const user_instance = res.data.user_instance;
+
+              console.log(token);
+              console.log(user_instance);
+
               dispatch({
                 type: ActionKind.SET_USER,
                 payload: [user_instance, token],
