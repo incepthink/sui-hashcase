@@ -1,15 +1,27 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { useCurrentAccount, useSuiClientQuery } from "@mysten/dapp-kit";
-import { createClient } from "@supabase/supabase-js";
-import { Bounce, toast } from "react-toastify";
+
 import { useZkLogin } from "@mysten/enoki/react";
 import { useRouter } from "next/navigation";
 import "./page.css";
-import axios from "axios";
+
 import axiosInstance from "@/utils/axios";
 import WalletConnectionModal from "@/components/WalletConnectionModal";
 import NFTModal from "./ClaimNFTModal";
+
+type NFT = {
+  attributes?: string[];
+  collection_id: string;
+  creator: string;
+  description?: string;
+  id: { id: string };
+  image_url: string;
+  metadata_version: string;
+  mint_price: string;
+  name: string;
+  token_number: string;
+};
 
 const App: React.FC = () => {
   const [userData, setUserData] = useState({
@@ -37,15 +49,10 @@ const App: React.FC = () => {
   const router = useRouter();
 
   //needed for the NFT modal to function
-  const [selectedModalNft, setSelectedModalNft] = useState<string | null>(null);
+  const [selectedModalNft, setSelectedModalNft] = useState<NFT | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const openModal = (nft) => {
-    // setSelectedModalNft(imageUrl);
-
-    console.log("LOGGING FROM INSIDE THE OPEN MODAL FUNCTION");
-    console.log(nft);
-
+  const openModal = (nft: NFT) => {
     setSelectedModalNft(nft);
 
     setIsModalOpen(true);
@@ -56,12 +63,8 @@ const App: React.FC = () => {
     setIsModalOpen(false);
   };
 
-  const Hashcase_Loyalty =
-    "0xbdfb6f8ad73a073b500f7ba1598ddaa59038e50697e2dc6e9dedb55af7ae5b49";
   const SUI_FRENS_Package_ID =
     "0x15a2fe781ae848c3f108eddc0298649ed9e76da4e9103b5e0bd6f363cca1d56d";
-  const base_loyalty =
-    "0xb92dbbdb90ea755f8ea371d3e4658687fc4a1e9f6b13264e358c7d27da7514a7";
 
   const MY_PACKAGE_ID =
     process.env.NEXT_PUBLIC_PACKAGE_ID ||
@@ -85,27 +88,27 @@ const App: React.FC = () => {
     }
   );
 
-  console.log(myLoyaltyData);
+  // console.log(myLoyaltyData);
 
   const filteredNFTs = myLoyaltyData?.data.filter(
-    (item) =>
-      item.data.type ===
-      "0x072920bb06baea0717fbeda59950b97a1205f0196d6ad33878d3120710fafe84::hashcase_module::NFT"
+    (item) => item?.data?.type === `${MY_PACKAGE_ID}::hashcase_module::NFT`
   );
 
-  const otherThings = myLoyaltyData?.data.filter(
-    (item) =>
-      item.data.type !=
-      "0x072920bb06baea0717fbeda59950b97a1205f0196d6ad33878d3120710fafe84::hashcase_module::NFT"
+  // const otherThings = myLoyaltyData?.data.filter(
+  //   (item) =>
+  //     item?.data?.type !=
+  //     "0x072920bb06baea0717fbeda59950b97a1205f0196d6ad33878d3120710fafe84::hashcase_module::NFT"
+  // );
+
+  // console.log(otherThings);
+
+  // console.log(filteredNFTs);
+
+  const processedNFTs = filteredNFTs?.map(
+    (nft) => (nft.data?.content as any).fields
   );
 
-  console.log(otherThings);
-
-  console.log(filteredNFTs);
-
-  const processedNFTs = filteredNFTs?.map((nft) => nft.data?.content.fields);
-
-  console.log(processedNFTs);
+  // console.log(processedNFTs);
 
   // const nftFieldsArray = filteredNFTs?.map((nft) => nft.data.content.fields);
 
@@ -203,8 +206,8 @@ const App: React.FC = () => {
       nfts: 0,
     };
 
-    console.log("LOGGING THE USER DATA");
-    console.log(newUserData);
+    // console.log("LOGGING THE USER DATA");
+    // console.log(newUserData);
 
     setUserData(newUserData);
   };

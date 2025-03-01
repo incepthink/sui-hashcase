@@ -77,9 +77,9 @@ const CollectionLoyaltiesPage = () => {
 
       const owner_id = ownerResponse.data.owner_instance.id;
 
-      console.log(owner_id);
+      // console.log(owner_id);
 
-      console.log(ownerResponse);
+      // console.log(ownerResponse);
 
       //we get the loyalty codes, by using the owner_id
       const loyaltyReponse = await axiosInstance.get(
@@ -93,7 +93,7 @@ const CollectionLoyaltiesPage = () => {
 
       setLoyaltyCodes(loyaltyReponse.data.loyalties);
 
-      console.log(loyaltyReponse);
+      // console.log(loyaltyReponse);
 
       //we get the leaderboard, with the help of the owner_id & the time period
       const response = await axiosInstance.get("/platform/leaderboard", {
@@ -103,7 +103,7 @@ const CollectionLoyaltiesPage = () => {
         },
       });
       const leaderboard = response.data.leaderboard;
-      console.log(leaderboard);
+      // console.log(leaderboard);
       setLeaderboardData(leaderboard);
     };
 

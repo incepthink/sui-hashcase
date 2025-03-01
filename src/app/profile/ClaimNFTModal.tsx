@@ -7,10 +7,10 @@ import { X, HandCoins } from "lucide-react";
 interface NFTModalProps {
   isOpen: boolean;
   selectedNft: {
-    attributes: string[];
+    attributes?: string[];
     collection_id: string;
     creator: string;
-    description: string;
+    description?: string;
     id: { id: string };
     image_url: string;
     metadata_version: string;
@@ -85,7 +85,7 @@ const NFTModal: React.FC<NFTModalProps> = ({
         <div className="mt-2">
           <h3 className="font-semibold text-white">Attributes:</h3>
           <ul className="text-sm text-gray-400">
-            {selectedNft.attributes.map((attr, index) => (
+            {selectedNft?.attributes?.map((attr, index) => (
               <li key={index}>{attr}</li>
             ))}
           </ul>

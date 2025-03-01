@@ -54,8 +54,8 @@ export default function SuiWalletConnect() {
               const token = res.data.token;
               const user_instance = res.data.user_instance;
 
-              console.log(token);
-              console.log(user_instance);
+              // console.log(token);
+              // console.log(user_instance);
 
               dispatch({
                 type: ActionKind.SET_USER,
