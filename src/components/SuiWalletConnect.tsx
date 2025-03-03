@@ -3,13 +3,17 @@
 import { useContext, useEffect, useState } from "react";
 
 import Logo from "../assets/icons/sui-sui-logo 1.png";
+import { Wallet as LucideWalletIcon } from "lucide-react"; // Import the Wallet icon
+
 import Image from "next/image";
 
 import {
   ConnectModal as SuiConnectModal,
+  useConnectWallet,
   useCurrentAccount,
   useDisconnectWallet,
   useSignPersonalMessage,
+  useWallets,
 } from "@mysten/dapp-kit";
 
 import { AppContext } from "@/context/AppContext";
@@ -22,10 +26,15 @@ export default function SuiWalletConnect() {
 
   const { mutate: signPersonalMessage } = useSignPersonalMessage();
   const currentAccount = useCurrentAccount();
+
+  //functions to perform things like connect, disconnect wallet
+  const { mutateAsync: connect } = useConnectWallet();
   const { mutate: disconnect } = useDisconnectWallet();
 
+  //to get the wallets that the user has installed & can be connected to
+  const wallets = useWallets();
+
   const [loading, setLoading] = useState(true);
-  const [open, setOpen] = useState(false);
 
   const handleUserCreation = async () => {
     if (state.isUserVerified) return;
@@ -93,34 +102,40 @@ export default function SuiWalletConnect() {
     }
   }, [currentAccount]);
 
-  if (currentAccount) {
+  const handleWalletConnect = async (wallet) => {
+    try {
+      await connect({ wallet });
+      console.log("connected to", wallet.name);
+    } catch (error) {
+      console.log("Failed to connect to the wallet");
+      console.error(error);
+    }
+  };
+
+  if (currentAccount?.address)
     return (
       <button
         className="bg-[#ffffff] border-black/20 px-6 py-2 text-black font-semibold rounded-full w-full flex items-center gap-x-8"
-        onClick={() => disconnect()}
+        onClick={() => disconnect()} // Pass the correct wallet
       >
-        {" "}
-        <Image src={Logo} alt="Sui Logo" width={20} height={20} />
+        <LucideWalletIcon className="w-5 h-5" />
         {"Disconnect Wallet"}
       </button>
     );
+
+  if (!wallets || wallets.length === 0) {
+    return <div>No wallets were found</div>;
   }
 
-  return (
-    <SuiConnectModal
-      trigger={
-        <button
-          className="bg-[#ffffff] border-black/20 px-6 py-2 text-black font-semibold rounded-full w-full flex items-center gap-x-8"
-          disabled={!!currentAccount}
-          onClick={handleUserCreation}
-        >
-          {" "}
-          <Image src={Logo} alt="Sui Logo" width={20} height={20} />
-          {"Connect Sui Wallet"}
-        </button>
-      }
-      open={open}
-      onOpenChange={(isOpen) => setOpen(isOpen)}
-    />
-  );
+  return wallets.map((wallet) => (
+    <button
+      key={wallet.name} // Add a unique key for each button
+      className="bg-[#ffffff] border-black/20 px-6 py-2 text-black font-semibold rounded-full w-full flex items-center gap-x-8"
+      onClick={() => handleWalletConnect(wallet)} // Pass the correct wallet
+    >
+      {" "}
+      <Image src={wallet.icon} alt="Sui Logo" width={20} height={20} />
+      {"Connect Sui Wallet"}{" "}
+    </button>
+  ));
 }

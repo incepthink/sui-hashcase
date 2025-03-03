@@ -31,7 +31,7 @@ const CollectionsPage: React.FC = () => {
     // Fetch collections data (Replace with actual API call)
     const fetchCollections = async () => {
       try {
-        const response = await axiosInstance.get("/platform/collections-sui"); // Update with your API endpoint
+        const response = await axiosInstance.get("/platform/collections-sui");
         // console.log(response);
         const data: Collection[] = response.data.suiCollections;
         setCollections(data);

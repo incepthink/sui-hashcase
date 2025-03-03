@@ -6,6 +6,7 @@ import { TanstackProvider } from "@/components/TanstackProvider";
 import { Navbar } from "@/components/Navbar";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { Toaster } from "react-hot-toast";
 
 const dmSans = DM_Sans({ subsets: ["latin"] });
 
@@ -23,9 +24,10 @@ export default function RootLayout({
     <TanstackProvider>
       <html lang="en">
         <body className={clsx(dmSans.className, "antialiased")}>
-          <ToastContainer />
+          <Toaster />
           <Navbar />
           {children}
+          <ToastContainer />
         </body>
       </html>
     </TanstackProvider>
