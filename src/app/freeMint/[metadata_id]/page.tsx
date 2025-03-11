@@ -45,6 +45,7 @@ import {
   mintLoyaltyHelper,
   mintSuiLoyaltyHelper,
 } from "@/utils/contractHelperFunctions";
+import { useNftTransactions } from "@/app/hooks/useNftTransactions";
 
 interface Metadata {
   id: string;
@@ -86,12 +87,7 @@ export default function NFTPage() {
   const { mutateAsync: signAndExecuteTransaction } =
     useSignAndExecuteTransaction();
 
-  const [uniqueId, setUniqueId] = useState<string | null>(null);
-
-  const [mintedNftAddress, setMintedNftAddress] = useState("");
-
-  const suiClient = useSuiClient();
-  // const { suiClient } = useSui();
+  const { freeMintNft } = useNftTransactions();
 
   useEffect(() => {
     const fetchNFTData = async () => {
@@ -122,10 +118,6 @@ export default function NFTPage() {
         collection_address: collection_instance.contract_address,
       };
 
-      setUniqueId(
-        `id${metadata_instance.id}collection${collection_instance.id}`
-      );
-
       // console.log(finalNftData);
 
       setNftData(finalNftData);
@@ -149,65 +141,7 @@ export default function NFTPage() {
       attributes: nftData.attributes || "",
     };
 
-    const tx = await freeMintNftHelper(nftForm);
-    tx.setSender(currentAccount?.address!);
-
-    const notifyId = notifyPromise("Minting free mint NFT...", "info");
-    //trying to mint the NFT
-
-    let txResult;
-
-    try {
-      txResult = await signAndExecuteTransaction({
-        transaction: tx as any,
-        chain: "sui:testnet",
-      });
-
-      notifyResolve(notifyId, "Minted free mint NFT", "success");
-
-      toast(
-        <div
-          onClick={() =>
-            window.open(
-              `https://suiscan.xyz/testnet/account/${currentAccount?.address}`,
-              "_blank"
-            )
-          }
-        >
-          Click to view loyalty on Suiscan
-        </div>,
-        {
-          position: "top-center",
-          autoClose: false,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-          progress: undefined,
-          theme: "light",
-          transition: Bounce,
-        }
-      );
-
-      // console.log("reached the end of the transaction");
-    } catch (error) {
-      notifyResolve(notifyId, "Error minting loyalty", "error");
-      console.error("Error minting loyalty:", error);
-    }
-
-    //fetch the minted nft event
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    // console.log(txResult);
-    // console.log(txResult?.digest);
-
-    const digest = txResult?.digest || "";
-
-    const txDetails = await suiClient.getTransactionBlock({
-      digest,
-      options: { showEvents: true },
-    });
-
+    const txDetails = await freeMintNft(nftForm);
     // console.log(txDetails);
 
     if (!txDetails?.events?.length) {

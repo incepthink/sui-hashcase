@@ -1,0 +1,42 @@
+Milestone 1 
+✅Integrating SUI and supporting existing collections			 
+✅Connect SUI Wallet							
+✅Support SUI Name Service
+✅Building a new frontend for SUI
+✅Integrating Gmail
+Apple authentication
+✅Onboarding SUI frens and other prominent NFT collections
+✅Adding utility like token-gating and geo-fencing to existing NFTs
+✅On chain loyalty points
+✅Generating user profiles that can be shared
+
+
+Milestone 2 
+✅NFT Contracts and Gasless Minting
+✅Standard NFT contracts with Enoki Sponsored Transactions Service
+Claim contract (dispensing NFTs that are already minted)
+Free Mint/Paid Mint
+Open Edition
+Claim and burn (claiming NFT utility automatically burns the NFT)
+Claim and ship (Claiming requires you to select a variant and enter shipping details)
+Dynamic mint (take users input for NFT image)
+Randomised token ID (So people who are minting generative collections can’t pre-empt
+certain NFTs)
+Token contract
+Vending contract for NFTs to be purchased in other tokens
+
+
+Milestone 3 
+Building loyalty and rewards functionality
+Upgradeable NFTs (punchcard system)
+Off-chain loyalty points
+Social integrations (Twitter, email, Instagram)
+Quests
+Phygital NFTs
+Ticketing
+Integrating FIAT on-ramp
+Building Admin dashboard with API key and analytics
+Creating a shareable API key for brands who want to integrate this into their own platform
+Set up Enoki instances and smart accounts for client APIs
+Create a dashboard to track and manage collections, assets and users
+Provide in-depth analytics, we can collect raw data from the SUI explorer

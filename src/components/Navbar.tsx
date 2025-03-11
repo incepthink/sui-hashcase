@@ -19,6 +19,8 @@ export const Navbar = () => {
   const [isOpen, setOpen] = useState<boolean>(false);
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
 
+  const user_address = currentAccount?.address || address;
+
   useEffect(() => {
     if (currentAccount?.address) {
       setWalletAddress(
@@ -71,7 +73,7 @@ export const Navbar = () => {
                 Collections
               </Link>
               <Link
-                href="/profile"
+                href={`/${user_address}`}
                 className="hover:bg-white/10 hover:backdrop-blur-md rounded-full transition-colors duration-300 px-4 py-2"
               >
                 Profile

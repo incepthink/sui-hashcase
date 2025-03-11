@@ -3,33 +3,37 @@ import Cookies from "js-cookie";
 
 interface User {
   // Define the shape of your user object
-  id: string;
-  name: string;
-  email: string;
+  id: number;
+  walletAddress: string;
+  email: string | null;
+  badges: string;
 }
 
 interface AppState {
   user: User | null;
   isUserVerified: boolean;
   openModal: boolean;
+  userWalletAddress: string | null;
   setUser: (user: User, jwt: string) => void;
   unsetUser: () => void;
   inferUser: () => void;
   setOpenModal: (open: boolean) => void;
+  setUserWalletAddress: (address: string) => void;
 }
 
 export const useGlobalAppStore = create<AppState>((set) => ({
   user: null,
   isUserVerified: false,
   openModal: true,
+  userWalletAddress: null,
 
   // Action to set the user and JWT in cookies and state
   setUser: (user, jwt) => {
     Cookies.set("user", JSON.stringify(user), {
-      expires: new Date(new Date().getTime() + 30 * 60 * 1000), // 30 minutes
+      expires: new Date(new Date().getTime() + 60 * 60 * 1000), // 60 minutes
     });
     Cookies.set("jwt", jwt, {
-      expires: new Date(new Date().getTime() + 30 * 60 * 1000), // 30 minutes
+      expires: new Date(new Date().getTime() + 60 * 60 * 1000), // 60 minutes
     });
     set({ user: user, isUserVerified: true });
   },
@@ -54,4 +58,10 @@ export const useGlobalAppStore = create<AppState>((set) => ({
 
   // Action to set the modal state
   setOpenModal: (open) => set({ openModal: open }),
+
+  // Action to set the userWalletAddress
+  setUserWalletAddress: (address) => set({ userWalletAddress: address }),
 }));
+
+//this line is meant to allow us to infer the user if a refresh happens
+useGlobalAppStore.getState().inferUser();

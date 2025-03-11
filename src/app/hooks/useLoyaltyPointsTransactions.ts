@@ -13,11 +13,14 @@ export const useLoyaltyPointsTransactions = () => {
   const { mutateAsync: signAndExecuteTransaction } =
     useSignAndExecuteTransaction();
 
+  const packageId =
+    process.env.NEXT_PUBLIC_CONTRACT_PACKAGE_ID ||
+    "0xdd9cd4161d083f8ae99adb03dbce45b400263f49975f4c48a6e74488dea285ee";
+  const treasuryCapId =
+    process.env.NEXT_PUBLIC_TREASURY_CAP ||
+    "0xacd90a0531d5de71ded1d80d2d01d78caec275490f8a2075dbc0d9d1fdff28c8";
+
   const addLoyaltyPoints = async (userTokenId: string, amount: string) => {
-    const packageId =
-      "0xdd9cd4161d083f8ae99adb03dbce45b400263f49975f4c48a6e74488dea285ee";
-    const treasuryCapId =
-      "0xacd90a0531d5de71ded1d80d2d01d78caec275490f8a2075dbc0d9d1fdff28c8";
     userTokenId =
       userTokenId ||
       "0x4215804794fb9bc9b01b0148b9caaba82cea4194ca1ccb2cd383e95403682081";
@@ -73,10 +76,6 @@ export const useLoyaltyPointsTransactions = () => {
   };
 
   const spendLoyaltyPoints = async (userTokenId: string, amount: string) => {
-    const packageId =
-      "0xdd9cd4161d083f8ae99adb03dbce45b400263f49975f4c48a6e74488dea285ee";
-    const treasuryCapId =
-      "0xacd90a0531d5de71ded1d80d2d01d78caec275490f8a2075dbc0d9d1fdff28c8";
     userTokenId =
       userTokenId ||
       "0x4215804794fb9bc9b01b0148b9caaba82cea4194ca1ccb2cd383e95403682081";

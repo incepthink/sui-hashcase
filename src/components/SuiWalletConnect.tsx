@@ -20,9 +20,12 @@ import { AppContext } from "@/context/AppContext";
 import { ActionKind } from "@/context/context-types";
 import { notifyPromise, notifyResolve } from "@/utils/notify";
 import axiosInstance from "@/utils/axios";
+import { useGlobalAppStore } from "@/store/globalAppStore";
 
 export default function SuiWalletConnect() {
   const { state, dispatch, setOpenModal } = useContext(AppContext);
+
+  const { isUserVerified, setUser, setUserWalletAddress } = useGlobalAppStore();
 
   const { mutate: signPersonalMessage } = useSignPersonalMessage();
   const currentAccount = useCurrentAccount();
@@ -37,7 +40,7 @@ export default function SuiWalletConnect() {
   const [loading, setLoading] = useState(true);
 
   const handleUserCreation = async () => {
-    if (state.isUserVerified) return;
+    if (isUserVerified) return;
     const notifyId = notifyPromise("Connecting...", "info");
 
     try {
@@ -66,10 +69,23 @@ export default function SuiWalletConnect() {
               // console.log(token);
               // console.log(user_instance);
 
-              dispatch({
-                type: ActionKind.SET_USER,
-                payload: [user_instance, token],
-              });
+              const userDataToStoreInGlobalStore = {
+                id: user_instance.id,
+                walletAddress: user_instance.sui_wallet_address,
+                email: user_instance.email,
+                badges: user_instance.badges,
+              };
+
+              //this will set the user state in our global zustand store
+              //it will also set the jwt as a cookie
+              setUser(userDataToStoreInGlobalStore, token);
+              setUserWalletAddress(currentAccount?.address!);
+
+              // dispatch({
+              //   type: ActionKind.SET_USER,
+              //   payload: [user_instance, token],
+              // });
+
               notifyResolve(notifyId, "Created User", "success");
             } catch (error) {
               console.error("Error verifying token:", error);
@@ -95,7 +111,7 @@ export default function SuiWalletConnect() {
 
   useEffect(() => {
     if (currentAccount) {
-      if (!state.user) {
+      if (!isUserVerified) {
         console.log("call the user create server api");
         handleUserCreation();
       }
@@ -106,6 +122,7 @@ export default function SuiWalletConnect() {
     try {
       await connect({ wallet });
       console.log("connected to", wallet.name);
+      handleUserCreation();
     } catch (error) {
       console.log("Failed to connect to the wallet");
       console.error(error);

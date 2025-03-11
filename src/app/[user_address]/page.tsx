@@ -7,7 +7,6 @@ import { useRouter } from "next/navigation";
 import "./page.css";
 
 import axiosInstance from "@/utils/axios";
-import WalletConnectionModal from "@/components/WalletConnectionModal";
 import NFTModal from "./ClaimNFTModal";
 
 type NFT = {
@@ -239,14 +238,7 @@ const App: React.FC = () => {
       </div>
 
       <div className="p-8 max-w-[1600px] mx-auto">
-        <h1 className="text-4xl font-bold text-center mb-8">
-          Collections{" "}
-          <span>
-            <button className="bg-purple-400 px-2 py-1 rounded-sm">
-              Update Metadata
-            </button>
-          </span>{" "}
-        </h1>
+        <h1 className="text-4xl font-bold text-center mb-8">Collections </h1>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {processedNFTs?.map((nft) => (
             <div
