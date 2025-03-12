@@ -12,7 +12,7 @@ type LeaderboardEntry = {
   rank: number;
 };
 
-const LeaderboardTable = ({ owner_id }) => {
+const LeaderboardTable = ({ owner_id }: { owner_id: number }) => {
   const [period, setPeriod] = useState<LeaderboardPeriod>(
     LeaderboardPeriod.MONTHLY
   );

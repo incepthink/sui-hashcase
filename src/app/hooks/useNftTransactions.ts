@@ -5,6 +5,14 @@ import { useSuiClient, useSignAndExecuteTransaction } from "@mysten/dapp-kit";
 
 import { toast } from "react-hot-toast";
 
+interface MintingForm {
+  title: string;
+  description: string;
+  image_url: string;
+  collection_id: string;
+  attributes: string;
+}
+
 export const useNftTransactions = () => {
   const [isLoading, setIsLoading] = useState(false);
 
@@ -18,7 +26,7 @@ export const useNftTransactions = () => {
     process.env.NEXT_PUBLIC_CONTRACT_PACKAGE_ID ||
     "0x072920bb06baea0717fbeda59950b97a1205f0196d6ad33878d3120710fafe84";
 
-  const freeMintNft = async (nftForm) => {
+  const freeMintNft = async (nftForm: MintingForm) => {
     if (!nftForm.collection_id) {
       toast.error("Please fill in all fields.");
       return;
@@ -38,7 +46,7 @@ export const useNftTransactions = () => {
 
       const attributesArray = nftForm.attributes
         .split(",")
-        .map((attr) => attr.trim())
+        .map((attr: string) => attr.trim())
         .filter(Boolean);
 
       tx.moveCall({

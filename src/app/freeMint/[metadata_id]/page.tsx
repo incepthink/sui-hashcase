@@ -18,33 +18,21 @@ import { useEffect, useState } from "react";
 import React, { useContext } from "react";
 import Link from "next/link";
 
-import { AppContext } from "@/context/AppContext";
 import { useZkLogin } from "@mysten/enoki/react";
-import { Transaction } from "@mysten/sui/transactions";
 
 import { useSponsorSignAndExecute } from "../../hooks/useSponsorSignandExecute";
 
 import {
-  ConnectModal,
   useCurrentAccount,
-  useSuiClient,
   useSignAndExecuteTransaction,
 } from "@mysten/dapp-kit";
-import Modal from "@/components/Modal";
-import ZkLogin from "@/components/ZkLogin";
 
 import Collectable from "@/components/Collectable";
 import Footer from "@/components/Footer";
 import WalletConnectionModal from "@/components/WalletConnectionModal";
 
 import axiosInstance from "@/utils/axios";
-import {
-  claimNftHelper,
-  createCollectionHelper,
-  freeMintNftHelper,
-  mintLoyaltyHelper,
-  mintSuiLoyaltyHelper,
-} from "@/utils/contractHelperFunctions";
+import { claimNftHelper } from "@/utils/contractHelperFunctions";
 import { useNftTransactions } from "@/app/hooks/useNftTransactions";
 
 interface Metadata {
@@ -133,65 +121,74 @@ export default function NFTPage() {
   }
 
   const createFreeMintNft = async () => {
-    const nftForm = {
-      collection_id: nftData.collection_address || "", // Replace with the actual Collection object ID
-      title: nftData.title,
-      description: nftData.description,
-      image_url: nftData.image_url,
-      attributes: nftData.attributes || "",
-    };
+    const notifyId = notifyPromise("Minting NFT...", "info");
 
-    const txDetails = await freeMintNft(nftForm);
-    // console.log(txDetails);
+    try {
+      const nftForm = {
+        collection_id: nftData.collection_address || "", // Replace with the actual Collection object ID
+        title: nftData.title,
+        description: nftData.description,
+        image_url: nftData.image_url,
+        attributes: nftData.attributes || "",
+      };
 
-    if (!txDetails?.events?.length) {
-      throw new Error("No events found in transaction details.");
+      const txDetails = await freeMintNft(nftForm);
+      // console.log(txDetails);
+
+      if (!txDetails?.events?.length) {
+        throw new Error("No events found in transaction details.");
+      }
+
+      const emittedNFTsInformation = txDetails.events[0]
+        ?.parsedJson as EmittedNFTInfo;
+
+      if (!emittedNFTsInformation) {
+        throw new Error("Invalid NFT data structure in transaction details.");
+      }
+
+      const { collection_id, mint_price, nft_id, token_number } =
+        emittedNFTsInformation;
+      //get the collection_instance with the collection address
+      // const response = await axiosInstance.get(
+      //   "/platform/collection-by-address",
+      //   {
+      //     params: {
+      //       contract_address: collection_id,
+      //     },
+      //   }
+      // );
+
+      // console.log("THE DATA THAT WE ARE GETTING BACK AFTER MINTING");
+      // console.log(collection_id);
+      // console.log("COMPARING THE DATAS");
+      // console.log(nftData.collection_id);
+      // console.log(nftData.collection_address);
+
+      // const { collection_instance } = response.data;
+
+      // console.log(collection_instance.id);
+
+      //constructing the item-listing to add to the items table
+      const itemToAdd = {
+        name: nftData.title,
+        description: nftData.description,
+        image_uri: nftData.image_url,
+        collection_id: nftData.collection_id,
+        token_id: parseInt(token_number),
+        type: "buyandclaim",
+        attributes: nftData.attributes || "",
+      };
+
+      //sending the request to add the item
+      const itemResponse = await axiosInstance.post("/platform/item/create", {
+        item: itemToAdd,
+      });
+
+      notifyResolve(notifyId, "NFT Minted", "success");
+    } catch (error) {
+      notifyResolve(notifyId, "Error minting NFT", "error");
+      console.error("Error minting NFT:", error);
     }
-
-    const emittedNFTsInformation = txDetails.events[0]
-      ?.parsedJson as EmittedNFTInfo;
-
-    if (!emittedNFTsInformation) {
-      throw new Error("Invalid NFT data structure in transaction details.");
-    }
-
-    const { collection_id, mint_price, nft_id, token_number } =
-      emittedNFTsInformation;
-    //get the collection_instance with the collection address
-    // const response = await axiosInstance.get(
-    //   "/platform/collection-by-address",
-    //   {
-    //     params: {
-    //       contract_address: collection_id,
-    //     },
-    //   }
-    // );
-
-    // console.log("THE DATA THAT WE ARE GETTING BACK AFTER MINTING");
-    // console.log(collection_id);
-    // console.log("COMPARING THE DATAS");
-    // console.log(nftData.collection_id);
-    // console.log(nftData.collection_address);
-
-    // const { collection_instance } = response.data;
-
-    // console.log(collection_instance.id);
-
-    //constructing the item-listing to add to the items table
-    const itemToAdd = {
-      name: nftData.title,
-      description: nftData.description,
-      image_uri: nftData.image_url,
-      collection_id: nftData.collection_id,
-      token_id: parseInt(token_number),
-      type: "buyandclaim",
-      attributes: nftData.attributes || "",
-    };
-
-    //sending the request to add the item
-    const itemResponse = await axiosInstance.post("/platform/item/create", {
-      item: itemToAdd,
-    });
 
     // console.log(itemResponse);
   };
@@ -240,24 +237,9 @@ export default function NFTPage() {
           transition: Bounce,
         }
       );
-
-      // console.log(txResult);
-
-      // const digest = txResult.digest;
-
-      // await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // const txDetails = await suiClient.getTransactionBlock({
-      //   digest,
-      //   options: { showEvents: true },
-      // });
-
-      // console.log(txDetails);
-
-      // console.log("reached the end of the transaction");
     } catch (error) {
       notifyResolve(notifyId, "Error claiming NFT", "error");
-      console.error("Error minting loyalty:", error);
+      console.error("Error claiming NFT:", error);
     }
   };
 
@@ -265,7 +247,7 @@ export default function NFTPage() {
     <div className={`flex flex-col bg-[#00041F] ${workSans.className}`}>
       <div className="flex flex-col px-8 md:px-16">
         <Link
-          href="/"
+          href={`/collections`}
           className="hidden md:flex items-center justify-start gap-x-2 my-4 px-20"
         >
           <ArrowW />
@@ -329,13 +311,6 @@ export default function NFTPage() {
                 Mint the NFT
                 <ArrowB />
               </button>
-              <button
-                onClick={claimNFT}
-                className="md:px-6 md:py-3 px-4 py-2 rounded-full md:text-xl text-sm bg-white text-black border-[1px] border-b-4 border-[#4DA2FF] flex items-center gap-x-2"
-              >
-                Claim the NFT
-                <ArrowB />
-              </button>
             </div>
           </div>
         </div>
@@ -389,7 +364,6 @@ export default function NFTPage() {
           </div>
         </div>
       </div>
-      <WalletConnectionModal />
 
       <Collectable />
       <Footer />

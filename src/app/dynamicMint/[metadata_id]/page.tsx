@@ -47,7 +47,6 @@ import {
   mintLoyaltyHelper,
   mintSuiLoyaltyHelper,
 } from "@/utils/contractHelperFunctions";
-import { useSui } from "@/app/hooks/useSui";
 
 interface Metadata {
   id: string;
@@ -90,7 +89,6 @@ export default function NFTPage() {
   const [uniqueId, setUniqueId] = useState<string | null>(null);
 
   const suiClient = useSuiClient();
-  // const { suiClient } = useSui();
 
   useEffect(() => {
     const fetchNFTData = async () => {

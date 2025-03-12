@@ -9,13 +9,16 @@ import { HashcaseText } from "../assets";
 import { AppContext } from "@/context/AppContext";
 import { useContext, useEffect, useState } from "react";
 import Hamburger from "hamburger-react";
+import { useGlobalAppStore } from "@/store/globalAppStore";
 
 const workSans = Work_Sans({ subsets: ["latin"] });
 
 export const Navbar = () => {
   const currentAccount = useCurrentAccount();
   const { address } = useZkLogin();
-  const { openModal, setOpenModal } = useContext(AppContext);
+  // const { openModal, setOpenModal } = useContext(AppContext);
+  const { openModal, setOpenModal } = useGlobalAppStore();
+
   const [isOpen, setOpen] = useState<boolean>(false);
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
 

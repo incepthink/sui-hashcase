@@ -24,7 +24,7 @@ interface AppState {
 export const useGlobalAppStore = create<AppState>((set) => ({
   user: null,
   isUserVerified: false,
-  openModal: true,
+  openModal: false,
   userWalletAddress: null,
 
   // Action to set the user and JWT in cookies and state

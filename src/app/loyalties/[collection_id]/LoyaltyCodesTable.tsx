@@ -13,7 +13,21 @@ type Loyalty = {
   type: string;
 };
 
-const LoyaltyCodesTable = ({ owner_id, user }) => {
+interface User {
+  // Define the shape of the user object
+  id: number;
+  walletAddress: string;
+  email: string | null;
+  badges: string;
+}
+
+const LoyaltyCodesTable = ({
+  owner_id,
+  user,
+}: {
+  owner_id: number;
+  user: User;
+}) => {
   // to store the fetched loyalty codes, points data & active streak
   const [loyaltyCodes, setLoyaltyCodes] = useState<Loyalty[]>([]);
   const [offChainPointsState, setOffChainPointsState] = useState();

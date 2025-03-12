@@ -7,6 +7,7 @@ import { Navbar } from "@/components/Navbar";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { Toaster } from "react-hot-toast";
+import WalletConnectionModal from "@/components/WalletConnectionModal";
 
 const dmSans = DM_Sans({ subsets: ["latin"] });
 
@@ -27,6 +28,7 @@ export default function RootLayout({
           <Toaster />
           <Navbar />
           {children}
+          <WalletConnectionModal />
           <ToastContainer />
         </body>
       </html>

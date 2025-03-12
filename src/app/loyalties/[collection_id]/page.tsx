@@ -27,7 +27,7 @@ const CollectionLoyaltiesPage = () => {
 
   const { user } = useGlobalAppStore();
 
-  const [ownerId, setOwnerId] = useState();
+  const [ownerId, setOwnerId] = useState<number | null>();
 
   //to track the number of loyalty points to be added or subtracted
   const [points, setPoints] = useState<string>();

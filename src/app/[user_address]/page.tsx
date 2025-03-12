@@ -8,6 +8,7 @@ import "./page.css";
 
 import axiosInstance from "@/utils/axios";
 import NFTModal from "./ClaimNFTModal";
+import Link from "next/link";
 
 type NFT = {
   attributes?: string[];
@@ -243,38 +244,50 @@ const App: React.FC = () => {
           {processedNFTs?.map((nft) => (
             <div
               key={nft.id.id} // Using the correct ID field
-              onClick={() => openModal(nft)}
               className="bg-[#0a0f3b] shadow-lg rounded-lg p-4 transform transition-transform duration-300 hover:scale-105 hover:bg-[#141a52] cursor-pointer"
             >
-              <img
-                src={nft.image_url || "https://via.placeholder.com/300"}
-                alt={nft.name}
-                className="w-full h-48 object-cover rounded-md"
-              />
-              <h2 className="text-2xl font-semibold mt-4">{nft.name}</h2>
-              <p className="text-sm text-gray-300 mt-2">
-                {nft.description.length > 100
-                  ? `${nft.description.substring(0, 100)}...`
-                  : nft.description}
-              </p>
-              <div className="mt-4">
-                <p className="text-blue-200">Mint Price: {nft.mint_price}</p>
-                <p className="text-blue-300">
-                  Collection ID:{" "}
-                  {nft.collection_id.length > 15
-                    ? `${nft.collection_id.substring(0, 15)}...`
-                    : nft.collection_id}
+              {/* the following div is used just for opening modal on clicking */}
+              <div onClick={() => openModal(nft)}>
+                <img
+                  src={nft.image_url || "https://via.placeholder.com/300"}
+                  alt={nft.name}
+                  className="w-full h-48 object-cover rounded-md"
+                />
+                <h2 className="text-2xl font-semibold mt-4">{nft.name}</h2>
+                <p className="text-sm text-gray-300 mt-2">
+                  {nft.description.length > 100
+                    ? `${nft.description.substring(0, 100)}...`
+                    : nft.description}
                 </p>
-                <p className="text-blue-400">
-                  Token Number: {nft.token_number}
-                </p>
+                <div className="mt-4">
+                  <p className="text-blue-200">Mint Price: {nft.mint_price}</p>
+                  <p className="text-blue-300">
+                    Collection ID:{" "}
+                    {nft.collection_id.length > 15
+                      ? `${nft.collection_id.substring(0, 15)}...`
+                      : nft.collection_id}
+                  </p>
+                  <p className="text-blue-400">
+                    Token Number: {nft.token_number}
+                  </p>
+                </div>
+                <div className="hidden hover:block text-gray-400 mt-2 text-sm">
+                  <p>Metadata Version: {nft.metadata_version}</p>
+                  <p>Creator: {nft.creator.slice(0, 10)}...</p>
+                </div>
               </div>
-              <div className="hidden hover:block text-gray-400 mt-2 text-sm">
-                <p>Metadata Version: {nft.metadata_version}</p>
-                <p>Creator: {nft.creator.slice(0, 10)}...</p>
-              </div>
+
+              <Link
+                key={nft.id.id} // Using the correct ID field
+                href={`/nft/${nft.id.id}`} // Redirect to the NFT details page
+                passHref // Ensure the link is passed correctly
+              >
+                <button className="font-semibold text-lg">
+                  Go to NFT Page &#8594;
+                </button>
+              </Link>
             </div>
-          ))}
+          ))}{" "}
         </div>
       </div>
 

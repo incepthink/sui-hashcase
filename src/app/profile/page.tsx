@@ -7,7 +7,6 @@ import { useRouter } from "next/navigation";
 import "./page.css";
 
 import axiosInstance from "@/utils/axios";
-import WalletConnectionModal from "@/components/WalletConnectionModal";
 import NFTModal from "./ClaimNFTModal";
 
 type NFT = {

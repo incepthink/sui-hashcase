@@ -7,18 +7,20 @@ import React, { useContext } from "react";
 
 import axiosInstance from "@/utils/axios";
 import { Frown } from "lucide-react";
+import CustomNftModal from "./CustomNftModal";
 
-interface Metadata {
-  id: string;
-  title: string;
+interface Collection {
   name: string;
-  description: string;
-  animation_url: string;
-  image_url: string;
-  collection_id: number;
-  token_uri: string;
+  description?: string;
+  image_uri?: string;
+  chain_type: string;
+  chain_id: number;
+  contract_address: string;
+  standard: string;
+  owner_id: number;
+  paymaster_id?: number;
+  priority?: number;
   attributes?: string;
-  collection_name: string;
 }
 
 interface NFTMetadata {
@@ -36,7 +38,18 @@ interface NFTMetadata {
 
 export default function NFTPage() {
   const params = useParams();
-  const [collectionData, setCollectionData] = useState<Metadata | null>(null);
+  const [collectionData, setCollectionData] = useState<Collection | null>(null);
+
+  //needed for the NFT modal to function
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const openModal = () => {
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+  };
 
   useEffect(() => {
     const fetchNFTData = async () => {
@@ -108,7 +121,7 @@ export default function NFTPage() {
         <div className="w-full h-[200px] overflow-hidden">
           <img
             src={
-              collectionData.image_url ||
+              collectionData.image_uri ||
               "https://i.pinimg.com/564x/49/cc/10/49cc10386c922de5e2e3c0bb66956e65.jpg"
             }
             alt="Banner"
@@ -121,7 +134,7 @@ export default function NFTPage() {
           <div className="flex-shrink-0">
             <img
               src={
-                collectionData.image_url ||
+                collectionData.image_uri ||
                 "https://i.pinimg.com/564x/49/cc/10/49cc10386c922de5e2e3c0bb66956e65.jpg"
               }
               alt="Logo"
@@ -138,6 +151,14 @@ export default function NFTPage() {
           <h1 className="text-5xl font-extrabold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500 drop-shadow-lg text-center">
             Collection Assets{" "}
           </h1>
+          <div className="text-xl font-extrabold bg-gradient-to-r from-blue-400 to-purple-500 text-center my-3">
+            <button
+              onClick={() => openModal()}
+              className="px-2 text-xl font-extrabold bg-gradient-to-r py-2 from-blue-400 to-purple-500 w-full"
+            >
+              Mint Custom NFT
+            </button>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {metadata.length > 0 ? (
               metadata.map((metadata) => (
@@ -187,6 +208,12 @@ export default function NFTPage() {
           </div>{" "}
         </div>
       </div>
+
+      <CustomNftModal
+        isOpen={isModalOpen}
+        nftCollectionAddress={collectionData.contract_address!}
+        onClose={closeModal}
+      />
     </div>
   );
 }

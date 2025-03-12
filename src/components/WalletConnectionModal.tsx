@@ -1,3 +1,4 @@
+"use client";
 import React, { useEffect } from "react";
 import { useContext, useState } from "react";
 
@@ -6,10 +7,12 @@ import ZkLogin from "@/components/ZkLogin";
 
 import SuiWalletConnect from "@/components/SuiWalletConnect";
 import { AppContext } from "@/context/AppContext";
+import { useGlobalAppStore } from "@/store/globalAppStore";
 
 const WalletConnectionModal = () => {
   // const [showModal, setShowModal] = useState(false);
-  const { openModal, setOpenModal } = useContext(AppContext);
+  // const { openModal, setOpenModal } = useContext(AppContext);
+  const { openModal, setOpenModal } = useGlobalAppStore();
 
   return (
     <Modal
