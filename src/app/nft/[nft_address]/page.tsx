@@ -1,7 +1,7 @@
 "use client";
 import { useSuiClientQuery } from "@mysten/dapp-kit";
 import { useParams } from "next/navigation";
-import React from "react";
+import React, { useEffect, useState } from "react";
 
 import Link from "next/link";
 import Image from "next/image";
@@ -11,16 +11,33 @@ import Heart from "@/assets/images/heart.svg";
 import HeartW from "@/assets/images/white_heart.svg";
 import Send from "@/assets/images/send-Regular.svg";
 import Eye from "@/assets/images/eye_Icon.png";
+import EyeW from "@/assets/eye-white.svg";
 import { Work_Sans } from "next/font/google";
 import { Hash } from "lucide-react";
+
 import { useNftTransactions } from "@/app/hooks/useNftTransactions";
+import axiosInstance from "@/utils/axios";
+import Footer from "@/components/Footer";
+import UnlockableNft from "./UnlockableNft";
 
 const workSans = Work_Sans({ subsets: ["latin"] });
 
 const NftPage = () => {
   const params = useParams();
 
-  const { claimNFT, updateNftMetadata } = useNftTransactions();
+  //needed for the NFT modal to function
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const openModal = () => {
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+  };
+
+  const { claimNFT } = useNftTransactions();
+  const [unlockableContent, setUnlockableContent] = useState<string>("");
 
   const handleClaimNft = async (collection_id: string, nftId: string) => {
     await claimNFT(collection_id, nftId);
@@ -35,10 +52,34 @@ const NftPage = () => {
     },
   });
 
-  if (isLoading) return <div>Loading</div>;
-
   const nftData = (nft?.data?.content as any)?.fields;
+
   console.log(nftData);
+
+  // Set collectionAddress only when nftData changes
+  useEffect(() => {
+    const getUnlockableContentForCollection = async () => {
+      if (nftData?.collection_id) {
+        const collectionData = await axiosInstance.get(
+          "/platform/collection-by-address",
+          {
+            params: {
+              contract_address: nftData.collection_id,
+            },
+          }
+        );
+        const { collection_instance } = collectionData.data;
+
+        console.log(collection_instance);
+
+        setUnlockableContent(collection_instance.unlockable_content);
+      }
+    };
+
+    getUnlockableContentForCollection();
+  }, [nftData]);
+
+  if (isLoading) return <div>Loading</div>;
 
   if (!nftData) return <div>Nft data was not found.</div>;
 
@@ -46,7 +87,7 @@ const NftPage = () => {
     <div
       className={`flex flex-col bg-[#00041F] ${workSans.className} min-h-screen`}
     >
-      <div className="flex flex-col px-8 md:px-16">
+      <div className="flex flex-col px-8 md:px-16 min-h-[80vh]">
         <Link
           href={`/${nftData.creator}`}
           className="hidden md:flex items-center justify-start gap-x-2 my-4 px-20"
@@ -54,18 +95,27 @@ const NftPage = () => {
           <ArrowW />
           <p className="text-2xl text-white/70">back</p>
         </Link>
+
+        {/* Token Number with Icon */}
+        <div className="flex items-center justify-center my-8">
+          <div className="flex items-center gap-x-2 bg-[#1E1E1ECC] backdrop-blur-md rounded-full px-4 py-2">
+            <Hash className="text-[#4DA2FF]" size={24} />
+            <p className="text-white md:text-xl text-lg font-bold">
+              {nftData.id.id}
+            </p>
+          </div>
+        </div>
+
         <div className="my-4 flex flex-col md:flex-row items-center justify-around md:gap-y-0 gap-y-8">
           {/* Replace <img> with Next.js <Image> */}
-          <div className="relative h-96 w-full md:w-auto">
-            <img
-              className="h-96 w-auto"
-              src={nftData.image_url}
-              alt="nft"
-              // className="rounded-lg"
-            />
-          </div>
+          <img
+            className="h-96 w-auto"
+            src={nftData.image_url}
+            alt="nft"
+            // className="rounded-lg"
+          />
 
-          <div className="flex flex-col items-center justify-center w-full md:w-auto">
+          <div className="flex flex-col items-center justify-center">
             <div className="flex items-center justify-between w-full">
               <div>
                 <p className="text-white md:text-2xl text-lg">
@@ -103,23 +153,28 @@ const NftPage = () => {
               </div>
             </div>
 
-            <div className="flex items-center justify-center my-4">
+            <div className="flex items-center justify-center md:justify-start w-full my-4">
               <p className="md:text-xl text-sm text-white">
                 {nftData.description}
               </p>
             </div>
 
-            {/* Token Number with Icon */}
-            <div className="flex items-center justify-center my-4">
-              <div className="flex items-center gap-x-2 bg-[#1E1E1ECC] backdrop-blur-md rounded-full px-4 py-2">
-                <Hash className="text-[#4DA2FF]" size={24} />
-                <p className="text-white md:text-xl text-lg font-bold">
-                  {nftData.id.id.slice(0, 10)}...
-                </p>
+            <div className="flex items-center justify-start w-full">
+              <div className="flex items-center md:w-auto w-full justify-between my-4 bg-[#4DA2FF] backdrop-blur-md rounded-lg px-3 py-3 gap-x-2">
+                <button
+                  onClick={openModal}
+                  className="flex items-center gap-x-2"
+                >
+                  <EyeW />
+                  <p className="text-white md:text-lg text-sm">
+                    Reveal the Content
+                  </p>
+                </button>
+                <ArrowW className="rotate-180 ml-4" />
               </div>
             </div>
 
-            <div className="flex flex-col gap-4 items-center justify-start my-4 w-full">
+            <div className="flex flex-col gap-4 items-center md:items-start justify-start my-4 w-full">
               <button
                 onClick={() =>
                   handleClaimNft(nftData.collection_id, nftData.id.id)
@@ -133,6 +188,14 @@ const NftPage = () => {
           </div>
         </div>
       </div>
+
+      <UnlockableNft
+        isOpen={isModalOpen}
+        unlockableContent={unlockableContent}
+        closeModal={closeModal}
+      />
+
+      <Footer />
     </div>
   );
 };

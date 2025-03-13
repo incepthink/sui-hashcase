@@ -34,6 +34,7 @@ import WalletConnectionModal from "@/components/WalletConnectionModal";
 import axiosInstance from "@/utils/axios";
 import { claimNftHelper } from "@/utils/contractHelperFunctions";
 import { useNftTransactions } from "@/app/hooks/useNftTransactions";
+import UnlockableNft from "./UnlockableNft";
 
 interface Metadata {
   id: string;
@@ -67,6 +68,17 @@ const testnet_loyalty =
 export default function NFTPage() {
   const params = useParams();
   const [nftData, setNftData] = useState<Metadata | null>(null);
+
+  //needed for the NFT modal to function
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const openModal = () => {
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+  };
 
   const { address } = useZkLogin();
   const { sponsorSignAndExecute } = useSponsorSignAndExecute();
@@ -280,6 +292,7 @@ export default function NFTPage() {
                 </div>
               </div>
             </div>
+
             <div className="flex flex-col justify-start gap-y-2 my-4 w-full">
               <p className="text-white md:text-4xl text-2xl tracking-wide font-bold">
                 {nftData.name}
@@ -297,12 +310,29 @@ export default function NFTPage() {
                 </div>
               </div>
             </div>
+
             <div className="flex items-center justify-center my-4">
               <p className="md:text-xl text-sm text-white">
                 {nftData.description}
               </p>
             </div>
+
             <div className="flex items-center justify-start w-full"></div>
+            <div className="flex items-center justify-start w-full">
+              <div className="flex items-center md:w-auto w-full justify-between my-4 bg-[#4DA2FF] backdrop-blur-md rounded-lg px-3 py-3 gap-x-2">
+                <button
+                  onClick={openModal}
+                  className="flex items-center gap-x-2"
+                >
+                  <EyeW />
+                  <p className="text-white md:text-lg text-sm">
+                    Reveal the Content
+                  </p>
+                </button>
+                <ArrowW className="rotate-180 ml-4" />
+              </div>
+            </div>
+
             <div className="flex flex-col gap-4 items-center justify-start my-4 w-full">
               <button
                 onClick={createFreeMintNft}
@@ -365,7 +395,8 @@ export default function NFTPage() {
         </div>
       </div>
 
-      <Collectable />
+      <UnlockableNft isOpen={isModalOpen} closeModal={closeModal} />
+
       <Footer />
       {/* <Modal
         context="Unlockable Content"
