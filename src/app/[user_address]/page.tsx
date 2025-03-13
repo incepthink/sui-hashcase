@@ -35,13 +35,6 @@ const App: React.FC = () => {
 
   const [activeTab, setActiveTab] = useState("Base_Assets");
 
-  const [formValues, setFormValues] = useState({
-    name: "",
-    description: "",
-    image_uri: "",
-    collection_id: "",
-  });
-
   const [collections, setCollections] = useState([]);
 
   const currentAccount = useCurrentAccount();
@@ -100,18 +93,6 @@ const App: React.FC = () => {
     (nft) => (nft.data?.content as any).fields
   );
 
-  // console.log(processedNFTs);
-
-  // const nftFieldsArray = filteredNFTs?.map((nft) => nft.data.content.fields);
-
-  // console.log("HELLO THERE");
-  // console.log(nftFieldsArray);
-
-  // console.log(JSON.stringify(processedNFTs, null, 2)); // Pretty-print as JSON
-  // processedNFTs?.forEach((nft, index) => {
-  //   console.log(`NFT ${index + 1}:`, nft);
-  // });
-
   // Query objects only if we have a valid address
   const { data: hashcaseData } = useSuiClientQuery("getOwnedObjects", {
     owner: userAddress,
@@ -125,18 +106,6 @@ const App: React.FC = () => {
     },
   });
 
-  // const { data: baseLoyaltyData } = useSuiClientQuery("getOwnedObjects", {
-  //   owner: userAddress,
-  //   filter: {
-  //     Package: base_loyalty,
-  //   },
-  //   options: {
-  //     showDisplay: true,
-  //     showContent: true,
-  //     showType: true,
-  //   },
-  // });
-
   // const { data: suiFrensData } = useSuiClientQuery("getOwnedObjects", {
   //   owner: userAddress,
   //   filter: {
@@ -149,24 +118,10 @@ const App: React.FC = () => {
   //   },
   // });
 
-  // Process the data outside of hooks
-  const imgurl =
-    hashcaseData?.data
-      ?.filter((item: any) => item?.data?.content?.fields?.image_url)
-      .map((item: any) => item.data.content.fields.image_url) || [];
-
-  // const baseurl =
-  //   baseLoyaltyData?.data
-  //     ?.filter((item: any) => item?.data?.content?.fields?.image_url)
-  //     .map((item: any) => item.data.content.fields.image_url) || [];
-
   // const suiurl =
   //   suiFrensData?.data
   //     ?.map((item: any) => item?.data?.display?.data?.image_url)
   //     .filter((url: string | undefined) => url) || [];
-
-  // console.log("LOGGING ALL THE IMGURL DATA");
-  // console.log(imgurl);
 
   useEffect(() => {
     const getCollectionNames = async () => {
@@ -197,9 +152,6 @@ const App: React.FC = () => {
       username: user.sui_wallet_address,
       nfts: 0,
     };
-
-    // console.log("LOGGING THE USER DATA");
-    // console.log(newUserData);
 
     setUserData(newUserData);
   };

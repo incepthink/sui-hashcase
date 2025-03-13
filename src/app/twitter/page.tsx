@@ -1,3 +1,11 @@
+import React from "react";
+
+function TwitterPage() {
+  return <div>TwitterPage</div>;
+}
+
+export default TwitterPage;
+
 // "use client";
 // import axios from "axios";
 // import React, { useState } from "react";
