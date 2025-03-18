@@ -31,7 +31,7 @@ const CollectionsPage: React.FC = () => {
     // Fetch collections data (Replace with actual API call)
     const fetchCollections = async () => {
       try {
-        const response = await axiosInstance.get("/platform/collections-sui"); // Update with your API endpoint
+        const response = await axiosInstance.get("/platform/collections-sui");
         // console.log(response);
         const data: Collection[] = response.data.suiCollections;
         setCollections(data);
@@ -76,7 +76,11 @@ const CollectionsPage: React.FC = () => {
         <h1 className="text-4xl font-bold text-center mb-8">Collections</h1>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {collections.map((collection) => (
-            <Link key={collection.id} href={`/metadatas/${collection.id}`}>
+            <Link
+              key={collection.id}
+              href={`/collection/${collection.contract_address}`} // Navigate to the individual collection page
+              className="block" // Ensure the Link behaves like a block element
+            >
               <div className="bg-[#0a0f3b] shadow-lg rounded-lg p-4 transform transition-transform duration-300 hover:scale-105 hover:bg-[#141a52] cursor-pointer">
                 <img
                   src={
@@ -107,19 +111,27 @@ const CollectionsPage: React.FC = () => {
                     Priority: {collection.priority}
                   </p>
                 </div>
-                <div className="hidden hover:block text-gray-400 mt-2 text-sm">
-                  <p>
-                    Created:{" "}
-                    {new Date(collection.createdAt).toLocaleDateString()}
-                  </p>
-                  <p>
-                    Updated:{" "}
-                    {new Date(collection.updatedAt).toLocaleDateString()}
-                  </p>
+
+                {/* Buttons for Metadata & Loyalties */}
+                <div className="mt-4 flex gap-4">
+                  <Link
+                    href={`/metadatas/${collection.id}`}
+                    onClick={(e) => e.stopPropagation()} // Prevent the parent Link from being triggered
+                    className="bg-[#313197] text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-[#3e3eb7] transition"
+                  >
+                    Metadata
+                  </Link>
+                  <Link
+                    href={`/loyalties/${collection.id}`}
+                    onClick={(e) => e.stopPropagation()} // Prevent the parent Link from being triggered
+                    className="bg-[#313197] text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-[#3e3eb7] transition"
+                  >
+                    Loyalties
+                  </Link>
                 </div>
               </div>
             </Link>
-          ))}
+          ))}{" "}
         </div>
       </div>
     </div>

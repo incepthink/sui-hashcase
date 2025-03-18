@@ -50,7 +50,9 @@ const NFTMetadataPage = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#00041f] to-[#030828] p-8 text-white">
-      <h1 className="text-4xl font-bold text-center mb-8">NFT Metadata</h1>
+      <h1 className="text-5xl font-extrabold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500 drop-shadow-lg text-center">
+        Collection Assets{" "}
+      </h1>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {metadata.map((metadata) => (
           <Link key={metadata.id} href={`/freeMint/${metadata.id}`}>

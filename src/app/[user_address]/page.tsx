@@ -8,6 +8,7 @@ import "./page.css";
 
 import axiosInstance from "@/utils/axios";
 import NFTModal from "./ClaimNFTModal";
+import Link from "next/link";
 
 type NFT = {
   attributes?: string[];
@@ -33,13 +34,6 @@ const App: React.FC = () => {
   });
 
   const [activeTab, setActiveTab] = useState("Base_Assets");
-
-  const [formValues, setFormValues] = useState({
-    name: "",
-    description: "",
-    image_uri: "",
-    collection_id: "",
-  });
 
   const [collections, setCollections] = useState([]);
 
@@ -99,18 +93,6 @@ const App: React.FC = () => {
     (nft) => (nft.data?.content as any).fields
   );
 
-  // console.log(processedNFTs);
-
-  // const nftFieldsArray = filteredNFTs?.map((nft) => nft.data.content.fields);
-
-  // console.log("HELLO THERE");
-  // console.log(nftFieldsArray);
-
-  // console.log(JSON.stringify(processedNFTs, null, 2)); // Pretty-print as JSON
-  // processedNFTs?.forEach((nft, index) => {
-  //   console.log(`NFT ${index + 1}:`, nft);
-  // });
-
   // Query objects only if we have a valid address
   const { data: hashcaseData } = useSuiClientQuery("getOwnedObjects", {
     owner: userAddress,
@@ -124,18 +106,6 @@ const App: React.FC = () => {
     },
   });
 
-  // const { data: baseLoyaltyData } = useSuiClientQuery("getOwnedObjects", {
-  //   owner: userAddress,
-  //   filter: {
-  //     Package: base_loyalty,
-  //   },
-  //   options: {
-  //     showDisplay: true,
-  //     showContent: true,
-  //     showType: true,
-  //   },
-  // });
-
   // const { data: suiFrensData } = useSuiClientQuery("getOwnedObjects", {
   //   owner: userAddress,
   //   filter: {
@@ -148,24 +118,10 @@ const App: React.FC = () => {
   //   },
   // });
 
-  // Process the data outside of hooks
-  const imgurl =
-    hashcaseData?.data
-      ?.filter((item: any) => item?.data?.content?.fields?.image_url)
-      .map((item: any) => item.data.content.fields.image_url) || [];
-
-  // const baseurl =
-  //   baseLoyaltyData?.data
-  //     ?.filter((item: any) => item?.data?.content?.fields?.image_url)
-  //     .map((item: any) => item.data.content.fields.image_url) || [];
-
   // const suiurl =
   //   suiFrensData?.data
   //     ?.map((item: any) => item?.data?.display?.data?.image_url)
   //     .filter((url: string | undefined) => url) || [];
-
-  // console.log("LOGGING ALL THE IMGURL DATA");
-  // console.log(imgurl);
 
   useEffect(() => {
     const getCollectionNames = async () => {
@@ -196,9 +152,6 @@ const App: React.FC = () => {
       username: user.sui_wallet_address,
       nfts: 0,
     };
-
-    // console.log("LOGGING THE USER DATA");
-    // console.log(newUserData);
 
     setUserData(newUserData);
   };
@@ -238,50 +191,55 @@ const App: React.FC = () => {
       </div>
 
       <div className="p-8 max-w-[1600px] mx-auto">
-        <h1 className="text-4xl font-bold text-center mb-8">
-          Collections{" "}
-          <span>
-            <button className="bg-purple-400 px-2 py-1 rounded-sm">
-              Update Metadata
-            </button>
-          </span>{" "}
-        </h1>
+        <h1 className="text-4xl font-bold text-center mb-8">Collections </h1>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {processedNFTs?.map((nft) => (
             <div
               key={nft.id.id} // Using the correct ID field
-              onClick={() => openModal(nft)}
               className="bg-[#0a0f3b] shadow-lg rounded-lg p-4 transform transition-transform duration-300 hover:scale-105 hover:bg-[#141a52] cursor-pointer"
             >
-              <img
-                src={nft.image_url || "https://via.placeholder.com/300"}
-                alt={nft.name}
-                className="w-full h-48 object-cover rounded-md"
-              />
-              <h2 className="text-2xl font-semibold mt-4">{nft.name}</h2>
-              <p className="text-sm text-gray-300 mt-2">
-                {nft.description.length > 100
-                  ? `${nft.description.substring(0, 100)}...`
-                  : nft.description}
-              </p>
-              <div className="mt-4">
-                <p className="text-blue-200">Mint Price: {nft.mint_price}</p>
-                <p className="text-blue-300">
-                  Collection ID:{" "}
-                  {nft.collection_id.length > 15
-                    ? `${nft.collection_id.substring(0, 15)}...`
-                    : nft.collection_id}
+              {/* the following div is used just for opening modal on clicking */}
+              <div onClick={() => openModal(nft)}>
+                <img
+                  src={nft.image_url || "https://via.placeholder.com/300"}
+                  alt={nft.name}
+                  className="w-full h-48 object-cover rounded-md"
+                />
+                <h2 className="text-2xl font-semibold mt-4">{nft.name}</h2>
+                <p className="text-sm text-gray-300 mt-2">
+                  {nft.description.length > 100
+                    ? `${nft.description.substring(0, 100)}...`
+                    : nft.description}
                 </p>
-                <p className="text-blue-400">
-                  Token Number: {nft.token_number}
-                </p>
+                <div className="mt-4">
+                  <p className="text-blue-200">Mint Price: {nft.mint_price}</p>
+                  <p className="text-blue-300">
+                    Collection ID:{" "}
+                    {nft.collection_id.length > 15
+                      ? `${nft.collection_id.substring(0, 15)}...`
+                      : nft.collection_id}
+                  </p>
+                  <p className="text-blue-400">
+                    Token Number: {nft.token_number}
+                  </p>
+                </div>
+                <div className="hidden hover:block text-gray-400 mt-2 text-sm">
+                  <p>Metadata Version: {nft.metadata_version}</p>
+                  <p>Creator: {nft.creator.slice(0, 10)}...</p>
+                </div>
               </div>
-              <div className="hidden hover:block text-gray-400 mt-2 text-sm">
-                <p>Metadata Version: {nft.metadata_version}</p>
-                <p>Creator: {nft.creator.slice(0, 10)}...</p>
-              </div>
+
+              <Link
+                key={nft.id.id} // Using the correct ID field
+                href={`/nft/${nft.id.id}`} // Redirect to the NFT details page
+                passHref // Ensure the link is passed correctly
+              >
+                <button className="font-semibold text-lg">
+                  Go to NFT Page &#8594;
+                </button>
+              </Link>
             </div>
-          ))}
+          ))}{" "}
         </div>
       </div>
 

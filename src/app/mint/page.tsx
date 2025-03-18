@@ -213,11 +213,8 @@ const MintPage = () => {
     }
   };
 
-  const { openModal, setOpenModal } = useContext(AppContext);
-  const [showModal, setShowModal] = useState<boolean>(false);
   const [isUnlocked, setIsUnlocked] = useState<boolean>(false);
   const [loyaltyId, setLoyaltyId] = useState<string>("");
-  const [open, setOpen] = useState<boolean>(false);
 
   const handleReveal = async () => {
     let hashcaseData = [];
@@ -397,7 +394,7 @@ const MintPage = () => {
       </div>
       <Collectable />
       <Footer />
-      {/* <Modal
+      <Modal
         context="Unlockable Content"
         openModal={isUnlocked}
         onClose={() => setIsUnlocked(false)}
@@ -410,15 +407,6 @@ const MintPage = () => {
           >
             https://suiscan.xyz/testnet/object/...
           </Link>
-        </div>
-      </Modal> */}
-      <Modal
-        context="Connect Your Wallet"
-        openModal={openModal}
-        onClose={() => setOpenModal(false)}
-      >
-        <div className="flex flex-col justify-center items-center gap-y-4 my-4 mx-4">
-          <WalletConnectionModal />
         </div>
       </Modal>
     </div>

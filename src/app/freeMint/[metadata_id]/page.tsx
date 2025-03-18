@@ -18,33 +18,23 @@ import { useEffect, useState } from "react";
 import React, { useContext } from "react";
 import Link from "next/link";
 
-import { AppContext } from "@/context/AppContext";
 import { useZkLogin } from "@mysten/enoki/react";
-import { Transaction } from "@mysten/sui/transactions";
 
 import { useSponsorSignAndExecute } from "../../hooks/useSponsorSignandExecute";
 
 import {
-  ConnectModal,
   useCurrentAccount,
-  useSuiClient,
   useSignAndExecuteTransaction,
 } from "@mysten/dapp-kit";
-import Modal from "@/components/Modal";
-import ZkLogin from "@/components/ZkLogin";
 
 import Collectable from "@/components/Collectable";
 import Footer from "@/components/Footer";
 import WalletConnectionModal from "@/components/WalletConnectionModal";
 
 import axiosInstance from "@/utils/axios";
-import {
-  claimNftHelper,
-  createCollectionHelper,
-  freeMintNftHelper,
-  mintLoyaltyHelper,
-  mintSuiLoyaltyHelper,
-} from "@/utils/contractHelperFunctions";
+import { claimNftHelper } from "@/utils/contractHelperFunctions";
+import { useNftTransactions } from "@/app/hooks/useNftTransactions";
+import UnlockableNft from "./UnlockableNft";
 
 interface Metadata {
   id: string;
@@ -79,6 +69,17 @@ export default function NFTPage() {
   const params = useParams();
   const [nftData, setNftData] = useState<Metadata | null>(null);
 
+  //needed for the NFT modal to function
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const openModal = () => {
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+  };
+
   const { address } = useZkLogin();
   const { sponsorSignAndExecute } = useSponsorSignAndExecute();
 
@@ -86,19 +87,14 @@ export default function NFTPage() {
   const { mutateAsync: signAndExecuteTransaction } =
     useSignAndExecuteTransaction();
 
-  const [uniqueId, setUniqueId] = useState<string | null>(null);
-
-  const [mintedNftAddress, setMintedNftAddress] = useState("");
-
-  const suiClient = useSuiClient();
-  // const { suiClient } = useSui();
+  const { freeMintNft } = useNftTransactions();
 
   useEffect(() => {
     const fetchNFTData = async () => {
       //we get the metadata instance using the id
       //we extract the collection_id from it
       //we use it to get the collection_instance
-      //we create the final NFT data by adding the collection name to the metadata
+      //we create the final NFT data by adding the (collection id, collection name & collection address) to the metadata
       const itemData = await axiosInstance.get("/platform/metadata/by-id", {
         params: {
           metadata_id: params.metadata_id,
@@ -122,10 +118,6 @@ export default function NFTPage() {
         collection_address: collection_instance.contract_address,
       };
 
-      setUniqueId(
-        `id${metadata_instance.id}collection${collection_instance.id}`
-      );
-
       // console.log(finalNftData);
 
       setNftData(finalNftData);
@@ -137,127 +129,78 @@ export default function NFTPage() {
   }, [params.metadata_id]);
 
   if (!nftData) {
-    return <div>Wrong URL</div>;
+    return <div className="h-screen w-screen text-center">Loading</div>;
   }
 
   const createFreeMintNft = async () => {
-    const nftForm = {
-      collection_id: nftData.collection_address || "", // Replace with the actual Collection object ID
-      title: nftData.title,
-      description: nftData.description,
-      image_url: nftData.image_url,
-      attributes: nftData.attributes || "",
-    };
-
-    const tx = await freeMintNftHelper(nftForm);
-    tx.setSender(currentAccount?.address!);
-
-    const notifyId = notifyPromise("Minting free mint NFT...", "info");
-    //trying to mint the NFT
-
-    let txResult;
+    const notifyId = notifyPromise("Minting NFT...", "info");
 
     try {
-      txResult = await signAndExecuteTransaction({
-        transaction: tx as any,
-        chain: "sui:testnet",
+      const nftForm = {
+        collection_id: nftData.collection_address || "", // Replace with the actual Collection object ID
+        title: nftData.title,
+        description: nftData.description,
+        image_url: nftData.image_url,
+        attributes: nftData.attributes || "",
+      };
+
+      const txDetails = await freeMintNft(nftForm);
+      // console.log(txDetails);
+
+      if (!txDetails?.events?.length) {
+        throw new Error("No events found in transaction details.");
+      }
+
+      const emittedNFTsInformation = txDetails.events[0]
+        ?.parsedJson as EmittedNFTInfo;
+
+      if (!emittedNFTsInformation) {
+        throw new Error("Invalid NFT data structure in transaction details.");
+      }
+
+      const { collection_id, mint_price, nft_id, token_number } =
+        emittedNFTsInformation;
+      //get the collection_instance with the collection address
+      // const response = await axiosInstance.get(
+      //   "/platform/collection-by-address",
+      //   {
+      //     params: {
+      //       contract_address: collection_id,
+      //     },
+      //   }
+      // );
+
+      // console.log("THE DATA THAT WE ARE GETTING BACK AFTER MINTING");
+      // console.log(collection_id);
+      // console.log("COMPARING THE DATAS");
+      // console.log(nftData.collection_id);
+      // console.log(nftData.collection_address);
+
+      // const { collection_instance } = response.data;
+
+      // console.log(collection_instance.id);
+
+      //constructing the item-listing to add to the items table
+      const itemToAdd = {
+        name: nftData.title,
+        description: nftData.description,
+        image_uri: nftData.image_url,
+        collection_id: nftData.collection_id,
+        token_id: parseInt(token_number),
+        type: "buyandclaim",
+        attributes: nftData.attributes || "",
+      };
+
+      //sending the request to add the item
+      const itemResponse = await axiosInstance.post("/platform/item/create", {
+        item: itemToAdd,
       });
 
-      notifyResolve(notifyId, "Minted free mint NFT", "success");
-
-      toast(
-        <div
-          onClick={() =>
-            window.open(
-              `https://suiscan.xyz/testnet/account/${currentAccount?.address}`,
-              "_blank"
-            )
-          }
-        >
-          Click to view loyalty on Suiscan
-        </div>,
-        {
-          position: "top-center",
-          autoClose: false,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-          progress: undefined,
-          theme: "light",
-          transition: Bounce,
-        }
-      );
-
-      // console.log("reached the end of the transaction");
+      notifyResolve(notifyId, "NFT Minted", "success");
     } catch (error) {
-      notifyResolve(notifyId, "Error minting loyalty", "error");
-      console.error("Error minting loyalty:", error);
+      notifyResolve(notifyId, "Error minting NFT", "error");
+      console.error("Error minting NFT:", error);
     }
-
-    //fetch the minted nft event
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    // console.log(txResult);
-    // console.log(txResult?.digest);
-
-    const digest = txResult?.digest || "";
-
-    const txDetails = await suiClient.getTransactionBlock({
-      digest,
-      options: { showEvents: true },
-    });
-
-    // console.log(txDetails);
-
-    if (!txDetails?.events?.length) {
-      throw new Error("No events found in transaction details.");
-    }
-
-    const emittedNFTsInformation = txDetails.events[0]
-      ?.parsedJson as EmittedNFTInfo;
-
-    if (!emittedNFTsInformation) {
-      throw new Error("Invalid NFT data structure in transaction details.");
-    }
-
-    const { collection_id, mint_price, nft_id, token_number } =
-      emittedNFTsInformation;
-    //get the collection_instance with the collection address
-    // const response = await axiosInstance.get(
-    //   "/platform/collection-by-address",
-    //   {
-    //     params: {
-    //       contract_address: collection_id,
-    //     },
-    //   }
-    // );
-
-    // console.log("THE DATA THAT WE ARE GETTING BACK AFTER MINTING");
-    // console.log(collection_id);
-    // console.log("COMPARING THE DATAS");
-    // console.log(nftData.collection_id);
-    // console.log(nftData.collection_address);
-
-    // const { collection_instance } = response.data;
-
-    // console.log(collection_instance.id);
-
-    //constructing the item-listing to add to the items table
-    const itemToAdd = {
-      name: nftData.title,
-      description: nftData.description,
-      image_uri: nftData.image_url,
-      collection_id: nftData.collection_id,
-      token_id: parseInt(token_number),
-      type: "buyandclaim",
-      attributes: nftData.attributes || "",
-    };
-
-    //sending the request to add the item
-    const itemResponse = await axiosInstance.post("/platform/item/create", {
-      item: itemToAdd,
-    });
 
     // console.log(itemResponse);
   };
@@ -306,24 +249,9 @@ export default function NFTPage() {
           transition: Bounce,
         }
       );
-
-      // console.log(txResult);
-
-      // const digest = txResult.digest;
-
-      // await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // const txDetails = await suiClient.getTransactionBlock({
-      //   digest,
-      //   options: { showEvents: true },
-      // });
-
-      // console.log(txDetails);
-
-      // console.log("reached the end of the transaction");
     } catch (error) {
       notifyResolve(notifyId, "Error claiming NFT", "error");
-      console.error("Error minting loyalty:", error);
+      console.error("Error claiming NFT:", error);
     }
   };
 
@@ -331,7 +259,7 @@ export default function NFTPage() {
     <div className={`flex flex-col bg-[#00041F] ${workSans.className}`}>
       <div className="flex flex-col px-8 md:px-16">
         <Link
-          href="/"
+          href={`/collections`}
           className="hidden md:flex items-center justify-start gap-x-2 my-4 px-20"
         >
           <ArrowW />
@@ -364,6 +292,7 @@ export default function NFTPage() {
                 </div>
               </div>
             </div>
+
             <div className="flex flex-col justify-start gap-y-2 my-4 w-full">
               <p className="text-white md:text-4xl text-2xl tracking-wide font-bold">
                 {nftData.name}
@@ -381,25 +310,35 @@ export default function NFTPage() {
                 </div>
               </div>
             </div>
+
             <div className="flex items-center justify-center my-4">
               <p className="md:text-xl text-sm text-white">
                 {nftData.description}
               </p>
             </div>
+
             <div className="flex items-center justify-start w-full"></div>
+            <div className="flex items-center justify-start w-full">
+              <div className="flex items-center md:w-auto w-full justify-between my-4 bg-[#4DA2FF] backdrop-blur-md rounded-lg px-3 py-3 gap-x-2">
+                <button
+                  onClick={openModal}
+                  className="flex items-center gap-x-2"
+                >
+                  <EyeW />
+                  <p className="text-white md:text-lg text-sm">
+                    Reveal the Content
+                  </p>
+                </button>
+                <ArrowW className="rotate-180 ml-4" />
+              </div>
+            </div>
+
             <div className="flex flex-col gap-4 items-center justify-start my-4 w-full">
               <button
                 onClick={createFreeMintNft}
                 className="md:px-6 md:py-3 px-4 py-2 rounded-full md:text-xl text-sm bg-white text-black border-[1px] border-b-4 border-[#4DA2FF] flex items-center gap-x-2"
               >
                 Mint the NFT
-                <ArrowB />
-              </button>
-              <button
-                onClick={claimNFT}
-                className="md:px-6 md:py-3 px-4 py-2 rounded-full md:text-xl text-sm bg-white text-black border-[1px] border-b-4 border-[#4DA2FF] flex items-center gap-x-2"
-              >
-                Claim the NFT
                 <ArrowB />
               </button>
             </div>
@@ -455,9 +394,9 @@ export default function NFTPage() {
           </div>
         </div>
       </div>
-      <WalletConnectionModal />
 
-      <Collectable />
+      <UnlockableNft isOpen={isModalOpen} closeModal={closeModal} />
+
       <Footer />
       {/* <Modal
         context="Unlockable Content"

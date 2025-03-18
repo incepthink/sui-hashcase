@@ -9,15 +9,20 @@ import { HashcaseText } from "../assets";
 import { AppContext } from "@/context/AppContext";
 import { useContext, useEffect, useState } from "react";
 import Hamburger from "hamburger-react";
+import { useGlobalAppStore } from "@/store/globalAppStore";
 
 const workSans = Work_Sans({ subsets: ["latin"] });
 
 export const Navbar = () => {
   const currentAccount = useCurrentAccount();
   const { address } = useZkLogin();
-  const { openModal, setOpenModal } = useContext(AppContext);
+  // const { openModal, setOpenModal } = useContext(AppContext);
+  const { openModal, setOpenModal } = useGlobalAppStore();
+
   const [isOpen, setOpen] = useState<boolean>(false);
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
+
+  const user_address = currentAccount?.address || address;
 
   useEffect(() => {
     if (currentAccount?.address) {
@@ -71,7 +76,7 @@ export const Navbar = () => {
                 Collections
               </Link>
               <Link
-                href="/profile"
+                href={`/${user_address}`}
                 className="hover:bg-white/10 hover:backdrop-blur-md rounded-full transition-colors duration-300 px-4 py-2"
               >
                 Profile

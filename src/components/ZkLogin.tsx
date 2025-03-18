@@ -1,5 +1,5 @@
 "use client";
-import React, { useContext, useEffect } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import {
   useEnokiFlow,
   useZkLogin,
@@ -18,6 +18,8 @@ interface ZkLoginProps {
 
 const ZkLogin = ({ setOpenModal }: ZkLoginProps) => {
   const { state, dispatch } = useContext(AppContext);
+
+  const [loading, setLoading] = useState(true);
 
   const clientGoogleId = process.env.NEXT_PUBLIC_CLIENT_ID_GOOGLE;
 
@@ -47,6 +49,7 @@ const ZkLogin = ({ setOpenModal }: ZkLoginProps) => {
         handleUserCreation();
       }
     }
+    setLoading(false);
   }, [address]);
 
   const handleSignIn = () => {
@@ -73,6 +76,10 @@ const ZkLogin = ({ setOpenModal }: ZkLoginProps) => {
         console.error(error);
       });
   };
+
+  if (loading) {
+    return <div>Loading Enoki Login...</div>;
+  }
 
   if (address) {
     return (
