@@ -65,15 +65,13 @@ const MintSuccessModal: React.FC<MintSuccessModalProps> = ({
         ) : showContents ? (
           <div className={styles.successContent}>
             <h2>Congratulations!</h2>
-            <p>You've successfully minted:</p>
+            <p>You&apos;ve successfully minted:</p>
             <h3>{nftData.title}</h3>
-
             {nftData.image_url && (
               <div className={styles.nftImage}>
                 <img src={nftData.image_url} alt={nftData.title} />
               </div>
             )}
-
             <div className={styles.tweetSection}>
               <p>Share your new NFT with the world!</p>
               <a
@@ -85,7 +83,6 @@ const MintSuccessModal: React.FC<MintSuccessModalProps> = ({
                 Tweet about it
               </a>
             </div>
-
             <button onClick={onClose} className={styles.closeButton}>
               Close
             </button>
