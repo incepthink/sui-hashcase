@@ -74,60 +74,75 @@ const CollectionsPage: React.FC = () => {
       </div>
       <div ref={collectionsRef} className="p-8 max-w-[1600px] mx-auto">
         <h1 className="text-4xl font-bold text-center mb-8">Collections</h1>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {collections.map((collection) => (
             <Link
               key={collection.id}
               href={`/collection/${collection.contract_address}`} // Navigate to the individual collection page
               className="block" // Ensure the Link behaves like a block element
             >
-              <div className="bg-[#0a0f3b] shadow-lg rounded-lg p-4 transform transition-transform duration-300 hover:scale-105 hover:bg-[#141a52] cursor-pointer">
-                <img
-                  src={
-                    collection.image_uri || "https://via.placeholder.com/300"
-                  }
-                  alt={collection.name}
-                  className="w-full h-48 object-cover rounded-md"
-                />
-                <h2 className="text-2xl font-semibold mt-4">
-                  {collection.name}
-                </h2>
-                <p className="text-sm text-gray-300 mt-2">
-                  {collection.description.length > 100
-                    ? `${collection.description.substring(0, 100)}...`
-                    : collection.description}
-                </p>
-                <div className="mt-4">
-                  <p className="text-blue-200">
-                    Chain: {collection.chain_type}
-                  </p>
-                  <p className="text-blue-300">
-                    Contract:{" "}
-                    {collection.contract_address.length > 15
-                      ? `${collection.contract_address.substring(0, 15)}...`
-                      : collection.contract_address}
-                  </p>
-                  <p className="text-blue-400">
-                    Priority: {collection.priority}
-                  </p>
+              <div
+                key={collection.id}
+                className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 overflow-hidden shadow-lg transition-all hover:scale-[1.02] hover:bg-white/15"
+              >
+                {/* Chain Badge */}
+                <div className="absolute top-4 left-4 bg-black/30 px-3 py-1 rounded-full backdrop-blur-sm">
+                  <span className="text-xs font-semibold text-white uppercase">
+                    {collection.chain_type || "SUI"}
+                  </span>
                 </div>
 
-                {/* Buttons for Metadata & Loyalties */}
-                <div className="mt-4 flex gap-4">
-                  <Link
-                    href={`/metadatas/${collection.id}`}
-                    onClick={(e) => e.stopPropagation()} // Prevent the parent Link from being triggered
-                    className="bg-[#313197] text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-[#3e3eb7] transition"
-                  >
-                    Metadata
-                  </Link>
-                  <Link
-                    href={`/loyalties/${collection.id}`}
-                    onClick={(e) => e.stopPropagation()} // Prevent the parent Link from being triggered
-                    className="bg-[#313197] text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-[#3e3eb7] transition"
-                  >
-                    Loyalties
-                  </Link>
+                {/* NFT Image */}
+                <div className="relative aspect-square">
+                  <img
+                    src={
+                      collection.image_uri || "https://via.placeholder.com/300"
+                    }
+                    alt={collection.name}
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
+                    <h3 className="text-xl font-bold text-white">
+                      {collection.name}
+                    </h3>
+                  </div>
+                </div>
+
+                {/* Card Content */}
+                <div className="p-4 flex flex-col justify-between min-h-[150px]">
+                  {/* Description with line clamp */}
+                  <p className="text-sm text-white/80 line-clamp-2 mb-4">
+                    {collection.description}
+                  </p>
+
+                  {/* Stats Row */}
+                  <div className="flex justify-between items-center text-xs text-green-400 mb-3">
+                    <span>
+                      {" "}
+                      Contract:{" "}
+                      {collection.contract_address.length > 15
+                        ? `${collection.contract_address.substring(0, 15)}...`
+                        : collection.contract_address}
+                    </span>
+                  </div>
+
+                  {/* Buttons for Metadata & Loyalties */}
+                  <div className="flex gap-4">
+                    <Link
+                      href={`/metadatas/${collection.id}`}
+                      onClick={(e) => e.stopPropagation()} // Prevent the parent Link from being triggered
+                      className="bg-[#313197] text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-[#3e3eb7] transition"
+                    >
+                      Metadata
+                    </Link>
+                    <Link
+                      href={`/loyalties/${collection.id}`}
+                      onClick={(e) => e.stopPropagation()} // Prevent the parent Link from being triggered
+                      className="bg-[#313197] text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-[#3e3eb7] transition"
+                    >
+                      Loyalties
+                    </Link>
+                  </div>
                 </div>
               </div>
             </Link>

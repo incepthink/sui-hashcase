@@ -194,8 +194,6 @@ const NftPage = () => {
         unlockableContent={unlockableContent}
         closeModal={closeModal}
       />
-
-      <Footer />
     </div>
   );
 };

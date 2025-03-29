@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import axiosInstance from "@/utils/axios";
 
 import { Flame } from "lucide-react";
+import toast from "react-hot-toast";
 
 type Loyalty = {
   id: number;
@@ -76,8 +77,15 @@ const LoyaltyCodesTable = ({
         }
       );
 
+      toast.success(
+        `${loyaltyResponse.data.message} : Total Points - ${loyaltyResponse.data.totalPoints}`
+      );
+
+      setOffChainPointsState(loyaltyResponse.data.totalPoints);
+
       console.log(loyaltyResponse);
     } catch (error) {
+      toast.error("Loyalty Code has already been used");
       console.log(error);
     }
   };

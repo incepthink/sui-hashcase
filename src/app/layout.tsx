@@ -8,6 +8,7 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { Toaster } from "react-hot-toast";
 import WalletConnectionModal from "@/components/WalletConnectionModal";
+import Footer from "@/components/Footer";
 
 const dmSans = DM_Sans({ subsets: ["latin"] });
 
@@ -30,6 +31,7 @@ export default function RootLayout({
           {children}
           <WalletConnectionModal />
           <ToastContainer />
+          <Footer />
         </body>
       </html>
     </TanstackProvider>

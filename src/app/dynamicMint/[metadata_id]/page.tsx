@@ -328,7 +328,6 @@ export default function NFTPage() {
       <WalletConnectionModal />
 
       <Collectable />
-      <Footer />
       <Modal
         context="Unlockable Content"
         openModal={isUnlocked}

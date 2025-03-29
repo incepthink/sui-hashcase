@@ -192,25 +192,34 @@ const App: React.FC = () => {
 
       <div className="p-8 max-w-[1600px] mx-auto">
         <h1 className="text-4xl font-bold text-center mb-8">Collections </h1>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
           {processedNFTs?.map((nft) => (
             <div
-              key={nft.id.id} // Using the correct ID field
-              className="bg-[#0a0f3b] shadow-lg rounded-lg p-4 transform transition-transform duration-300 hover:scale-105 hover:bg-[#141a52] cursor-pointer"
+              key={nft.id.id}
+              className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 overflow-hidden shadow-lg transition-all hover:scale-[1.02] hover:bg-white/15"
             >
-              {/* the following div is used just for opening modal on clicking */}
-              <div onClick={() => openModal(nft)}>
+              {/* NFT Image */}
+              <div
+                onClick={() => openModal(nft)}
+                className="relative aspect-square cursor-pointer"
+              >
                 <img
                   src={nft.image_url || "https://via.placeholder.com/300"}
                   alt={nft.name}
-                  className="w-full h-48 object-cover rounded-md"
+                  className="w-full h-full object-cover"
                 />
-                <h2 className="text-2xl font-semibold mt-4">{nft.name}</h2>
-                <p className="text-sm text-gray-300 mt-2">
-                  {nft.description.length > 100
-                    ? `${nft.description.substring(0, 100)}...`
-                    : nft.description}
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
+                  <h3 className="text-xl font-bold text-white">{nft.name}</h3>
+                </div>
+              </div>
+
+              {/* Card Content */}
+              <div className="p-4 flex flex-col justify-between min-h-[150px]">
+                {/* Description with line clamp */}
+                <p className="text-sm text-white/80 line-clamp-2 mb-4">
+                  {nft.description}
                 </p>
+
                 <div className="mt-4">
                   <p className="text-blue-200">Mint Price: {nft.mint_price}</p>
                   <p className="text-blue-300">
@@ -223,23 +232,22 @@ const App: React.FC = () => {
                     Token Number: {nft.token_number}
                   </p>
                 </div>
-                <div className="hidden hover:block text-gray-400 mt-2 text-sm">
-                  <p>Metadata Version: {nft.metadata_version}</p>
-                  <p>Creator: {nft.creator.slice(0, 10)}...</p>
+
+                {/* Stats Row */}
+                <div className="flex justify-between items-center text-xs text-green-400 mb-3">
+                  <Link
+                    key={nft.id.id} // Using the correct ID field
+                    href={`/nft/${nft.id.id}`} // Redirect to the NFT details page
+                    passHref // Ensure the link is passed correctly
+                  >
+                    <button className="font-semibold text-lg">
+                      Go to NFT Page &#8594;
+                    </button>
+                  </Link>
                 </div>
               </div>
-
-              <Link
-                key={nft.id.id} // Using the correct ID field
-                href={`/nft/${nft.id.id}`} // Redirect to the NFT details page
-                passHref // Ensure the link is passed correctly
-              >
-                <button className="font-semibold text-lg">
-                  Go to NFT Page &#8594;
-                </button>
-              </Link>
             </div>
-          ))}{" "}
+          ))}
         </div>
       </div>
 
