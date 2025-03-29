@@ -393,7 +393,6 @@ const MintPage = () => {
         </div>
       </div>
       <Collectable />
-      <Footer />
       <Modal
         context="Unlockable Content"
         openModal={isUnlocked}

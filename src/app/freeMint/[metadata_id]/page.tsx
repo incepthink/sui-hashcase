@@ -35,6 +35,7 @@ import axiosInstance from "@/utils/axios";
 import { claimNftHelper } from "@/utils/contractHelperFunctions";
 import { useNftTransactions } from "@/app/hooks/useNftTransactions";
 import UnlockableNft from "./UnlockableNft";
+import MintSuccessModal from "./MintSuccessModal";
 
 interface Metadata {
   id: string;
@@ -68,6 +69,9 @@ const testnet_loyalty =
 export default function NFTPage() {
   const params = useParams();
   const [nftData, setNftData] = useState<Metadata | null>(null);
+
+  // states for the modal for showing minting success
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   //needed for the NFT modal to function
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -160,27 +164,7 @@ export default function NFTPage() {
 
       const { collection_id, mint_price, nft_id, token_number } =
         emittedNFTsInformation;
-      //get the collection_instance with the collection address
-      // const response = await axiosInstance.get(
-      //   "/platform/collection-by-address",
-      //   {
-      //     params: {
-      //       contract_address: collection_id,
-      //     },
-      //   }
-      // );
 
-      // console.log("THE DATA THAT WE ARE GETTING BACK AFTER MINTING");
-      // console.log(collection_id);
-      // console.log("COMPARING THE DATAS");
-      // console.log(nftData.collection_id);
-      // console.log(nftData.collection_address);
-
-      // const { collection_instance } = response.data;
-
-      // console.log(collection_instance.id);
-
-      //constructing the item-listing to add to the items table
       const itemToAdd = {
         name: nftData.title,
         description: nftData.description,
@@ -196,6 +180,9 @@ export default function NFTPage() {
         item: itemToAdd,
       });
 
+      // Show success modal
+      setShowSuccessModal(true);
+
       notifyResolve(notifyId, "NFT Minted", "success");
     } catch (error) {
       notifyResolve(notifyId, "Error minting NFT", "error");
@@ -203,56 +190,6 @@ export default function NFTPage() {
     }
 
     // console.log(itemResponse);
-  };
-
-  const claimNFT = async () => {
-    const claimNFTForm = {
-      collection_id:
-        "0x39b9b9eeaff544e9ba514e82482f3ba507b96394ee180ef2926d426eac9e38d6", // Replace with the actual Collection object ID
-      nft_id:
-        "0x3ec3eb2399edab14bd299eb284e5943a26cab65a684fcde18f989f55c03ff480",
-    };
-
-    const tx = await claimNftHelper(claimNFTForm);
-    tx.setSender(currentAccount?.address!);
-
-    const notifyId = notifyPromise("Claiming NFT...", "info");
-
-    try {
-      const txResult = await signAndExecuteTransaction({
-        transaction: tx as any,
-        chain: "sui:testnet",
-      });
-
-      notifyResolve(notifyId, "NFT Claimed", "success");
-
-      toast(
-        <div
-          onClick={() =>
-            window.open(
-              `https://suiscan.xyz/testnet/account/${currentAccount?.address}`,
-              "_blank"
-            )
-          }
-        >
-          Click to view loyalty on Suiscan
-        </div>,
-        {
-          position: "top-center",
-          autoClose: false,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-          progress: undefined,
-          theme: "light",
-          transition: Bounce,
-        }
-      );
-    } catch (error) {
-      notifyResolve(notifyId, "Error claiming NFT", "error");
-      console.error("Error claiming NFT:", error);
-    }
   };
 
   return (
@@ -394,10 +331,13 @@ export default function NFTPage() {
           </div>
         </div>
       </div>
-
       <UnlockableNft isOpen={isModalOpen} closeModal={closeModal} />
-
-      <Footer />
+      {showSuccessModal && (
+        <MintSuccessModal
+          onClose={() => setShowSuccessModal(false)}
+          nftData={nftData}
+        />
+      )}
       {/* <Modal
         context="Unlockable Content"
         openModal={isUnlocked}

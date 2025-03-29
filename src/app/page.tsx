@@ -32,7 +32,6 @@ export default function Home() {
         <hr className="md:m-[100px] m-[20px] bg-gradient-to-r from-transparent via-white to-transparent opacity-20" />
         <Collectable />
         <WalletConnectionModal />
-        <Footer />
       </div>
     </>
   );
