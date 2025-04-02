@@ -9,6 +9,8 @@ import "./page.css";
 import axiosInstance from "@/utils/axios";
 import NFTModal from "./ClaimNFTModal";
 import Link from "next/link";
+import { useGlobalAppStore } from "@/store/globalAppStore";
+import UpdateProfileModal from "./UpdateProfileModal";
 
 type NFT = {
   attributes?: string[];
@@ -25,8 +27,10 @@ type NFT = {
 
 const App: React.FC = () => {
   const [userData, setUserData] = useState({
-    Logo: "",
-    collection_id: "",
+    profile_image:
+      "https://i.pinimg.com/564x/49/cc/10/49cc10386c922de5e2e3c0bb66956e65.jpg",
+    banner_image:
+      "https://i.pinimg.com/564x/49/cc/10/49cc10386c922de5e2e3c0bb66956e65.jpg",
     description: "",
     user_id: "",
     username: "",
@@ -44,6 +48,9 @@ const App: React.FC = () => {
   //needed for the NFT modal to function
   const [selectedModalNft, setSelectedModalNft] = useState<NFT | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // needing for updating profile
+  const [showModal, setShowModal] = useState(false);
 
   const openModal = (nft: NFT) => {
     setSelectedModalNft(nft);
@@ -145,15 +152,36 @@ const App: React.FC = () => {
     const user = response.data.user;
 
     const newUserData = {
-      Logo: "https://i.pinimg.com/564x/49/cc/10/49cc10386c922de5e2e3c0bb66956e65.jpg",
-      collection_id: "someCollection",
-      description: "someDescription",
+      profile_image:
+        user.profile_image ||
+        "https://i.pinimg.com/564x/49/cc/10/49cc10386c922de5e2e3c0bb66956e65.jpg",
+      banner_image:
+        user.banner_image ||
+        "https://i.pinimg.com/564x/49/cc/10/49cc10386c922de5e2e3c0bb66956e65.jpg",
+
+      description: user.description || "Hello, I am using Sui Hashcase",
       user_id: user.id,
-      username: user.sui_wallet_address,
+      username: user.username,
       nfts: 0,
     };
 
     setUserData(newUserData);
+  };
+
+  const handleUpdateProfile = () => {
+    getDatabase();
+    // You might want to add additional logic here like showing a success message
+  };
+
+  const updateUser = async () => {
+    const response = await axiosInstance.post("/user", {
+      description: "new second description",
+      username: "super user",
+      profile_image: "url",
+      banner_image: "url",
+    });
+
+    console.log(response);
   };
 
   // if (isLoading) return <div>Loading...</div>;
@@ -164,7 +192,7 @@ const App: React.FC = () => {
       <div className="w-full h-[200px] overflow-hidden">
         <img
           src={
-            userData.Logo ||
+            userData.banner_image ||
             "https://i.pinimg.com/564x/49/cc/10/49cc10386c922de5e2e3c0bb66956e65.jpg"
           }
           alt="Banner"
@@ -173,11 +201,11 @@ const App: React.FC = () => {
       </div>
 
       {/* Profile Section */}
-      <div className="flex items-center mt-[-50px] p-6  shadow-lg rounded-lg w-4/5 mx-auto">
+      <div className="flex items-center mt-[-20px] p-6  shadow-lg rounded-lg w-4/5 mx-auto">
         <div className="flex-shrink-0">
           <img
             src={
-              userData.Logo ||
+              userData.profile_image ||
               "https://i.pinimg.com/564x/49/cc/10/49cc10386c922de5e2e3c0bb66956e65.jpg"
             }
             alt="Logo"
@@ -186,7 +214,13 @@ const App: React.FC = () => {
         </div>
         <div className="ml-6">
           <h2 className="text-2xl font-semibold">{userData.username}</h2>
-          <p className="text-gray-600">{userData.description}</p>
+          <p className="text-gray-300 text-xl">{userData.description}</p>
+          <button
+            onClick={() => setShowModal(true)}
+            className="bg-blue-700 px-2 py-1 rounded-md"
+          >
+            Edit Profile
+          </button>
         </div>
       </div>
 
@@ -256,6 +290,15 @@ const App: React.FC = () => {
         selectedNft={selectedModalNft!}
         onClose={closeModal}
       />
+
+      {/* Render the modal conditionally */}
+      {showModal && (
+        <UpdateProfileModal
+          userData={userData}
+          onClose={() => setShowModal(false)}
+          onUpdate={handleUpdateProfile}
+        />
+      )}
     </div>
   );
 };
