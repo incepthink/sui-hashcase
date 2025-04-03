@@ -5,6 +5,7 @@ import { useCurrentAccount, useSuiClientQuery } from "@mysten/dapp-kit";
 import { useZkLogin } from "@mysten/enoki/react";
 import { useRouter } from "next/navigation";
 import "./page.css";
+import { MdEdit } from "react-icons/md";
 
 import axiosInstance from "@/utils/axios";
 import NFTModal from "./ClaimNFTModal";
@@ -144,10 +145,11 @@ const App: React.FC = () => {
     if (userAddress) {
       getDatabase();
     }
-  }, []);
+  }, [userAddress]);
 
   const getDatabase = async () => {
     const response = await axiosInstance.get("/user");
+    console.log(response.data);
 
     const user = response.data.user;
 
@@ -201,25 +203,29 @@ const App: React.FC = () => {
       </div>
 
       {/* Profile Section */}
-      <div className="flex items-center mt-[-20px] p-6  shadow-lg rounded-lg w-4/5 mx-auto">
-        <div className="flex-shrink-0">
-          <img
-            src={
-              userData.profile_image ||
-              "https://i.pinimg.com/564x/49/cc/10/49cc10386c922de5e2e3c0bb66956e65.jpg"
-            }
-            alt="Logo"
-            className="w-24 h-24 rounded-full border-2 border-gray-300"
-          />
-        </div>
-        <div className="ml-6">
-          <h2 className="text-2xl font-semibold">{userData.username}</h2>
-          <p className="text-gray-300 text-xl">{userData.description}</p>
+      <div className=" mt-[-20px] p-6  shadow-lg rounded-lg w-4/5 mx-auto">
+        <div className="flex items-center gap-8">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <img
+                src={
+                  userData.profile_image ||
+                  "https://i.pinimg.com/564x/49/cc/10/49cc10386c922de5e2e3c0bb66956e65.jpg"
+                }
+                alt="Logo"
+                className="w-24 h-24 rounded-full border-2 border-gray-300"
+              />
+            </div>
+            <div className="ml-6">
+              <h2 className="text-2xl font-semibold">{userData.username}</h2>
+              <p className="text-gray-300 text-xl">{userData.description}</p>
+            </div>
+          </div>
           <button
             onClick={() => setShowModal(true)}
-            className="bg-blue-700 px-2 py-1 rounded-md"
+            className="bg-white/30 p-2 rounded-full"
           >
-            Edit Profile
+            <MdEdit className="text-xl" />
           </button>
         </div>
       </div>
