@@ -45,7 +45,7 @@ export default function SuiWalletConnect() {
       const response = await axiosInstance.get("auth/wallet/request-token");
 
       const message = response.data.message;
-      console.log(message);
+      // console.log(message);
       const authToken = response.data.token;
 
       const signedMessageResponse = await signPersonalMessage({
@@ -88,6 +88,7 @@ export default function SuiWalletConnect() {
       setCreatingUser(false);
     }
   };
+  s;
 
   useEffect(() => {
     if (currentAccount) {
