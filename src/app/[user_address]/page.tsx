@@ -12,6 +12,7 @@ import NFTModal from "./ClaimNFTModal";
 import Link from "next/link";
 import { useGlobalAppStore } from "@/store/globalAppStore";
 import UpdateProfileModal from "./UpdateProfileModal";
+import ConnectButton from "@/components/ConnectButton";
 
 type NFT = {
   attributes?: string[];
@@ -43,6 +44,7 @@ const App: React.FC = () => {
   const [collections, setCollections] = useState([]);
 
   const currentAccount = useCurrentAccount();
+
   const { address: zkloginaddress } = useZkLogin();
   const router = useRouter();
 
@@ -204,30 +206,37 @@ const App: React.FC = () => {
 
       {/* Profile Section */}
       <div className=" mt-[-20px] p-6  shadow-lg rounded-lg w-4/5 mx-auto">
-        <div className="flex items-center gap-8">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <img
-                src={
-                  userData.profile_image ||
-                  "https://i.pinimg.com/564x/49/cc/10/49cc10386c922de5e2e3c0bb66956e65.jpg"
-                }
-                alt="Logo"
-                className="w-24 h-24 rounded-full border-2 border-gray-300"
-              />
+        {currentAccount ? (
+          <div className="flex items-center gap-8">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <img
+                  src={
+                    userData.profile_image ||
+                    "https://i.pinimg.com/564x/49/cc/10/49cc10386c922de5e2e3c0bb66956e65.jpg"
+                  }
+                  alt="Logo"
+                  className="w-24 h-24 rounded-full border-2 border-gray-300"
+                />
+              </div>
+              <div className="ml-6">
+                <h2 className="text-2xl font-semibold">{userData.username}</h2>
+                <p className="text-gray-300 text-xl">{userData.description}</p>
+              </div>
             </div>
-            <div className="ml-6">
-              <h2 className="text-2xl font-semibold">{userData.username}</h2>
-              <p className="text-gray-300 text-xl">{userData.description}</p>
-            </div>
+            <button
+              onClick={() => setShowModal(true)}
+              className="bg-white/30 p-2 rounded-full"
+            >
+              <MdEdit className="text-xl" />
+            </button>
           </div>
-          <button
-            onClick={() => setShowModal(true)}
-            className="bg-white/30 p-2 rounded-full"
-          >
-            <MdEdit className="text-xl" />
-          </button>
-        </div>
+        ) : (
+          <div className="mt-6 flex gap-8 items-center">
+            <p className="text-2xl font-semibold">Profile</p>
+            <ConnectButton />
+          </div>
+        )}
       </div>
 
       <div className="p-8 max-w-[1600px] mx-auto">

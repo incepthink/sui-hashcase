@@ -10,6 +10,7 @@ import { AppContext } from "@/context/AppContext";
 import { useContext, useEffect, useState } from "react";
 import Hamburger from "hamburger-react";
 import { useGlobalAppStore } from "@/store/globalAppStore";
+import ConnectButton from "./ConnectButton";
 
 const workSans = Work_Sans({ subsets: ["latin"] });
 
@@ -17,7 +18,6 @@ export const Navbar = () => {
   const currentAccount = useCurrentAccount();
   const { address } = useZkLogin();
   // const { openModal, setOpenModal } = useContext(AppContext);
-  const { openModal, setOpenModal } = useGlobalAppStore();
 
   const [isOpen, setOpen] = useState<boolean>(false);
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
@@ -36,13 +36,6 @@ export const Navbar = () => {
     }
   }, [address, currentAccount]);
 
-  const handleModal = () => {
-    if (openModal) {
-      setOpenModal(false);
-    } else {
-      setOpenModal(true);
-    }
-  };
   return (
     <div className="bg-[#00041F]">
       <div className="px-4">
@@ -84,19 +77,7 @@ export const Navbar = () => {
             </div>
           </div>
 
-          <button
-            onClick={handleModal}
-            className="md:flex hidden justify-center items-center gap-x-4 px-4 py-2 border-2 border-b-4 border-[#4DA2FF] text-white font-semibold rounded-full"
-          >
-            {walletAddress ? (
-              walletAddress
-            ) : (
-              <>
-                Connect
-                <Wallet />
-              </>
-            )}
-          </button>
+          <ConnectButton />
         </div>
       </div>
       {isOpen && (
@@ -113,19 +94,7 @@ export const Navbar = () => {
             Contact Us
           </Link>
           <div className="flex w-full my-4">
-            <button
-              onClick={handleModal}
-              className="flex justify-center items-center gap-x-4 px-4 py-2 border-2 border-b-4 border-[#4DA2FF] text-white font-semibold rounded-full w-full"
-            >
-              {walletAddress ? (
-                walletAddress
-              ) : (
-                <>
-                  Connect
-                  <Wallet />
-                </>
-              )}
-            </button>
+            <ConnectButton />
           </div>
         </div>
       )}
