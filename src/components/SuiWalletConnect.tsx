@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { Wallet as LucideWalletIcon } from "lucide-react"; // Import the Wallet icon
 
@@ -45,7 +45,7 @@ export default function SuiWalletConnect() {
       const response = await axiosInstance.get("auth/wallet/request-token");
 
       const message = response.data.message;
-      // console.log(message);
+      console.log(message);
       const authToken = response.data.token;
 
       const signedMessageResponse = await signPersonalMessage({
@@ -89,8 +89,12 @@ export default function SuiWalletConnect() {
     }
   };
 
+  // used to try to run the effect a single time
+  // so that we don't get the message signer popup multiple times
+  const ranEffect = useRef(false);
+
   useEffect(() => {
-    if (currentAccount) {
+    if (currentAccount && ranEffect.current === true) {
       if (!isUserVerified && !creatingUser) {
         setCreatingUser(true);
         console.log("call the user create server api");
@@ -98,6 +102,11 @@ export default function SuiWalletConnect() {
       }
     }
     setLoading(false);
+
+    return () => {
+      console.log("unmounted");
+      ranEffect.current = true;
+    };
   }, [currentAccount]);
 
   const handleWalletConnect = async (wallet: any) => {
