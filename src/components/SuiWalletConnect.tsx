@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { Wallet as LucideWalletIcon } from "lucide-react"; // Import the Wallet icon
 
@@ -45,7 +45,7 @@ export default function SuiWalletConnect() {
       const response = await axiosInstance.get("auth/wallet/request-token");
 
       const message = response.data.message;
-      // console.log(message);
+      console.log(message);
       const authToken = response.data.token;
 
       const signedMessageResponse = await signPersonalMessage({
@@ -147,7 +147,4 @@ export default function SuiWalletConnect() {
       {"Connect Sui Wallet"}{" "}
     </button>
   ));
-}
-function useRef(arg0: boolean) {
-  throw new Error("Function not implemented.");
 }
