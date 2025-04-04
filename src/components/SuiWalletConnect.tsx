@@ -88,7 +88,6 @@ export default function SuiWalletConnect() {
       setCreatingUser(false);
     }
   };
-  s;
 
   useEffect(() => {
     if (currentAccount) {
