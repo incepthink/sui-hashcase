@@ -34,9 +34,11 @@ export default function SuiWalletConnect() {
   const wallets = useWallets();
 
   const [loading, setLoading] = useState(true);
+  const [creatingUser, setCreatingUser] = useState(false);
 
   const handleUserCreation = async () => {
     if (isUserVerified) return;
+
     const notifyId = notifyPromise("Connecting...", "info");
 
     try {
@@ -64,6 +66,11 @@ export default function SuiWalletConnect() {
         walletAddress: user_instance.sui_wallet_address,
         email: user_instance.email,
         badges: user_instance.badges,
+        user_name: user_instance.username || "guest_user",
+        description:
+          user_instance.description || "this is a guest_user description",
+        profile_image: user_instance.profile_image,
+        banner_image: user_instance.banner_image,
       };
 
       //this will set the user state in our global zustand store
@@ -78,12 +85,14 @@ export default function SuiWalletConnect() {
       //   return false;
     } finally {
       setOpenModal(false);
+      setCreatingUser(false);
     }
   };
 
   useEffect(() => {
     if (currentAccount) {
-      if (!isUserVerified) {
+      if (!isUserVerified && !creatingUser) {
+        setCreatingUser(true);
         console.log("call the user create server api");
         handleUserCreation();
       }
@@ -95,7 +104,6 @@ export default function SuiWalletConnect() {
     try {
       await connect({ wallet });
       console.log("connected to", wallet.name);
-      handleUserCreation();
     } catch (error) {
       console.log("Failed to connect to the wallet");
       console.error(error);
