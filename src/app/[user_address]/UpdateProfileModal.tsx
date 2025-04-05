@@ -98,8 +98,9 @@ const UpdateProfileModal = ({
 
           // ✅ delete old profile image if it exists and is different from the new one
           if (
+            formData.profile_image &&
             formData.profile_image !== newUrl &&
-            formData.profile_image !==
+            formData.profileImageUrl !==
               "https://i.pinimg.com/564x/49/cc/10/49cc10386c922de5e2e3c0bb66956e65.jpg"
           ) {
             await axiosInstance.post("/platform/sui/profile/delete", {
@@ -138,7 +139,12 @@ const UpdateProfileModal = ({
           const newUrl = url.split("?")[0];
 
           // ✅ delete old banner image if it exists and is different from the new one
-          if (formData.banner_image && formData.banner_image !== newUrl) {
+          if (
+            formData.banner_image &&
+            formData.banner_image !== newUrl &&
+            formData.bannerImageUrl !==
+              "https://i.pinimg.com/564x/49/cc/10/49cc10386c922de5e2e3c0bb66956e65.jpg"
+          ) {
             await axiosInstance.post("/platform/sui/profile/delete", {
               imageUrl: formData.banner_image,
             });
