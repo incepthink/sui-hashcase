@@ -100,7 +100,7 @@ const UpdateProfileModal = ({
           if (
             formData.profile_image &&
             formData.profile_image !== newUrl &&
-            formData.profileImageUrl !==
+            formData.profile_image !==
               "https://i.pinimg.com/564x/49/cc/10/49cc10386c922de5e2e3c0bb66956e65.jpg"
           ) {
             await axiosInstance.post("/platform/sui/profile/delete", {
@@ -142,7 +142,7 @@ const UpdateProfileModal = ({
           if (
             formData.banner_image &&
             formData.banner_image !== newUrl &&
-            formData.bannerImageUrl !==
+            formData.banner_image !==
               "https://i.pinimg.com/564x/49/cc/10/49cc10386c922de5e2e3c0bb66956e65.jpg"
           ) {
             await axiosInstance.post("/platform/sui/profile/delete", {
