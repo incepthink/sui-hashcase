@@ -129,13 +129,6 @@ const CollectionsPage: React.FC = () => {
                   {/* Buttons for Metadata & Loyalties */}
                   <div className="flex gap-4">
                     <Link
-                      href={`/metadatas/${collection.id}`}
-                      onClick={(e) => e.stopPropagation()} // Prevent the parent Link from being triggered
-                      className="bg-[#313197] text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-[#3e3eb7] transition"
-                    >
-                      Metadata
-                    </Link>
-                    <Link
                       href={`/loyalties/${collection.id}`}
                       onClick={(e) => e.stopPropagation()} // Prevent the parent Link from being triggered
                       className="bg-[#313197] text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-[#3e3eb7] transition"

@@ -22,16 +22,10 @@ interface User {
   badges: string;
 }
 
-const LoyaltyCodesTable = ({
-  owner_id,
-  user,
-}: {
-  owner_id: number;
-  user: User;
-}) => {
+const LoyaltyCodesTable = ({ owner_id }: { owner_id: number }) => {
   // to store the fetched loyalty codes, points data & active streak
   const [loyaltyCodes, setLoyaltyCodes] = useState<Loyalty[]>([]);
-  const [offChainPointsState, setOffChainPointsState] = useState();
+  const [offChainPointsState, setOffChainPointsState] = useState(0);
   const [currentStreak, setCurrentStreak] = useState(0);
 
   const getLoyaltyCodesAndPoints = async () => {
@@ -42,48 +36,25 @@ const LoyaltyCodesTable = ({
     });
 
     setLoyaltyCodes(loyaltyResponse.data.loyalties);
-
-    const offChainPointsResponse = await axiosInstance.get(
-      "/platform/getLoyaltyPoints",
-      {
-        params: {
-          owner_id: owner_id,
-          user_id: user?.id,
-        },
-      }
-    );
-
-    // console.log(offChainPointsResponse);
-    setOffChainPointsState(offChainPointsResponse.data.points);
   };
 
-  //   let config = {
-  //     method: "post",
-  //     maxBodyLength: Infinity,
-  //     url: `http://localhost:8000/platform/daily-check-in?user_id=${user.id}&owner_id=${owner_id}`,
-  //     headers: {},
-  //   };
-
-  const handleAddLoyalty = async (code: string) => {
+  const handleAddLoyalty = async (code: string, value: number | undefined) => {
     try {
       const loyaltyResponse = await axiosInstance.post(
-        "/platform/addLoyaltyCode",
-        { code },
+        "user/achievements/add-points",
+        { code, value },
         {
           params: {
-            user_id: user.id,
             owner_id: owner_id,
           },
         }
       );
 
       toast.success(
-        `${loyaltyResponse.data.message} : Total Points - ${loyaltyResponse.data.totalPoints}`
+        `${loyaltyResponse.data.message} : Total Points - ${loyaltyResponse.data.user.total_points}`
       );
 
-      setOffChainPointsState(loyaltyResponse.data.totalPoints);
-
-      console.log(loyaltyResponse);
+      setOffChainPointsState(loyaltyResponse.data.user.total_points);
     } catch (error) {
       toast.error("Loyalty Code has already been used");
       console.log(error);
@@ -93,45 +64,27 @@ const LoyaltyCodesTable = ({
   const performDailyCheckIn = async () => {
     try {
       const checkInResponse = await axiosInstance.post(
-        "/platform/daily-check-in",
+        "user/achievements/extend-streak",
         null,
         {
           params: {
-            user_id: user.id,
             owner_id: owner_id,
           },
         }
       );
 
-      console.log(checkInResponse);
+      const user_achievements = checkInResponse.data.user_achievements;
+
+      setCurrentStreak(user_achievements.current_streak);
+      setOffChainPointsState(user_achievements.total_loyalty_points);
     } catch (error) {
       console.log(error);
-    }
-  };
-
-  const getStreakCount = async () => {
-    try {
-      const streakResponse = await axiosInstance.get("/platform/get-streak", {
-        params: {
-          user_id: user.id,
-          owner_id: owner_id,
-        },
-      });
-
-      console.log("WE ARE GETTING THE STREAK COUNT RESPONSE");
-      console.log(streakResponse);
-
-      setCurrentStreak(streakResponse.data.streakCount);
-    } catch (error) {
-      console.log("error while fetching streak");
-      console.error(error);
     }
   };
 
   useEffect(() => {
     getLoyaltyCodesAndPoints();
     performDailyCheckIn();
-    getStreakCount();
 
     // if (user.id) handleDailyCheckIn();
   }, []);
@@ -171,7 +124,9 @@ const LoyaltyCodesTable = ({
               >
                 <td className="p-4 font-semibold">
                   <button
-                    onClick={() => handleAddLoyalty(loyalty.code)}
+                    onClick={() =>
+                      handleAddLoyalty(loyalty.code, loyalty.value)
+                    }
                     className="bg-[#3f54b4] px-2 py-1 rounded-md"
                   >
                     {loyalty.code}
