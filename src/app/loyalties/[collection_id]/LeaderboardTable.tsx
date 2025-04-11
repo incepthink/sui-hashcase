@@ -4,8 +4,6 @@ import { useEffect, useState } from "react";
 import { LeaderboardPeriod } from "@/utils/enums";
 import axiosInstance from "@/utils/axios";
 
-import { useGlobalAppStore } from "@/store/globalAppStore";
-
 type LeaderboardEntry = {
   user_id: number;
   total_points: number;

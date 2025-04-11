@@ -17,13 +17,15 @@ import LeaderboardTable from "./LeaderboardTable";
 import LoyaltyCodesTable from "./LoyaltyCodesTable";
 import QuestsTable from "./QuestsTable";
 
-const CollectionLoyaltiesPage = () => {
+const PointsPage = () => {
   const params = useParams();
   const currentAccount = useCurrentAccount();
 
   const userTokenType =
     process.env.NEXT_PUBLIC_USER_TOKEN_TYPE ||
     "0x2::token::Token<0xdcbdbd4ef617c266d71cb8b5042d09cfcf2895bb7e05b1cbebd8adb5fc6f1f8d::loyalty_points::LOYALTY_POINTS>";
+
+  const { user } = useGlobalAppStore();
 
   const [ownerId, setOwnerId] = useState<number | null>(null);
   const [onChainPointsState, setOnChainPointsState] = useState(0);
@@ -32,27 +34,6 @@ const CollectionLoyaltiesPage = () => {
 
   const { addLoyaltyPoints, spendLoyaltyPoints } =
     useLoyaltyPointsTransactions();
-
-  // Fetch owner data
-  useEffect(() => {
-    const getOwnerData = async () => {
-      try {
-        const ownerResponse = await axiosInstance.get(
-          "/platform/owner-by-collection",
-          {
-            params: {
-              collection_id: params.collection_id,
-            },
-          }
-        );
-        setOwnerId(ownerResponse.data.owner_instance.id);
-      } catch (error) {
-        console.error("Error fetching owner data:", error);
-      }
-    };
-
-    getOwnerData();
-  }, [params.collection_id]);
 
   // Fetch token data
   // Add refetch capability to the query
@@ -196,12 +177,8 @@ const CollectionLoyaltiesPage = () => {
           </div>
         </div>
       </div>
-
-      {ownerId && <LoyaltyCodesTable owner_id={ownerId} />}
-      {ownerId && <LeaderboardTable owner_id={ownerId} />}
-      {ownerId && <QuestsTable owner_id={ownerId} />}
     </>
   );
 };
 
-export default CollectionLoyaltiesPage;
+export default PointsPage;
