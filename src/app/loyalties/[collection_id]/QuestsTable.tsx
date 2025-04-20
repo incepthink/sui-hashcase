@@ -1,66 +1,126 @@
 "use client";
 import { useEffect, useState } from "react";
 import axiosInstance from "@/utils/axios";
-import { Flag, Star, Key, Swords, Coins, CircleDot, Flame } from "lucide-react";
+import { Flame } from "lucide-react";
+import { CircularProgressbar } from "react-circular-progressbar";
+import "react-circular-progressbar/dist/styles.css";
 
-type Objective = {
-  objective: string;
-  value: number;
-  loyalty_code: string;
+type RequirementRule = {
+  field: string;
+  stringValues?: string[];
+  values?: number[];
+};
+
+type UserProgress = {
+  currentCount: number;
+  requiredCount: number;
+  isCompleted: boolean;
+  lastUpdated: string;
+  completedAt: string | null;
 };
 
 type Quest = {
   id: number;
   owner_id: number;
   title: string;
-  objectives: Objective[];
+  description: string;
+  reward_loyalty_points: number;
+  required_completions: number;
+  is_active: boolean;
+  requirement_rules: RequirementRule[];
   createdAt: string;
   updatedAt: string;
+  userProgress?: UserProgress;
 };
 
-interface User {
-  id: number;
-  walletAddress: string;
-  email: string | null;
-  badges: string;
-}
-
-const QuestsTable = ({ owner_id }: { owner_id: number }) => {
-  // State to store the fetched quests
+const QuestsTable = ({
+  owner_id,
+  user_id,
+}: {
+  owner_id: number;
+  user_id?: number;
+}) => {
   const [quests, setQuests] = useState<Quest[]>([]);
-  const [offChainPointsState, setOffChainPointsState] = useState<number>(0);
   const [currentStreak, setCurrentStreak] = useState<number>(0);
+  const [loading, setLoading] = useState<boolean>(true);
 
-  // Fetch quests and points
-  const getQuests = async () => {
+  const fetchQuests = async () => {
     try {
-      console.log("we are trying to call the get quests by owner endpoint");
+      setLoading(true);
+      const response = await axiosInstance.get("/user/quests", {
+        params: { owner_id, user_id }, // Include user_id to get progress
+      });
 
-      const questsResponse = await axiosInstance.get(
-        "/platform/quest/by-owner",
+      console.log(response.data.quests);
+
+      setQuests(response.data.quests);
+    } catch (error) {
+      console.error("Error fetching quests:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleQuestAction = async (actionType: string, quest_id: number) => {
+    try {
+      const questActionResponse = await axiosInstance.post(
+        "/user/quest/complete-objective-single",
         {
-          params: {
-            owner_id: owner_id,
-          },
+          owner_id,
+          quest_id,
+          action: { type: actionType },
         }
       );
 
-      console.log("WE ARE LOGGING INSIDE THE GET QUESTS");
-      console.log(questsResponse);
-
-      setQuests(questsResponse.data.ownerQuests);
+      // Optimized update - no need to refetch all quests
+      setQuests((prevQuests) => {
+        return prevQuests.map((quest) => {
+          if (quest.id === quest_id) {
+            // Update only the specific quest that changed
+            return {
+              ...quest,
+              userProgress: questActionResponse.data.updatedQuest.progress,
+            };
+          }
+          return quest;
+        });
+      });
     } catch (error) {
-      console.error("Error fetching quests and points:", error);
+      console.error("Error updating quest:", error);
     }
   };
 
   useEffect(() => {
-    getQuests();
-  }, []);
+    fetchQuests();
+  }, [owner_id, user_id]);
+
+  if (loading) {
+    return (
+      <div className="bg-gradient-to-b from-[#00041f] to-[#030828] text-center py-8">
+        Loading quests...
+      </div>
+    );
+  }
+
+  if (!quests || quests.length === 0) {
+    return (
+      <div className="bg-gradient-to-b from-[#00041f] to-[#030828] text-center py-8">
+        No quests found
+      </div>
+    );
+  }
+
+  const activeQuests = quests.filter((quest) => quest.is_active);
+  const completedQuests = quests.filter(
+    (quest) => quest.userProgress?.isCompleted
+  );
+  const totalXp = quests.reduce(
+    (sum, quest) => sum + quest.reward_loyalty_points,
+    0
+  );
 
   return (
     <div className="bg-gradient-to-b from-[#00041f] to-[#030828] p-6 shadow-2xl">
-      {/* Container-Wrapper */}
       <div className="xl:max-w-[80%] mx-auto">
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
@@ -70,7 +130,7 @@ const QuestsTable = ({ owner_id }: { owner_id: number }) => {
           <div className="flex items-center space-x-4 text-white">
             <div className="bg-[#3f54b4]/50 px-4 py-2 rounded-full">
               <span className="text-base font-medium">
-                Active: {quests.length}
+                Active: {activeQuests.length}
               </span>
             </div>
             <div className="bg-[#3f54b4]/50 px-4 py-2 rounded-full flex items-center">
@@ -82,83 +142,102 @@ const QuestsTable = ({ owner_id }: { owner_id: number }) => {
           </div>
         </div>
 
-        {/* Table */}
-        <div className="overflow-x-auto">
-          <table className="w-full border-separate border-spacing-y-2">
-            <thead>
-              <tr className="text-left text-white/80 text-sm">
-                <th className="px-4 py-3 font-medium">QUEST</th>
-                <th className="px-4 py-3 font-medium text-right">POINTS</th>
-                <th className="px-4 py-3 font-medium text-right">STATUS</th>
-              </tr>
-            </thead>
-            <tbody>
-              {quests.map((quest) => (
-                <tr
-                  key={quest.id}
-                  className="hover:bg-white/5 transition-colors"
-                >
-                  <td className="px-4 py-3 rounded-l-lg">
-                    <div className="flex items-center space-x-3">
-                      <div className="bg-blue-400/20 p-2 rounded-lg">
-                        <Swords className="w-5 h-5 text-blue-400" />
-                      </div>
-                      <div>
-                        <h3 className="font-medium text-white">
-                          {quest.title}
-                        </h3>
-                        {quest.objectives.length > 0 && (
-                          <p className="text-sm text-white/60">
-                            {quest.objectives[0].objective}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    {quest.objectives.length > 0 && (
-                      <div className="flex justify-end items-center space-x-1 text-white">
-                        <Star className="w-4 h-4 text-purple-400" />
-                        <span>{quest.objectives[0].value}</span>
-                      </div>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 rounded-r-lg text-right ">
-                    <div className="flex justify-end">
-                      <div className="bg-green-400/20 text-green-400 px-3 py-1 rounded-full text-xs font-medium flex items-center">
-                        <CircleDot className="w-3 h-3 mr-1" />
-                        ACTIVE
-                      </div>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        {/* Quests List */}
+        <div className="space-y-4 mb-8">
+          {quests.map((quest) => {
+            const progress = quest.userProgress || {
+              currentCount: 0,
+              requiredCount: quest.required_completions,
+              isCompleted: false,
+            };
+            const percentage = Math.min(
+              Math.round(
+                (progress.currentCount / progress.requiredCount) * 100
+              ),
+              100
+            );
+
+            return (
+              <div
+                key={quest.id}
+                className="bg-[#1a1f3d]/80 hover:bg-[#1a1f3d] transition-colors rounded-lg p-4 flex items-center"
+              >
+                <div className="w-16 h-16 mr-4">
+                  <CircularProgressbar
+                    value={percentage}
+                    text={`${percentage}%`}
+                    styles={{
+                      path: {
+                        stroke: progress.isCompleted ? "#10B981" : "#3B82F6",
+                      },
+                      text: {
+                        fill: "#fff",
+                        fontSize: "24px",
+                      },
+                      trail: {
+                        stroke: "#1E293B",
+                      },
+                    }}
+                  />
+                </div>
+
+                <div className="flex-1">
+                  <h3 className="text-lg font-medium text-white">
+                    {quest.title}
+                  </h3>
+                  <p className="text-sm text-gray-400">{quest.description}</p>
+                  <div className="mt-2 flex items-center">
+                    <span className="text-yellow-400 text-sm font-medium">
+                      {quest.reward_loyalty_points} XP
+                    </span>
+                    <span
+                      className={`ml-4 px-2 py-1 rounded-full text-xs ${
+                        quest.is_active
+                          ? "bg-green-900/30 text-green-400"
+                          : "bg-red-900/30 text-red-400"
+                      }`}
+                    >
+                      {quest.is_active ? "Active" : "Inactive"}
+                    </span>
+                  </div>
+                </div>
+
+                {quest.is_active && !progress.isCompleted && (
+                  <button
+                    onClick={() =>
+                      handleQuestAction(
+                        quest.requirement_rules[0].stringValues?.[0] || "",
+                        quest.id
+                      )
+                    }
+                    className="ml-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white"
+                  >
+                    Complete Action
+                  </button>
+                )}
+              </div>
+            );
+          })}
         </div>
 
-        {/* Footer Stats */}
-        <div className="mt-6 grid grid-cols-3 gap-4 text-center text-white">
+        {/* Stats */}
+        <div className="grid grid-cols-3 gap-4 text-center text-white">
           <div className="bg-[#3f54b4]/20 p-3 rounded-lg">
             <p className="text-xs text-white/60">TOTAL QUESTS</p>
             <p className="text-xl font-bold">{quests.length}</p>
           </div>
           <div className="bg-[#3f54b4]/20 p-3 rounded-lg">
-            <p className="text-xs text-white/60">TOTAL XP</p>
-            <p className="text-xl font-bold">
-              {quests.reduce(
-                (sum, q) => sum + Math.floor(q.objectives[0]?.value || 0),
-                0
-              )}
-            </p>
+            <p className="text-xs text-white/60">COMPLETED</p>
+            <p className="text-xl font-bold">{completedQuests.length}</p>
           </div>
           <div className="bg-[#3f54b4]/20 p-3 rounded-lg">
-            <p className="text-xs text-white/60">COMPLETION</p>
-            <p className="text-xl font-bold">12%</p>
+            <p className="text-xs text-white/60">TOTAL XP</p>
+            <p className="text-xl font-bold">{totalXp}</p>
           </div>
         </div>
       </div>
     </div>
   );
 };
+
 export default QuestsTable;

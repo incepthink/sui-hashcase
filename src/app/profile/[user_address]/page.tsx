@@ -13,6 +13,7 @@ import Link from "next/link";
 import { useGlobalAppStore } from "@/store/globalAppStore";
 import UpdateProfileModal from "./UpdateProfileModal";
 import ConnectButton from "@/components/ConnectButton";
+import Image from "next/image";
 
 type NFT = {
   attributes?: string[];
@@ -97,9 +98,21 @@ const App: React.FC = () => {
     (item) => item?.data?.type === `${MY_PACKAGE_ID}::hashcase_module::NFT`
   );
 
+  const claimedNFTs = myLoyaltyData?.data.filter(
+    (item) =>
+      item?.data?.type === `${MY_PACKAGE_ID}::hashcase_module::ClaimedNFT`
+  );
+
+  console.log("logging the claimed nfts");
+  console.log(claimedNFTs);
+
   //processing the fetched data to only including the content fields
   //content fields contains all the data we need
   const processedNFTs = filteredNFTs?.map(
+    (nft) => (nft.data?.content as any).fields
+  );
+
+  const processedClaimedNFTs = claimedNFTs?.map(
     (nft) => (nft.data?.content as any).fields
   );
 
@@ -191,58 +204,125 @@ const App: React.FC = () => {
   // if (isLoading) return <div>Loading...</div>;
 
   return (
-    <div className="bg-gradient-to-b from-[#00041f] to-[#030828] text-white">
-      {/* Banner Section */}
-      <div className="w-full h-[200px] overflow-hidden">
-        <img
+    <div className="relative bg-gradient-to-b from-[#00041f] to-[#030828] text-white pb-10">
+      {/* Banner Image Background */}
+      <div className="relative w-full h-[200px]">
+        <Image
           src={
             userData.banner_image ||
             "https://i.pinimg.com/564x/49/cc/10/49cc10386c922de5e2e3c0bb66956e65.jpg"
           }
           alt="Banner"
-          className="w-full h-auto"
+          fill
+          className="object-cover"
+          priority
         />
+        {/* Overlay to mute the banner */}
+        <div className="absolute inset-0 bg-black/50 z-10" />
       </div>
 
       {/* Profile Section */}
-      <div className=" mt-[-20px] p-6  shadow-lg rounded-lg w-4/5 mx-auto">
-        {currentAccount ? (
-          <div className="flex items-center gap-8">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <img
-                  src={
-                    userData.profile_image ||
-                    "https://i.pinimg.com/564x/49/cc/10/49cc10386c922de5e2e3c0bb66956e65.jpg"
-                  }
-                  alt="Logo"
-                  className="w-24 h-24 rounded-full border-2 border-gray-300"
-                />
-              </div>
-              <div className="ml-6">
-                <h2 className="text-2xl font-semibold">{userData.username}</h2>
-                <p className="text-gray-300 text-xl">{userData.description}</p>
-              </div>
-            </div>
-            <button
-              onClick={() => setShowModal(true)}
-              className="bg-white/30 p-2 rounded-full"
-            >
-              <MdEdit className="text-xl" />
-            </button>
+      {currentAccount ? (
+        <div className="relative z-20 flex flex-col items-center -mt-16">
+          {/* Profile Image */}
+          <div className="w-32 h-32 rounded-full border-4 border-white overflow-hidden bg-white z-20">
+            <Image
+              src={
+                userData.profile_image ||
+                "https://i.pinimg.com/564x/49/cc/10/49cc10386c922de5e2e3c0bb66956e65.jpg"
+              }
+              alt="Profile"
+              width={128}
+              height={128}
+              className="object-cover w-full h-full"
+            />
           </div>
-        ) : (
-          <div className="mt-6 flex gap-8 items-center">
-            <p className="text-2xl font-semibold">Profile</p>
-            <ConnectButton />
+
+          {/* User Info */}
+          <div className="text-center mt-4">
+            <h2 className="text-xl font-semibold">{userData.username}</h2>
+            <p className="text-blue-400 text-sm">{userData.description}</p>
           </div>
-        )}
-      </div>
+
+          {/* Edit Button */}
+          <button
+            onClick={() => setShowModal(true)}
+            className="mt-2 flex items-center text-white text-sm font-medium hover:underline"
+          >
+            Edit Wallet
+            <MdEdit className="ml-1 text-blue-400 text-lg" />
+          </button>
+        </div>
+      ) : (
+        <div className="flex gap-2 my-4 items-center justify-center">
+          <p className="text-2xl font-semibold">Profile</p>
+          <ConnectButton />
+        </div>
+      )}
 
       <div className="p-8 max-w-[1600px] mx-auto">
-        <h1 className="text-4xl font-bold text-center mb-8">Collections </h1>
+        <h1 className="text-4xl font-bold text-center mb-8">Owned NFTs </h1>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
           {processedNFTs?.map((nft) => (
+            <div
+              key={nft.id.id}
+              className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 overflow-hidden shadow-lg transition-all hover:scale-[1.02] hover:bg-white/15"
+            >
+              {/* NFT Image */}
+              <div
+                onClick={() => openModal(nft)}
+                className="relative aspect-square cursor-pointer"
+              >
+                <img
+                  src={nft.image_url || "https://via.placeholder.com/300"}
+                  alt={nft.name}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
+                  <h3 className="text-xl font-bold text-white">{nft.name}</h3>
+                </div>
+              </div>
+
+              {/* Card Content */}
+              <div className="p-4 flex flex-col justify-between min-h-[150px]">
+                {/* Description with line clamp */}
+                <p className="text-sm text-white/80 line-clamp-2 mb-4">
+                  {nft.description}
+                </p>
+
+                <div className="mt-4">
+                  <p className="text-blue-200">Mint Price: {nft.mint_price}</p>
+                  <p className="text-blue-300">
+                    Collection ID:{" "}
+                    {nft.collection_id.length > 15
+                      ? `${nft.collection_id.substring(0, 15)}...`
+                      : nft.collection_id}
+                  </p>
+                  <p className="text-blue-400">
+                    Token Number: {nft.token_number}
+                  </p>
+                </div>
+
+                {/* Stats Row */}
+                <div className="flex justify-between items-center text-xs text-green-400 mb-3">
+                  <Link
+                    key={nft.id.id} // Using the correct ID field
+                    href={`/nft/${nft.id.id}`} // Redirect to the NFT details page
+                    passHref // Ensure the link is passed correctly
+                  >
+                    <button className="font-semibold text-lg">
+                      Go to NFT Page &#8594;
+                    </button>
+                  </Link>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <h1 className="text-4xl font-bold text-center mb-8">Claimed NFTs </h1>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+          {processedClaimedNFTs?.map((nft) => (
             <div
               key={nft.id.id}
               className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 overflow-hidden shadow-lg transition-all hover:scale-[1.02] hover:bg-white/15"

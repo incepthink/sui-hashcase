@@ -23,13 +23,13 @@ const Modal: React.FC<ModalProps> = ({
   return (
     <div
       onClick={onClose}
-      className={`fixed inset-0 flex justify-center items-center transition-colors ${
+      className={`fixed inset-0 flex justify-center items-center z-[99999] transition-colors ${
         openModal ? "visible bg-black/20" : "invisible"
       } `}
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className={`bg-[#00041F]/20 backdrop-blur-md text-white rounded-xl z-[100] shadow md:p-8 p-3 transition-all ${
+        className={`bg-[#00041F]/20 backdrop-blur-md text-white rounded-xl  shadow md:p-8 p-3 transition-all ${
           openModal ? "scale-100 opacity-100" : "scale-125 opacity-0"
         } `}
       >

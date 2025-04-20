@@ -36,6 +36,20 @@ const nextConfig = {
 
     return config;
   },
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "hash-collect.s3.ap-south-1.amazonaws.com",
+        pathname: "/**", // allow all paths under this domain
+      },
+      {
+        protocol: "https",
+        hostname: "i.pinimg.com",
+        pathname: "/**", // allow all paths under this domain
+      },
+    ],
+  },
 };
 
 export default nextConfig;
