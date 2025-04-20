@@ -75,6 +75,9 @@ const LoyaltyCodesTable = ({ owner_id }: { owner_id: number }) => {
 
       const user_achievements = checkInResponse.data.user_achievements;
 
+      console.log("this is the user achievement");
+      console.log(user_achievements);
+
       setCurrentStreak(user_achievements.current_streak);
       setOffChainPointsState(user_achievements.total_loyalty_points);
     } catch (error) {

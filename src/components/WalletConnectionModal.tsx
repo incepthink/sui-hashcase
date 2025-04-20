@@ -21,7 +21,7 @@ const WalletConnectionModal = () => {
       onClose={() => setOpenModal(false)}
     >
       {" "}
-      <div className="flex flex-col justify-center items-center gap-y-4 my-4 mx-4">
+      <div className="flex flex-col z-[9999] justify-center items-center gap-y-4 my-4 mx-4">
         <SuiWalletConnect />
         <ZkLogin setOpenModal={setOpenModal} />
       </div>
