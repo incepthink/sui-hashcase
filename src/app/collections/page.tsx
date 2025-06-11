@@ -93,6 +93,8 @@ const CollectionsPage: React.FC = () => {
     const res = await axiosInstance.get(
       `/platform/collections-sui?page=${page}&limit=12`
     );
+    console.log("COLLECTOINS RETURNED");
+    console.log(res.data);
     return res.data;
   };
 
@@ -129,7 +131,7 @@ const CollectionsPage: React.FC = () => {
           {collections.map((collection: any) => (
             <Link
               key={collection.id}
-              href={`/collection/${collection.contract_address}`}
+              href={`/collection/${collection.contract.contract_address}`}
               className="block"
             >
               <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 overflow-hidden shadow-lg transition-all hover:scale-[1.02] hover:bg-white/15">

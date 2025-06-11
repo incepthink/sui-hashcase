@@ -8,33 +8,41 @@ import React, { useContext } from "react";
 import axiosInstance from "@/utils/axios";
 import { Frown } from "lucide-react";
 import CustomNftModal from "./CustomNftModal";
+import {
+  Metadata,
+  MetadataSetWithAllMetadataInstances,
+} from "@/utils/modelTypes";
 
 interface Collection {
+  id: number;
   name: string;
   description?: string;
   image_uri?: string;
-  chain_type: string;
-  chain_id: number;
-  contract_address: string;
-  standard: string;
+  chain_name: string;
   owner_id: number;
-  paymaster_id?: number;
   priority?: number;
   attributes?: string;
-}
-
-interface NFTMetadata {
-  id: number;
-  title: string;
-  description: string;
-  animation_url: string;
-  image_url: string;
-  collection_id: number;
-  token_uri: string;
-  attributes: string;
+  contract_id?: number;
   createdAt: string;
   updatedAt: string;
+  contract: {
+    id: number;
+    chain_name: string;
+    contract_address: string;
+    standard: string;
+    paymaster_id?: number | null;
+    Chain: {
+      chain_name: string;
+      chain_id: number;
+      chain_type: string;
+    };
+  };
 }
+
+type Coordinates = {
+  latitude: number;
+  longitude: number;
+};
 
 export default function NFTPage() {
   const params = useParams();
@@ -51,34 +59,74 @@ export default function NFTPage() {
     setIsModalOpen(false);
   };
 
-  useEffect(() => {
-    const fetchNFTData = async () => {
-      const collectionData = await axiosInstance.get(
-        "/platform/collection-by-address",
-        {
-          params: {
-            contract_address: params.collection_address,
-          },
+  function getCurrentPosition(): Promise<Coordinates> {
+    return new Promise((resolve, reject) => {
+      navigator.geolocation.getCurrentPosition(
+        (position: GeolocationPosition) => {
+          const { latitude, longitude } = position.coords;
+          resolve({ latitude, longitude });
+        },
+        (error: GeolocationPositionError) => {
+          reject(error);
         }
       );
-      const { collection_instance } = collectionData.data;
+    });
+  }
 
-      console.log(collection_instance);
+  useEffect(() => {
+    const fetchNFTData = async () => {
+      try {
+        const collectionData = await axiosInstance.get(
+          "/platform/collection-by-address",
+          {
+            params: {
+              contract_address: params.collection_address,
+            },
+          }
+        );
+        const { collection_instance } = collectionData.data;
 
-      setCollectionData(collection_instance);
+        setCollectionData(collection_instance);
 
-      const response = await axiosInstance.get(
-        "platform/metadata/by-collection",
-        {
-          params: {
-            collection_id: collection_instance.id,
-          },
-        }
-      ); // Update with actual API endpoint
+        const response = await axiosInstance.get(
+          "platform/metadata/by-collection",
+          {
+            params: {
+              collection_id: collection_instance.id,
+            },
+          }
+        ); // Update with actual API endpoint
 
-      console.log(response);
+        setMetadata(response.data.metadata_instances);
 
-      setMetadata(response.data.metadata_instances);
+        const { latitude, longitude } = await getCurrentPosition();
+
+        const geofenced = await axiosInstance.get(
+          "/platform/metadata/geo-fenced",
+          {
+            params: {
+              user_lat: latitude,
+              user_lon: longitude,
+              collection_id: collection_instance.id,
+            },
+          }
+        );
+
+        setGeofencedMetadata(geofenced.data.data);
+
+        const randomizedToken = await axiosInstance.get(
+          "/platform/metadata-set/by-collection",
+          {
+            params: {
+              collection_id: collection_instance.id,
+            },
+          }
+        );
+
+        setRandomizedTokenMetadata(randomizedToken.data.metadataSets);
+      } catch (error) {
+        console.error(error);
+      }
     };
 
     if (params.collection_address) {
@@ -86,29 +134,13 @@ export default function NFTPage() {
     }
   }, [params.collection_address]);
 
-  const [metadata, setMetadata] = useState<NFTMetadata[]>([]);
+  const [allMetadata, setMetadata] = useState<Metadata[]>([]);
 
-  // useEffect(() => {
-  //   const fetchMetadata = async () => {
-  //     try {
-  //       const response = await axiosInstance.get(
-  //         "platform/metadata/by-collection",
-  //         {
-  //           params: {
-  //             collection_id: params.collection_id,
-  //           },
-  //         }
-  //       ); // Update with actual API endpoint
+  const [geofencedMetadata, setGeofencedMetadata] = useState<Metadata[]>([]);
 
-  //       console.log(response);
-
-  //       setMetadata(response.data.metadata_instances);
-  //     } catch (error) {
-  //       console.error("Error fetching metadata", error);
-  //     }
-  //   };
-  //   fetchMetadata();
-  // }, [params.collection_address]);
+  const [randomizedTokenMetadata, setRandomizedTokenMetadata] = useState<
+    MetadataSetWithAllMetadataInstances[]
+  >([]);
 
   if (!collectionData) {
     return <div>Collection does not exist</div>;
@@ -160,8 +192,8 @@ export default function NFTPage() {
             </button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-            {metadata.length > 0 ? (
-              metadata.map((metadata) => (
+            {allMetadata.length > 0 ? (
+              allMetadata.map((metadata) => (
                 <Link
                   key={metadata.id}
                   className="block"
@@ -220,12 +252,121 @@ export default function NFTPage() {
               </div>
             )}
           </div>{" "}
+          {randomizedTokenMetadata?.length > 0 && (
+            <h3 className="py-6 font-bold tracking-widest text-2xl bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500 drop-shadow-lg text-center">
+              Lucky Draw NFTs
+            </h3>
+          )}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+            {randomizedTokenMetadata?.length > 0 &&
+              randomizedTokenMetadata?.map((metadataSet) => (
+                <Link
+                  key={metadataSet.id}
+                  className="block"
+                  href={`/randomizedMint/${metadataSet.id}`}
+                >
+                  <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 overflow-hidden shadow-lg transition-all hover:scale-[1.02] hover:bg-white/15">
+                    {/* NFT Image */}
+                    <div className="relative aspect-square">
+                      <img
+                        src={
+                          metadataSet.Collection.image_uri ||
+                          "https://via.placeholder.com/300"
+                        }
+                        alt={metadataSet.name}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
+                        <h3 className="text-xl font-bold text-white">
+                          {metadataSet.name}
+                        </h3>
+                      </div>
+                    </div>
+
+                    {/* Card Content */}
+                    <div className="p-4 flex flex-col justify-between min-h-[150px]">
+                      {/* Description with line clamp */}
+                      <p className="text-sm text-white/80 line-clamp-2 mb-4">
+                        {metadataSet.Collection.description}
+                      </p>
+
+                      {/* Stats Row */}
+                      <div className="flex justify-between items-center text-xs text-green-400 mb-3">
+                        <p>
+                          Created:{" "}
+                          {new Date(metadataSet.createdAt).toLocaleDateString()}
+                        </p>
+                        <p>
+                          Updated:{" "}
+                          {new Date(metadataSet.updatedAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+          </div>{" "}
+          {geofencedMetadata.length > 0 && (
+            <h3 className="py-6 font-bold tracking-widest text-2xl bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500 drop-shadow-lg text-center">
+              Congratulations, There are Exclusive NFTs available in your
+              location
+            </h3>
+          )}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+            {geofencedMetadata.length > 0 &&
+              geofencedMetadata.map((metadata) => (
+                <Link
+                  key={metadata.id}
+                  className="block"
+                  href={`/freeMint/${metadata.id}`}
+                >
+                  <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 overflow-hidden shadow-lg transition-all hover:scale-[1.02] hover:bg-white/15">
+                    {/* NFT Image */}
+                    <div className="relative aspect-square">
+                      <img
+                        src={
+                          metadata.image_url ||
+                          "https://via.placeholder.com/300"
+                        }
+                        alt={metadata.title}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
+                        <h3 className="text-xl font-bold text-white">
+                          {metadata.title}
+                        </h3>
+                      </div>
+                    </div>
+
+                    {/* Card Content */}
+                    <div className="p-4 flex flex-col justify-between min-h-[150px]">
+                      {/* Description with line clamp */}
+                      <p className="text-sm text-white/80 line-clamp-2 mb-4">
+                        {metadata.description}
+                      </p>
+
+                      {/* Stats Row */}
+                      <div className="flex justify-between items-center text-xs text-green-400 mb-3">
+                        <p>
+                          Created:{" "}
+                          {new Date(metadata.createdAt).toLocaleDateString()}
+                        </p>
+                        <p>
+                          Updated:{" "}
+                          {new Date(metadata.updatedAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+          </div>{" "}
         </div>
       </div>
 
       <CustomNftModal
         isOpen={isModalOpen}
-        nftCollectionAddress={collectionData.contract_address!}
+        nftCollectionAddress={collectionData.contract.contract_address!}
         onClose={closeModal}
       />
     </div>

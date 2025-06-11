@@ -140,23 +140,11 @@ export const useNftTransactions = () => {
     }
   };
 
-  const updateNftMetadata = async (collection_id: string, nft_id: string) => {
-    if (!collection_id || !nft_id) {
+  const updateNftMetadata = async (updateForm: any) => {
+    if (!updateForm.collectionId || !updateForm.nftId) {
       toast.error("Please fill in all fields.");
       return;
     }
-
-    const updateForm = {
-      name: "new name",
-      description: "new description",
-      imageUrl: "someImageUrl",
-      attributes: "very,good,extra,special",
-      collectionId: collection_id,
-      nftId: nft_id,
-    };
-
-    console.log("THIS IS THE UPDATE FORM WE WANT TO SET THE NEW DATA TO");
-    console.log(updateForm);
 
     setIsLoading(true);
 
@@ -168,7 +156,7 @@ export const useNftTransactions = () => {
       );
       const attributesArray = updateForm.attributes
         .split(",")
-        .map((attr) => attr.trim())
+        .map((attr: string) => attr.trim())
         .filter(Boolean);
 
       tx.moveCall({

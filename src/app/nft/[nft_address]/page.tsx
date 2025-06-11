@@ -19,6 +19,12 @@ import { useNftTransactions } from "@/app/hooks/useNftTransactions";
 import axiosInstance from "@/utils/axios";
 import Footer from "@/components/Footer";
 import UnlockableNft from "./UnlockableNft";
+import toast from "react-hot-toast";
+import {
+  Collection,
+  Metadata,
+  MetadataInstanceWithMetadataSet,
+} from "@/utils/modelTypes";
 
 const workSans = Work_Sans({ subsets: ["latin"] });
 
@@ -36,11 +42,50 @@ const NftPage = () => {
     setIsModalOpen(false);
   };
 
-  const { claimNFT } = useNftTransactions();
+  const { claimNFT, updateNftMetadata } = useNftTransactions();
+  const [collection, setCollection] = useState<Collection | null>(null);
   const [unlockableContent, setUnlockableContent] = useState<string>("");
 
+  const [address, setAddress] = useState("");
+
+  const [upgradeData, setUpgradeData] =
+    useState<MetadataInstanceWithMetadataSet | null>(null);
+
   const handleClaimNft = async (collection_id: string, nftId: string) => {
-    await claimNFT(collection_id, nftId);
+    try {
+      if (!nftData) return;
+      // Claim NFT on the blockchain
+      await claimNFT(collection_id, nftId);
+
+      // Place the order
+      await axiosInstance.post("/user/order/create", {
+        collection_id: collection?.id,
+        token_id: nftData.token_number,
+        address: address,
+        status: "order_placed",
+      });
+    } catch (error) {
+      toast.error("Failed to place the order.");
+    }
+  };
+
+  const handleUpgradeNft = async (collection_id: string, nftId: string) => {
+    try {
+      if (!nftData || !upgradeData) return;
+
+      const updateForm = {
+        name: upgradeData.title!,
+        description: upgradeData.description,
+        imageUrl: upgradeData.image_url,
+        collectionId: collection_id,
+        attributes: "super, good",
+        nftId: nftId,
+      };
+
+      await updateNftMetadata(updateForm);
+    } catch (error) {
+      toast.error("Failed to upgrade the NFT");
+    }
   };
 
   const nft_address = (params.nft_address as string) || "";
@@ -53,8 +98,6 @@ const NftPage = () => {
   });
 
   const nftData = (nft?.data?.content as any)?.fields;
-
-  console.log(nftData);
 
   // Set collectionAddress only when nftData changes
   useEffect(() => {
@@ -70,9 +113,17 @@ const NftPage = () => {
         );
         const { collection_instance } = collectionData.data;
 
-        console.log(collection_instance);
+        const upgrade = await axiosInstance.get("/platform/metadata/next", {
+          params: {
+            collection_id: collection_instance.id,
+            token_id: nftData.token_number,
+          },
+        });
 
-        setUnlockableContent(collection_instance.unlockable_content);
+        setCollection(collection_instance);
+        setUpgradeData(upgrade.data.metadata_instance);
+
+        setUnlockableContent(collection_instance.contract.unlockable_content);
       }
     };
 
@@ -174,6 +225,15 @@ const NftPage = () => {
               </div>
             </div>
 
+            <input
+              id="address"
+              type="text"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              className="w-full px-4 py-4 text-base bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent placeholder:text-white/50 text-white"
+              placeholder="Enter the order address"
+            />
+
             <div className="flex flex-col gap-4 items-center md:items-start justify-start my-4 w-full">
               <button
                 onClick={() =>
@@ -184,6 +244,17 @@ const NftPage = () => {
                 Claim the NFT
                 <ArrowB />
               </button>
+              {upgradeData?.metadata_set?.isUpgradable && (
+                <button
+                  onClick={() =>
+                    handleUpgradeNft(nftData.collection_id, nftData.id.id)
+                  }
+                  className="md:px-6 md:py-3 px-4 py-2 rounded-full md:text-xl text-sm bg-white text-black border-[1px] border-b-4 border-[#4DA2FF] flex items-center gap-x-2 hover:bg-[#f0f0f0] transition-colors duration-300"
+                >
+                  Upgrade the NFT
+                  <ArrowB />
+                </button>
+              )}{" "}
             </div>
           </div>
         </div>

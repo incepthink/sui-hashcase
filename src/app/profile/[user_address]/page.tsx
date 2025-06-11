@@ -8,7 +8,6 @@ import "./page.css";
 import { MdEdit } from "react-icons/md";
 
 import axiosInstance from "@/utils/axios";
-import NFTModal from "./ClaimNFTModal";
 import Link from "next/link";
 import { useGlobalAppStore } from "@/store/globalAppStore";
 import UpdateProfileModal from "./UpdateProfileModal";
@@ -97,6 +96,9 @@ const App: React.FC = () => {
   const filteredNFTs = myLoyaltyData?.data.filter(
     (item) => item?.data?.type === `${MY_PACKAGE_ID}::hashcase_module::NFT`
   );
+
+  console.log("OWNED NFTS");
+  console.log(filteredNFTs);
 
   const claimedNFTs = myLoyaltyData?.data.filter(
     (item) =>
@@ -188,17 +190,6 @@ const App: React.FC = () => {
   const handleUpdateProfile = () => {
     getDatabase();
     // You might want to add additional logic here like showing a success message
-  };
-
-  const updateUser = async () => {
-    const response = await axiosInstance.post("/user", {
-      description: "new second description",
-      username: "super user",
-      profile_image: "url",
-      banner_image: "url",
-    });
-
-    console.log(response);
   };
 
   // if (isLoading) return <div>Loading...</div>;
@@ -379,12 +370,6 @@ const App: React.FC = () => {
           ))}
         </div>
       </div>
-
-      <NFTModal
-        isOpen={isModalOpen}
-        selectedNft={selectedModalNft!}
-        onClose={closeModal}
-      />
 
       {/* Render the modal conditionally */}
       {showModal && (
