@@ -45,6 +45,10 @@ const nextConfig = {
       },
       {
         protocol: "https",
+        hostname: "sui-hashcase-images.s3.ap-south-1.amazonaws.com",
+      },
+      {
+        protocol: "https",
         hostname: "i.pinimg.com",
         pathname: "/**", // allow all paths under this domain
       },
