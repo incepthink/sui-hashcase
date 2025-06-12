@@ -11,18 +11,21 @@ import { useCurrentAccount, useSuiClientQuery } from "@mysten/dapp-kit";
 import { PlusCircle, MinusCircle } from "lucide-react";
 import HeroImage from "@/assets/images/sui-bg.png";
 
+import { useGlobalAppStore } from "@/store/globalAppStore";
+
 import LeaderboardTable from "./LeaderboardTable";
 import LoyaltyCodesTable from "./LoyaltyCodesTable";
 import QuestsTable from "./QuestsTable";
-import BadgesTable from "./BadgesTable";
 
-const CollectionLoyaltiesPage = () => {
+const PointsPage = () => {
   const params = useParams();
   const currentAccount = useCurrentAccount();
 
   const userTokenType =
     process.env.NEXT_PUBLIC_USER_TOKEN_TYPE ||
     "0x2::token::Token<0xdcbdbd4ef617c266d71cb8b5042d09cfcf2895bb7e05b1cbebd8adb5fc6f1f8d::loyalty_points::LOYALTY_POINTS>";
+
+  const { user } = useGlobalAppStore();
 
   const [ownerId, setOwnerId] = useState<number | null>(null);
   const [onChainPointsState, setOnChainPointsState] = useState(0);
@@ -31,36 +34,6 @@ const CollectionLoyaltiesPage = () => {
 
   const { addLoyaltyPoints, spendLoyaltyPoints } =
     useLoyaltyPointsTransactions();
-
-  // States to handle the tab change
-  const [activeTab, setActiveTab] = useState<"loyalty" | "quests" | "badges">(
-    "loyalty"
-  );
-
-  const handleTabChange = (tab: "loyalty" | "quests" | "badges") => {
-    setActiveTab(tab);
-  };
-
-  // Fetch owner data
-  useEffect(() => {
-    const getOwnerData = async () => {
-      try {
-        const ownerResponse = await axiosInstance.get(
-          "/platform/owner-by-collection",
-          {
-            params: {
-              collection_id: params.collection_id,
-            },
-          }
-        );
-        setOwnerId(ownerResponse.data.owner_instance.id);
-      } catch (error) {
-        console.error("Error fetching owner data:", error);
-      }
-    };
-
-    getOwnerData();
-  }, [params.collection_id]);
 
   // Fetch token data
   // Add refetch capability to the query
@@ -204,51 +177,8 @@ const CollectionLoyaltiesPage = () => {
           </div>
         </div>
       </div>
-
-      {/* Navbar Element */}
-      <div className="bg-[#00041f] flex justify-center pt-10">
-        <div className="backdrop-blur-sm rounded-xl border p-2 flex gap-4 shadow-md">
-          {[
-            { key: "loyalty", label: "Loyalty Codes" },
-            { key: "quests", label: "Quests" },
-            { key: "badges", label: "Badges" },
-          ].map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => handleTabChange(tab.key as any)}
-              className={`relative px-6 py-2 rounded-lg font-semibold text-sm transition-all duration-300 
-          ${
-            activeTab === tab.key
-              ? "text-white bg-gradient-to-r from-blue-500 to-purple-500 shadow-md"
-              : "text-white/60 hover:text-white hover:bg-white/10"
-          }`}
-            >
-              {tab.label}
-              {/* Neon border glow on hover */}
-              <span
-                className={`absolute inset-0 rounded-lg pointer-events-none transition duration-300 ${
-                  activeTab === tab.key
-                    ? "ring-2 ring-blue-500/40"
-                    : "hover:ring-1 hover:ring-purple-500/20"
-                }`}
-              />
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {ownerId && activeTab === "loyalty" && (
-        <LoyaltyCodesTable owner_id={ownerId} />
-      )}
-      {ownerId && activeTab === "loyalty" && (
-        <LeaderboardTable owner_id={ownerId} />
-      )}
-
-      {ownerId && activeTab === "badges" && <BadgesTable owner_id={ownerId} />}
-
-      {ownerId && activeTab === "quests" && <QuestsTable owner_id={ownerId} />}
     </>
   );
 };
 
-export default CollectionLoyaltiesPage;
+export default PointsPage;

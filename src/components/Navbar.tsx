@@ -69,7 +69,7 @@ export const Navbar = () => {
                 Collections
               </Link>
               <Link
-                href={`/${user_address}`}
+                href={`/profile/${user_address}`}
                 className="hover:bg-white/10 hover:backdrop-blur-md rounded-full transition-colors duration-300 px-4 py-2"
               >
                 Profile
@@ -82,7 +82,7 @@ export const Navbar = () => {
       </div>
       {isOpen && (
         <div
-          className={`md:hidden absolute w-full text-right p-2 flex-col justify-center items-center bg-[#00041F]/10 backdrop-blur-md text-white gap-y-8  ml-auto z-10`}
+          className={`md:hidden fixed top-16 left-0 w-full z-[9999] bg-[#00041F]/90 backdrop-blur-md text-white flex flex-col items-start px-6 py-4 gap-y-6`}
         >
           <Link className="m-4 flex  justify-start" href={"/"}>
             Home

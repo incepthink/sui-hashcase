@@ -9,7 +9,7 @@ import Send from "@/assets/images/send-Regular.svg";
 import Eye from "@/assets/images/eye_Icon.png";
 import Nft from "@/assets/nft-token.jpeg";
 import { Work_Sans } from "next/font/google";
-import { notifyPromise, notifyResolve } from "@/utils/notify";
+import notify, { notifyPromise, notifyResolve } from "@/utils/notify";
 import { Bounce, toast } from "react-toastify";
 import EyeW from "@/assets/eye-white.svg";
 
@@ -36,6 +36,7 @@ import { claimNftHelper } from "@/utils/contractHelperFunctions";
 import { useNftTransactions } from "@/app/hooks/useNftTransactions";
 import UnlockableNft from "./UnlockableNft";
 import MintSuccessModal from "./MintSuccessModal";
+import { useGlobalAppStore } from "@/store/globalAppStore";
 
 interface Metadata {
   id: string;
@@ -91,14 +92,12 @@ export default function NFTPage() {
   const { mutateAsync: signAndExecuteTransaction } =
     useSignAndExecuteTransaction();
 
+  const { userWalletAddress } = useGlobalAppStore();
+
   const { freeMintNft } = useNftTransactions();
 
   useEffect(() => {
     const fetchNFTData = async () => {
-      //we get the metadata instance using the id
-      //we extract the collection_id from it
-      //we use it to get the collection_instance
-      //we create the final NFT data by adding the (collection id, collection name & collection address) to the metadata
       const itemData = await axiosInstance.get("/platform/metadata/by-id", {
         params: {
           metadata_id: params.metadata_id,
@@ -106,23 +105,17 @@ export default function NFTPage() {
       });
 
       const { metadata_instance } = itemData.data;
-      const collectionData = await axiosInstance.get("/platform/collection", {
-        params: {
-          collection_id: metadata_instance.collection_id,
-        },
-      });
-      const { collection_instance } = collectionData.data;
-
-      // console.log(collection_instance);
 
       const finalNftData = {
         ...metadata_instance,
-        collection_id: collection_instance.id,
-        collection_name: collection_instance.name,
-        collection_address: collection_instance.contract_address,
+        collection_id: metadata_instance.collection.id,
+        collection_name: metadata_instance.collection.name,
+        collection_address:
+          metadata_instance.collection.contract.contract_address,
       };
 
-      // console.log(finalNftData);
+      console.log("FINAL NFT DTA");
+      console.log(finalNftData);
 
       setNftData(finalNftData);
     };
@@ -135,6 +128,40 @@ export default function NFTPage() {
   if (!nftData) {
     return <div className="h-screen w-screen text-center">Loading</div>;
   }
+
+  const handleGaslessMintAndTransfer = async () => {
+    const notifyId = notifyPromise(
+      "Minting NFT... this might take some time...",
+      "info"
+    );
+
+    try {
+      const nftForm = {
+        collection_id: nftData.collection_address || "", // Replace with the actual Collection object ID
+        title: nftData.title,
+        description: nftData.description,
+        image_url: nftData.image_url,
+        attributes: nftData.attributes || "",
+      };
+
+      const mintAndTransferResponse = await axiosInstance.post(
+        "/user/sui-nft/backend-mint",
+        {
+          nftForm,
+        },
+        {
+          params: { user_address: currentAccount?.address },
+        }
+      );
+
+      notifyResolve(notifyId, "NFT Minted... Please Check Wallet", "success");
+
+      console.log(mintAndTransferResponse);
+    } catch (error) {
+      notifyResolve(notifyId, "Error minting NFT", "error");
+      console.error(error);
+    }
+  };
 
   const createFreeMintNft = async () => {
     const notifyId = notifyPromise("Minting NFT...", "info");
@@ -171,12 +198,13 @@ export default function NFTPage() {
         image_uri: nftData.image_url,
         collection_id: nftData.collection_id,
         token_id: parseInt(token_number),
+        metadata_id: nftData.id,
         type: "buyandclaim",
         attributes: nftData.attributes || "",
       };
 
       //sending the request to add the item
-      const itemResponse = await axiosInstance.post("/platform/item/create", {
+      const itemResponse = await axiosInstance.post("/user/item/create", {
         item: itemToAdd,
       });
 
@@ -270,12 +298,22 @@ export default function NFTPage() {
               </div>
             </div>
 
-            <div className="flex flex-col gap-4 items-center justify-start my-4 w-full">
+            <div className="flex flex-col gap-4 items-center justify-start mt-2 w-full">
               <button
                 onClick={createFreeMintNft}
                 className="md:px-6 md:py-3 px-4 py-2 rounded-full md:text-xl text-sm bg-white text-black border-[1px] border-b-4 border-[#4DA2FF] flex items-center gap-x-2"
               >
                 Mint the NFT
+                <ArrowB />
+              </button>
+            </div>
+
+            <div className="flex flex-col gap-4 items-center justify-start my-2 w-full">
+              <button
+                onClick={handleGaslessMintAndTransfer}
+                className="md:px-6 md:py-3 px-4 py-2 rounded-full md:text-xl text-sm bg-white text-black border-[1px] border-b-4 border-[#4DA2FF] flex items-center gap-x-2"
+              >
+                Gasless Mint
                 <ArrowB />
               </button>
             </div>
