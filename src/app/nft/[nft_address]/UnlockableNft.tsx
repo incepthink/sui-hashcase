@@ -38,7 +38,10 @@ const UnlockableNft: React.FC<UnlockableNft> = ({
           <X size={24} />
         </button>
 
-        <div>{unlockableContent}</div>
+        {/* Content with proper wrapping */}
+        <div className="break-words whitespace-pre-wrap max-h-[200px] overflow-y-auto">
+          {unlockableContent}
+        </div>
 
         {/* Buttons */}
         <div className="flex flex-col gap-4">

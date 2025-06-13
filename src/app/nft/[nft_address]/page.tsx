@@ -113,6 +113,10 @@ const NftPage = () => {
         );
         const { collection_instance } = collectionData.data;
 
+        setCollection(collection_instance);
+
+        setUnlockableContent(collection_instance.contract.unlockable_content);
+
         const upgrade = await axiosInstance.get("/platform/metadata/next", {
           params: {
             collection_id: collection_instance.id,
@@ -120,10 +124,7 @@ const NftPage = () => {
           },
         });
 
-        setCollection(collection_instance);
         setUpgradeData(upgrade.data.metadata_instance);
-
-        setUnlockableContent(collection_instance.contract.unlockable_content);
       }
     };
 
@@ -210,20 +211,22 @@ const NftPage = () => {
               </p>
             </div>
 
-            <div className="flex items-center justify-start w-full">
-              <div className="flex items-center md:w-auto w-full justify-between my-4 bg-[#4DA2FF] backdrop-blur-md rounded-lg px-3 py-3 gap-x-2">
-                <button
-                  onClick={openModal}
-                  className="flex items-center gap-x-2"
-                >
-                  <EyeW />
-                  <p className="text-white md:text-lg text-sm">
-                    Reveal the Content
-                  </p>
-                </button>
-                <ArrowW className="rotate-180 ml-4" />
+            {unlockableContent && (
+              <div className="flex items-center justify-start w-full">
+                <div className="flex items-center md:w-auto w-full justify-between my-4 bg-[#4DA2FF] backdrop-blur-md rounded-lg px-3 py-3 gap-x-2">
+                  <button
+                    onClick={openModal}
+                    className="flex items-center gap-x-2"
+                  >
+                    <EyeW />
+                    <p className="text-white md:text-lg text-sm">
+                      Reveal the Content
+                    </p>
+                  </button>
+                  <ArrowW className="rotate-180 ml-4" />
+                </div>
               </div>
-            </div>
+            )}
 
             <input
               id="address"
