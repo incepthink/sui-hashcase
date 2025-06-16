@@ -25,17 +25,18 @@ export const Hero = () => {
             Turn your audience into <br />{" "}
             <span className="text-[#4DA2FF]"> Superfans! </span>
           </p>
-          <p className="md:text-xl text-sm text-white text-center my-4">
+          <p className="md:text-xl text-sm text-white text-center mt-4">
             Engage your audience with better, smarter loyalty and rewards
-            campaigns. Integrate the <br className="hidden md:block" /> power of
-            Web 2.5 into your application with near-zero effort.
+            campaigns
+          </p>
+          <p className="md:text-xl text-sm text-white text-center">
+            Integrate the power of Web 2.5 into your application with near-zero
+            effort
           </p>
         </div>
         <div className="flex items-center justify-center my-4 w-full">
-          <Link
-            href="/mint"
-            className="px-6 py-3 rounded-full md:text-xl text-sm bg-white text-black border-[1px] border-b-4 border-[#4DA2FF] flex items-center gap-x-2"
-          >
+          <Link href="/mint" className="btn-primary">
+            {" "}
             Claim Free NFT Now
             <ArrowB />
           </Link>
@@ -47,7 +48,7 @@ export const Hero = () => {
             className={`md:text-3xl text-2xl md:mt-0 md:mb-0 mb-4 mt-4 px-3 font-semibold text-white ${workSans.className}`}
           >
             Create memorable browsing & <br className="hidden md:block" />{" "}
-            Checkout Experience
+            Checkout Experiences
           </p>
           <p
             className={`md:text-lg text-sm text-white px-3 ${workSans.className}`}

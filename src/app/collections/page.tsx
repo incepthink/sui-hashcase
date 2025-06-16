@@ -34,13 +34,13 @@ const HeroSection = ({
   scrollToCollections: () => void;
 }) => {
   return (
-    <div className="relative h-[900px] w-full overflow-hidden">
+    <div className="relative h-[730px] w-full overflow-hidden">
       {/* Background layer - darker, more transparent */}
       <div className="absolute top-0 left-0 right-0 h-[690px] z-0">
         <Image
           src={backgroundImageHeroSection}
           alt="Background layer"
-          layout="cover"
+          layout="fill"
           objectFit="cover"
           className="bg-opacity-70"
           priority
@@ -93,8 +93,6 @@ const CollectionsPage: React.FC = () => {
     const res = await axiosInstance.get(
       `/platform/collections-sui?page=${page}&limit=12`
     );
-    console.log("COLLECTOINS RETURNED");
-    console.log(res.data);
     return res.data;
   };
 
@@ -125,8 +123,6 @@ const CollectionsPage: React.FC = () => {
       <HeroSection scrollToCollections={scrollToCollections} />
 
       <div ref={collectionsRef} className="p-8 max-w-[1600px] mx-auto">
-        <h1 className="text-4xl font-bold text-center mb-8">Collections</h1>
-
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {collections.map((collection: any) => (
             <Link
