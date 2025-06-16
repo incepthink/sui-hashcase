@@ -298,7 +298,7 @@ export default function NFTPage() {
               </div>
             </div>
 
-            <div className="flex flex-col gap-4 items-center justify-start mt-2 w-full">
+            <div className="flex flex-col gap-4 items-start mt-2 w-full">
               <button
                 onClick={createFreeMintNft}
                 className="md:px-6 md:py-3 px-4 py-2 rounded-full md:text-xl text-sm bg-white text-black border-[1px] border-b-4 border-[#4DA2FF] flex items-center gap-x-2"
@@ -308,7 +308,7 @@ export default function NFTPage() {
               </button>
             </div>
 
-            <div className="flex flex-col gap-4 items-center justify-start my-2 w-full">
+            <div className="flex flex-col gap-4 items-start justify-start my-2 w-full">
               <button
                 onClick={handleGaslessMintAndTransfer}
                 className="md:px-6 md:py-3 px-4 py-2 rounded-full md:text-xl text-sm bg-white text-black border-[1px] border-b-4 border-[#4DA2FF] flex items-center gap-x-2"

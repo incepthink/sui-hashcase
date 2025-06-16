@@ -9,7 +9,7 @@ const workSans = Work_Sans({ subsets: ["latin"] });
 
 const Collectable = () => {
   return (
-    <div className="bg-[#00041F] md:h-[60vh] h-[40vh] md:px-[100px] px-0 relative">
+    <div className="bg-[#00041F] h-[40vh] md:px-[100px] px-0 relative">
       <div className="absolute inset-0 z-0">
         <Image
           src={CollBg}
@@ -26,16 +26,8 @@ const Collectable = () => {
             >
               Claim a Free Digital Collectable
             </h1>
-            <p
-              className={`${workSans.className} text-white text-center text-[16px] my-2`}
-            >
-              Feel the rush and collect your
-            </p>
           </div>
-          <Link
-            href="/mint"
-            className={`my-4 md:px-6 md:py-3 px-4 py-2 ${workSans.className} text-black bg-white border-2 border-t-0 border-b-4 border-[#4DA2FF] text-lg font-semibold rounded-full`}
-          >
+          <Link href="/mint" className="btn-primary">
             Claim Now
           </Link>
         </div>
