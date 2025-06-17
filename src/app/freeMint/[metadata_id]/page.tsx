@@ -38,6 +38,15 @@ import UnlockableNft from "./UnlockableNft";
 import MintSuccessModal from "./MintSuccessModal";
 import { useGlobalAppStore } from "@/store/globalAppStore";
 
+import {
+  Globe,
+  MapPin,
+  RefreshCw,
+  ArrowLeft,
+  MapPinOff,
+  Compass,
+} from "lucide-react";
+
 interface Metadata {
   id: string;
   title: string;
@@ -50,6 +59,8 @@ interface Metadata {
   attributes?: string;
   collection_name?: string;
   collection_address?: string;
+  latitude?: string;
+  longitude?: string;
 }
 
 interface EmittedNFTInfo {
@@ -61,6 +72,11 @@ interface EmittedNFTInfo {
   token_number: string;
 }
 
+type Coordinates = {
+  latitude: number;
+  longitude: number;
+};
+
 const workSans = Work_Sans({ subsets: ["latin"] });
 
 const testnet_loyalty =
@@ -70,6 +86,14 @@ const testnet_loyalty =
 export default function NFTPage() {
   const params = useParams();
   const [nftData, setNftData] = useState<Metadata | null>(null);
+
+  const [isLocked, setIsLocked] = useState(true);
+  const [location, setLocation] = useState<Coordinates>({
+    latitude: -1,
+    longitude: -1,
+  });
+
+  const [loading, setLoading] = useState(true);
 
   // states for the modal for showing minting success
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -97,39 +121,132 @@ export default function NFTPage() {
   const { freeMintNft } = useNftTransactions();
 
   useEffect(() => {
-    const fetchNFTData = async () => {
-      const itemData = await axiosInstance.get("/platform/metadata/by-id", {
-        params: {
-          metadata_id: params.metadata_id,
-        },
-      });
-
-      const { metadata_instance } = itemData.data;
-
-      const finalNftData = {
-        ...metadata_instance,
-        collection_id: metadata_instance.collection.id,
-        collection_name: metadata_instance.collection.name,
-        collection_address:
-          metadata_instance.collection.contract.contract_address,
-      };
-
-      console.log("FINAL NFT DTA");
-      console.log(finalNftData);
-
-      setNftData(finalNftData);
-    };
-
     if (params.metadata_id) {
       fetchNFTData();
     }
-  }, [params.metadata_id]);
+  }, [params.metadata_id, location]);
 
-  if (!nftData) {
-    return <div className="h-screen w-screen text-center">Loading</div>;
+  const fetchNFTData = async () => {
+    try {
+      const locationPermission = await checkLocationPermissions();
+
+      if (locationPermission == true) {
+        const itemData = await axiosInstance.get(
+          "/platform/metadata/geofenced-by-id",
+          {
+            params: {
+              metadata_id: params.metadata_id,
+              user_lat: location.latitude,
+              user_lon: location.longitude,
+            },
+          }
+        );
+
+        const { metadata_instance } = itemData.data;
+
+        console.log("THIS IS METADATA INSTANCE");
+        console.log(metadata_instance);
+
+        if (metadata_instance == null) {
+          setIsLocked(true);
+        } else {
+          const finalNftData = {
+            ...metadata_instance,
+            collection_id: metadata_instance.collection.id,
+            collection_name: metadata_instance.collection.name,
+            collection_address:
+              metadata_instance?.collection?.contract?.contract_address,
+          };
+
+          console.log("FINAL NFT DTA");
+          console.log(finalNftData);
+
+          setIsLocked(false);
+          setNftData(finalNftData);
+        }
+      } else {
+        const itemData = await axiosInstance.get(
+          "/platform/metadata/geofenced-by-id",
+          {
+            params: {
+              metadata_id: params.metadata_id,
+            },
+          }
+        );
+
+        const { metadata_instance } = itemData.data;
+        console.log(metadata_instance);
+
+        console.log("THIS IS METADATA INSTANCE");
+        console.log(metadata_instance);
+
+        if (metadata_instance == null) {
+          setIsLocked(true);
+        } else {
+          const finalNftData = {
+            ...metadata_instance,
+            collection_id: metadata_instance.collection.id,
+            collection_name: metadata_instance.collection.name,
+            collection_address:
+              metadata_instance?.collection?.contract?.contract_address,
+          };
+
+          setIsLocked(false);
+          setNftData(finalNftData);
+        }
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const checkLocationPermissions = async () => {
+    try {
+      if (!navigator.permissions) {
+        return false;
+      }
+
+      const permissionStatus = await navigator.permissions.query({
+        name: "geolocation",
+      });
+
+      return permissionStatus.state === "granted";
+    } catch (error) {
+      console.error("Error checking location permissions:", error);
+      return false;
+    }
+  };
+
+  function getCurrentPosition(): Promise<Coordinates> {
+    return new Promise((resolve, reject) => {
+      navigator.geolocation.getCurrentPosition(
+        (position: GeolocationPosition) => {
+          const { latitude, longitude } = position.coords;
+          resolve({ latitude, longitude });
+        },
+        (error: GeolocationPositionError) => {
+          reject(error);
+        }
+      );
+    });
   }
 
+  const handleGetCurrentPositionAndPageRefresh = async () => {
+    try {
+      const currentLocation = await getCurrentPosition();
+      setLocation(currentLocation);
+      await fetchNFTData();
+    } catch (error) {
+      console.error(error);
+      setIsLocked(true);
+    }
+  };
+
   const handleGaslessMintAndTransfer = async () => {
+    if (!nftData) return;
+
     const notifyId = notifyPromise(
       "Minting NFT... this might take some time...",
       "info"
@@ -164,6 +281,8 @@ export default function NFTPage() {
   };
 
   const createFreeMintNft = async () => {
+    if (!nftData) return;
+
     const notifyId = notifyPromise("Minting NFT...", "info");
 
     try {
@@ -176,7 +295,9 @@ export default function NFTPage() {
       };
 
       const txDetails = await freeMintNft(nftForm);
-      // console.log(txDetails);
+
+      console.log("THE TRANSACTION DETAILS");
+      console.log(txDetails);
 
       if (!txDetails?.events?.length) {
         throw new Error("No events found in transaction details.");
@@ -219,6 +340,93 @@ export default function NFTPage() {
 
     // console.log(itemResponse);
   };
+
+  if (loading) {
+    return (
+      <div className="h-[70vh] max-w-screen bg-[#00041F] flex justify-center items-center text-center">
+        <>
+          <svg
+            className="animate-spin h-12 w-12 text-blue-500"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <circle
+              className="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="4"
+            ></circle>
+            <path
+              className="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+            ></path>
+          </svg>
+        </>
+      </div>
+    );
+  }
+
+  if (isLocked) {
+    if (location.latitude == -1 && location.longitude == -1)
+      return (
+        <div className="h-[80vh] max-w-screen bg-[#00041F] text-white flex flex-col items-center justify-center p-6 text-center gap-5">
+          <div className="relative">
+            {/* <Globe className="w-16 h-16 text-blue-400 animate-pulse" /> */}
+            <MapPin className="w-16 h-16  text-red-500 animate-bounce" />
+          </div>
+
+          <div className="space-y-2">
+            <h2 className="text-2xl font-bold text-blue-100">
+              Location Restricted
+            </h2>
+            <p className="text-blue-300">
+              Location permissions are required to verify eligibility.
+            </p>
+          </div>
+
+          <div className="flex gap-3">
+            <button
+              onClick={handleGetCurrentPositionAndPageRefresh}
+              className="px-4 py-2 bg-[#4DA2FF] hover:bg-blue-700 rounded-md flex items-center gap-2 transition-colors"
+            >
+              <Globe className="w-4 h-4" />
+              Grant Location Permissions
+            </button>
+          </div>
+        </div>
+      );
+    else
+      return (
+        <div className="h-[80vh] max-w-screen bg-[#00041F] text-white flex flex-col items-center justify-center p-6 text-center gap-6">
+          {/* Animated icon with gradient */}
+          <div className="relative">
+            <Globe className="w-16 h-16 text-blue-400 animate-pulse" />
+            <MapPinOff className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 text-red-500" />
+          </div>
+
+          {/* Main message */}
+          <div className="space-y-3 max-w-md">
+            <h3 className="text-2xl font-bold text-blue-100 flex items-center justify-center gap-2">
+              <Compass className="w-6 h-6" />
+              Location Restricted
+            </h3>
+            <p className="text-red-300 text-lg">
+              This NFT is not accessible in your current region
+            </p>
+            <p className="text-blue-300 text-sm">
+              The content you&apos;re trying to view has geographical
+              restrictions
+            </p>
+          </div>
+        </div>
+      );
+  }
+
+  if (!nftData) return <div>NFT not found.</div>;
 
   return (
     <div className={`flex flex-col bg-[#00041F] ${workSans.className}`}>

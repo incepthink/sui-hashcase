@@ -154,10 +154,10 @@ const CollectionLoyaltiesPage = () => {
         {/* Right Side: Content */}
         <div className="w-full lg:w-1/2 flex flex-col items-start justify-center text-left space-y-6 relative z-10 px-4 py-8 lg:py-0">
           <div className="max-w-lg">
-            <h1 className="text-4xl sm:text-5xl font-extrabold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-blue-300 via-blue-400 to-purple-500 drop-shadow-lg leading-tight">
+            <h1 className="text-3xl sm:text-4xl font-extrabold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-blue-300 via-blue-400 to-purple-500 drop-shadow-lg leading-tight">
               {onChainPointsState !== undefined ? (
                 <>
-                  Your <span className="text-white">Loyalty Points</span>
+                  On-Chain <span className="text-white">Loyalty Points</span>
                   <span className="block text-2xl sm:text-3xl mt-2 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">
                     {onChainPointsState} Points
                   </span>
@@ -179,9 +179,8 @@ const CollectionLoyaltiesPage = () => {
                   value={points}
                   onChange={(e) => setPoints(e.target.value)}
                   placeholder="Enter points amount"
-                  className="w-full px-5 py-4 text-lg rounded-xl bg-white/5 text-white placeholder-white/40 border border-white/10 focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/30 backdrop-blur-sm transition-all duration-300"
+                  className="w-full px-5 py-4 text-lg rounded-xl bg-white/5 text-white placeholder-white/40 border focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/30"
                 />
-                <div className="absolute inset-0 rounded-xl border border-blue-400/20 opacity-0 hover:opacity-100 pointer-events-none transition-opacity duration-300"></div>
               </div>
 
               <div className="flex flex-col sm:flex-row gap-4">
