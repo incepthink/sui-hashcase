@@ -161,14 +161,7 @@ const CollectionsPage: React.FC = () => {
                     <Link
                       href={`/loyalties/${collection.id}`}
                       onClick={(e) => e.stopPropagation()}
-                      className="flex-1 text-center rounded-md px-4 py-2 text-sm font-semibold text-cyan-300 border border-cyan-300 hover:bg-cyan-300 hover:text-black transition"
-                    >
-                      Metadata
-                    </Link>
-                    <Link
-                      href={`/loyalties/${collection.id}`}
-                      onClick={(e) => e.stopPropagation()}
-                      className="flex-1 text-center rounded-md px-4 py-2 text-sm font-semibold text-purple-300 border border-purple-300 hover:bg-purple-300 hover:text-black transition"
+                      className="flex-1 text-center rounded-md px-4 py-2 text-sm font-semibold from-blue-300 via-blue-400 to-purple-500 text-white border border-[#4DA2FF] hover:bg-[#4DA2FF] hover:text-black transition"
                     >
                       Loyalties
                     </Link>
