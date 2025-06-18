@@ -90,10 +90,10 @@ export default function NFTPage() {
     description: "Celebrate the winter with this NFT.",
     animation_url: "",
     image_url:
-      "https://hash-collect.s3.ap-south-1.amazonaws.com/Cricketer+.png",
+      "https://peach-obvious-locust-150.mypinata.cloud/ipfs/bafybeifcjcodwk4ly4t54erwkqswyimg52zqpu3a4ozqisexiff36uqc4i",
     collection_id: 84,
     token_uri:
-      "https://hash-collect.s3.ap-south-1.amazonaws.com/Cricketer+.png",
+      "https://peach-obvious-locust-150.mypinata.cloud/ipfs/bafybeifcjcodwk4ly4t54erwkqswyimg52zqpu3a4ozqisexiff36uqc4i",
     attributes: "super, good, very, nice",
     collection_name: "Cricket Collection",
   });
