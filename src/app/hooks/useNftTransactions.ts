@@ -32,9 +32,6 @@ export const useNftTransactions = () => {
       return;
     }
 
-    console.log(nftForm);
-    console.log(packageId);
-
     setIsLoading(true);
 
     let txResult;
@@ -82,6 +79,69 @@ export const useNftTransactions = () => {
       console.log("Transaction Details:", txDetails);
       toast.success("NFT Minted Successfully!");
       return txDetails;
+    } catch (error) {
+      console.error("Error executing transaction:", error);
+      toast.error("Failed to mint NFT.");
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fixedPriceMintNFT = async (nftForm: MintingForm, address: string) => {
+    if (!nftForm.collection_id || !address) {
+      toast.error("Please fill in all fields.");
+      return;
+    }
+
+    setIsLoading(true);
+
+    let txResult;
+    try {
+      const tx = new Transaction();
+      // instead of 100 put the real price of NFT
+      const [payment] = tx.splitCoins(tx.gas, [tx.pure.u64(100)]);
+      const imageUrlBytes = Array.from(
+        new TextEncoder().encode(nftForm.image_url)
+      );
+      const attributesArray = nftForm.attributes
+        .split(",")
+        .map((attr) => attr.trim())
+        .filter(Boolean);
+
+      tx.moveCall({
+        target: `0x08581cdf574cd7c2aa6c781422681b66d35918ecf632733bcc8110cc79ac15ec::hashcase_module::fixed_price_mint_nft`,
+        arguments: [
+          tx.object(nftForm.collection_id),
+          payment,
+          tx.pure.string(nftForm.title),
+          tx.pure.string(nftForm.description),
+          tx.pure.vector("u8", imageUrlBytes),
+          tx.pure.vector("string", attributesArray),
+        ],
+      });
+
+      tx.transferObjects([payment], tx.pure.address(address));
+
+      txResult = await signAndExecuteTransaction({
+        transaction: tx as any,
+        chain: "sui:testnet",
+      });
+
+      // Wait before fetching transaction details
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      // Fetch transaction details
+      const digest = txResult?.digest || "";
+      await suiClient.waitForTransaction({ digest, timeout: 5_000 });
+
+      const txDetails = await suiClient.getTransactionBlock({
+        digest,
+        options: { showEvents: true },
+      });
+
+      console.log("Transaction Details:", txDetails);
+      toast.success("NFT Minted Successfully!");
     } catch (error) {
       console.error("Error executing transaction:", error);
       toast.error("Failed to mint NFT.");
@@ -203,6 +263,7 @@ export const useNftTransactions = () => {
   return {
     isLoading,
     freeMintNft,
+    fixedPriceMintNFT,
     claimNFT,
     updateNftMetadata,
   };

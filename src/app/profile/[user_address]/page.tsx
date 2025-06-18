@@ -240,7 +240,7 @@ const App: React.FC = () => {
             onClick={() => setShowModal(true)}
             className="mt-2 flex items-center text-white text-sm font-medium hover:underline"
           >
-            Edit Wallet
+            Edit Profile
             <MdEdit className="ml-1 text-blue-400 text-lg" />
           </button>
         </div>
