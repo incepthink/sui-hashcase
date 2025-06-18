@@ -178,124 +178,133 @@ const UpdateProfileModal = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-gradient-to-b from-[#00041f] to-[#030828] rounded-lg shadow-xl w-full max-w-xl p-6 text-white">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold">Edit Profile</h2>
-          <button onClick={onClose} className="text-gray-300 hover:text-white">
-            ✕
-          </button>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-gradient-to-b from-[#00041f] to-[#030828] rounded-lg shadow-xl w-full max-w-xl max-h-[calc(100vh-2rem)] my-auto overflow-y-auto">
+        <div className="sticky top-0 bg-gradient-to-b from-[#00041f] to-[#030828] z-10 px-6 border-b py-4 border-gray-700">
+          <div className="flex justify-between items-center">
+            <h2 className="text-xl font-semibold">Edit Profile</h2>
+            <button
+              onClick={onClose}
+              className="text-gray-300 hover:text-white"
+            >
+              ✕
+            </button>
+          </div>
         </div>
 
-        {error && (
-          <div className="mb-4 p-2 bg-red-500 text-white rounded text-sm">
-            {error}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit}>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-1">Username</label>
-              <input
-                type="text"
-                name="username"
-                value={formData.username}
-                onChange={handleChange}
-                className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                required
-                minLength={3}
-                maxLength={30}
-              />
+        {/* Scrollable Content */}
+        <div className="p-6 overflow-y-auto">
+          {error && (
+            <div className="mb-4 p-2 bg-red-500 text-white rounded text-sm">
+              {error}
             </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                Description
-              </label>
-              <textarea
-                name="description"
-                value={formData.description}
-                onChange={handleChange}
-                className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                rows={3}
-                maxLength={200}
-              />
-            </div>
-
-            <div className="flex gap-4">
-              <div className="w-1/2">
-                <UploadImage
-                  label="Profile Image"
-                  file={profileFile}
-                  setFile={setProfileFile}
-                  progress={profileProgress}
-                  setProgress={setProfileProgress}
-                  imageUrl={profileImageUrl}
-                  setImageUrl={setProfileImageUrl}
-                  oldImageUrl={formData.profile_image}
+          )}
+          <form onSubmit={handleSubmit}>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  Username
+                </label>
+                <input
+                  type="text"
+                  name="username"
+                  value={formData.username}
+                  onChange={handleChange}
+                  className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  required
+                  minLength={3}
+                  maxLength={30}
                 />
               </div>
 
-              <div className="w-1/2">
-                <UploadImage
-                  label="Banner Image"
-                  file={bannerFile}
-                  setFile={setBannerFile}
-                  progress={bannerProgress}
-                  setProgress={setBannerProgress}
-                  imageUrl={bannerImageUrl}
-                  setImageUrl={setBannerImageUrl}
-                  oldImageUrl={formData.banner_image}
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  Description
+                </label>
+                <textarea
+                  name="description"
+                  value={formData.description}
+                  onChange={handleChange}
+                  className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  rows={3}
+                  maxLength={200}
                 />
               </div>
-            </div>
 
-            <div className="mt-6 flex justify-end space-x-3">
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-4 py-2 rounded-md bg-gray-600 hover:bg-gray-700 transition-colors"
-                disabled={isLoading}
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="px-4 py-2 rounded-md bg-blue-600 hover:bg-blue-700 transition-colors flex items-center"
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <>
-                    <svg
-                      className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      ></circle>
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      ></path>
-                    </svg>
-                    Saving...
-                  </>
-                ) : (
-                  "Save Changes"
-                )}
-              </button>
+              <div className="flex gap-4">
+                <div className="w-1/2">
+                  <UploadImage
+                    label="Profile Image"
+                    file={profileFile}
+                    setFile={setProfileFile}
+                    progress={profileProgress}
+                    setProgress={setProfileProgress}
+                    imageUrl={profileImageUrl}
+                    setImageUrl={setProfileImageUrl}
+                    oldImageUrl={formData.profile_image}
+                  />
+                </div>
+
+                <div className="w-1/2">
+                  <UploadImage
+                    label="Banner Image"
+                    file={bannerFile}
+                    setFile={setBannerFile}
+                    progress={bannerProgress}
+                    setProgress={setBannerProgress}
+                    imageUrl={bannerImageUrl}
+                    setImageUrl={setBannerImageUrl}
+                    oldImageUrl={formData.banner_image}
+                  />
+                </div>
+              </div>
+
+              <div className="mt-6 flex justify-end space-x-3">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="px-4 py-2 rounded-md bg-gray-600 hover:bg-gray-700 transition-colors"
+                  disabled={isLoading}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 rounded-md bg-blue-600 hover:bg-blue-700 transition-colors flex items-center"
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <>
+                      <svg
+                        className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
+                      </svg>
+                      Saving...
+                    </>
+                  ) : (
+                    "Save Changes"
+                  )}
+                </button>
+              </div>
             </div>
-          </div>
-        </form>
+          </form>
+        </div>
       </div>
     </div>
   );
