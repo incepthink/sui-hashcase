@@ -144,7 +144,7 @@ export default function SuiWalletConnect() {
     >
       {" "}
       <Image src={wallet.icon} alt="Sui Logo" width={20} height={20} />
-      {"Connect Sui Wallet"}{" "}
+      {`Connect ${wallet.name} Wallet`}{" "}
     </button>
   ));
 }
