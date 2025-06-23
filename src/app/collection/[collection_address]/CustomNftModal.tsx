@@ -2,7 +2,7 @@ import React, { useState } from "react";
 
 import { useNftTransactions } from "../../hooks/useNftTransactions";
 
-import { X, HandCoins } from "lucide-react";
+import { X, HandCoins, Sparkles } from "lucide-react";
 
 interface CustomNftModalProps {
   isOpen: boolean;
@@ -21,7 +21,7 @@ const CustomNftModal: React.FC<CustomNftModalProps> = ({
     title: "",
     description: "",
     image_url: "",
-    attributes: "",
+    attributes: "user, custom, nft",
     collection_id: nftCollectionAddress,
   });
 
@@ -41,21 +41,28 @@ const CustomNftModal: React.FC<CustomNftModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-[9999]"
+      className="fixed inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-[9999]"
       onClick={onClose}
     >
       <div
-        className="bg-gradient-to-br from-blue-400 to-purple-500 p-8 rounded-2xl shadow-2xl text-white relative w-[450px] space-y-6"
+        className=" text-white p-6 relative w-[450px] space-y-6 backdrop-blur-sm bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-blue-400/10 via-transparent to-purple-500/10 border border-blue-400/40 shadow-[inset_0_0_12px_#60a5fa33,0_0_16px_#8b5cf622] rounded-lg"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Close Button */}
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 text-white/80 hover:text-white transition-colors duration-300"
-        >
-          <X size={24} />
-        </button>
-
+        {/* Header */}
+        <div className="flex justify-between items-center mb-6">
+          <div className="flex items-center gap-2">
+            <Sparkles className="text-purple-300" size={20} />
+            <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-300 to-purple-300">
+              Create Custom NFT
+            </h2>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-1 rounded-full hover:bg-white/10 transition-colors duration-200 text-white/80 hover:text-white"
+          >
+            <X size={20} />
+          </button>
+        </div>{" "}
         {/* Form */}
         <form className="flex flex-col gap-6">
           {/* Name Field */}
@@ -114,32 +121,12 @@ const CustomNftModal: React.FC<CustomNftModalProps> = ({
               className="w-full px-4 py-2.5 bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent placeholder:text-white/50 text-white"
             />
           </div>
-
-          {/* Attributes Field */}
-          <div className="space-y-2">
-            <label
-              htmlFor="attributes"
-              className="text-sm font-medium text-white/80"
-            >
-              Attributes
-            </label>
-            <input
-              name="attributes"
-              id="attributes"
-              type="text"
-              placeholder="Enter image URL"
-              value={formValues.attributes}
-              onChange={handleInputChange}
-              className="w-full px-4 py-2.5 bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent placeholder:text-white/50 text-white"
-            />
-          </div>
         </form>
-
         {/* Buttons */}
         <div className="flex flex-col gap-4">
           <button
             onClick={handleFreeMint}
-            className="flex items-center justify-center gap-2 w-full px-6 py-3 bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 hover:bg-white/20 transition-all duration-300 text-white font-semibold"
+            className={` flex justify-center gap-2 items-center py-2 text-lg font-bold text-white bg-gradient-to-r from-blue-500/55 to-purple-600/55 rounded-lg border border-blue-400/50 shadow-[0_0_15px_-3px_#60a5fa,0_0_30px_-5px_#8b5cf6] hover:shadow-[0_0_20px_-5px_#3b82f6,0_0_40px_-10px_#a78bfa] hover:brightness-110 transition-all duration-75 whitespace-nowrap`}
           >
             <HandCoins size={20} />
             Mint NFT

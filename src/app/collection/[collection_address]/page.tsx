@@ -13,6 +13,9 @@ import {
   MetadataSetWithAllMetadataInstances,
 } from "@/utils/modelTypes";
 
+import { Orbitron } from "next/font/google";
+const orbitron = Orbitron({ subsets: ["latin"], weight: "700" });
+
 interface Collection {
   id: number;
   name: string;
@@ -180,16 +183,23 @@ export default function NFTPage() {
         </div>
 
         <div className="p-8 max-w-[1600px] mx-auto">
-          <h1 className="text-5xl font-extrabold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500 drop-shadow-lg text-center">
-            Collection Assets{" "}
-          </h1>
-          <div className="text-xl font-extrabold bg-gradient-to-r from-blue-400 to-purple-500 text-center my-3">
-            <button
-              onClick={() => openModal()}
-              className="px-2 text-xl font-extrabold bg-gradient-to-r py-2 from-blue-400 to-purple-500 w-full"
-            >
-              Mint Custom NFT
-            </button>
+          <div className="relative mb-9">
+            <div className="flex items-center justify-between max-md:flex-col">
+              <h1
+                className={`${orbitron.className} text-4xl text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500 drop-shadow-[0_0_12px_#60a5fa] hover:drop-shadow-[0_0_20px_#a78bfa] transition-all duration-500`}
+              >
+                {" "}
+                Collection Assets
+              </h1>
+              {/* Gradient horizontal rule */}
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-400/85 via-blue-400/85 to-purple-500/50"></div>
+              <button
+                onClick={openModal}
+                className={`${orbitron.className} md:-mt-7 max-md:my-2 px-8 py-3 text-lg font-bold text-white bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg border border-blue-400/50 shadow-[0_0_15px_-3px_#60a5fa,0_0_30px_-5px_#8b5cf6] hover:shadow-[0_0_20px_-5px_#3b82f6,0_0_40px_-10px_#a78bfa] hover:brightness-110 transition-all duration-300 whitespace-nowrap`}
+              >
+                MINT CUSTOM NFT
+              </button>{" "}
+            </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
             {allMetadata.length > 0 ? (
@@ -253,9 +263,16 @@ export default function NFTPage() {
             )}
           </div>{" "}
           {randomizedTokenMetadata?.length > 0 && (
-            <h3 className="py-6 font-bold tracking-widest text-2xl bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500 drop-shadow-lg text-center">
-              Lucky Draw NFTs
-            </h3>
+            <div className="relative mb-9 mt-6">
+              <h1
+                className={`${orbitron.className} text-4xl text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500 drop-shadow-[0_0_12px_#60a5fa] hover:drop-shadow-[0_0_20px_#a78bfa] transition-all duration-500`}
+              >
+                Randomized NFT
+              </h1>
+
+              {/* Gradient horizontal rule */}
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-400/85 via-blue-400/85 to-purple-500/50"></div>
+            </div>
           )}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
             {randomizedTokenMetadata?.length > 0 &&
