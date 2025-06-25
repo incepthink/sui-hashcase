@@ -62,20 +62,6 @@ export default function NFTPage() {
     setIsModalOpen(false);
   };
 
-  function getCurrentPosition(): Promise<Coordinates> {
-    return new Promise((resolve, reject) => {
-      navigator.geolocation.getCurrentPosition(
-        (position: GeolocationPosition) => {
-          const { latitude, longitude } = position.coords;
-          resolve({ latitude, longitude });
-        },
-        (error: GeolocationPositionError) => {
-          reject(error);
-        }
-      );
-    });
-  }
-
   useEffect(() => {
     const fetchNFTData = async () => {
       try {
@@ -102,21 +88,6 @@ export default function NFTPage() {
 
         setMetadata(response.data.metadata_instances);
 
-        const { latitude, longitude } = await getCurrentPosition();
-
-        const geofenced = await axiosInstance.get(
-          "/platform/metadata/geo-fenced",
-          {
-            params: {
-              user_lat: latitude,
-              user_lon: longitude,
-              collection_id: collection_instance.id,
-            },
-          }
-        );
-
-        setGeofencedMetadata(geofenced.data.data);
-
         const randomizedToken = await axiosInstance.get(
           "/platform/metadata-set/by-collection",
           {
@@ -138,8 +109,6 @@ export default function NFTPage() {
   }, [params.collection_address]);
 
   const [allMetadata, setMetadata] = useState<Metadata[]>([]);
-
-  const [geofencedMetadata, setGeofencedMetadata] = useState<Metadata[]>([]);
 
   const [randomizedTokenMetadata, setRandomizedTokenMetadata] = useState<
     MetadataSetWithAllMetadataInstances[]
@@ -316,61 +285,6 @@ export default function NFTPage() {
                         <p>
                           Updated:{" "}
                           {new Date(metadataSet.updatedAt).toLocaleDateString()}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-              ))}
-          </div>{" "}
-          {geofencedMetadata.length > 0 && (
-            <h3 className="py-6 font-bold tracking-widest text-2xl bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500 drop-shadow-lg text-center">
-              Congratulations, There are Exclusive NFTs available in your
-              location
-            </h3>
-          )}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-            {geofencedMetadata.length > 0 &&
-              geofencedMetadata.map((metadata) => (
-                <Link
-                  key={metadata.id}
-                  className="block"
-                  href={`/freeMint/${metadata.id}`}
-                >
-                  <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 overflow-hidden shadow-lg transition-all hover:scale-[1.02] hover:bg-white/15">
-                    {/* NFT Image */}
-                    <div className="relative aspect-square">
-                      <img
-                        src={
-                          metadata.image_url ||
-                          "https://via.placeholder.com/300"
-                        }
-                        alt={metadata.title}
-                        className="w-full h-full object-cover"
-                      />
-                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
-                        <h3 className="text-xl font-bold text-white">
-                          {metadata.title}
-                        </h3>
-                      </div>
-                    </div>
-
-                    {/* Card Content */}
-                    <div className="p-4 flex flex-col justify-between min-h-[150px]">
-                      {/* Description with line clamp */}
-                      <p className="text-sm text-white/80 line-clamp-2 mb-4">
-                        {metadata.description}
-                      </p>
-
-                      {/* Stats Row */}
-                      <div className="flex justify-between items-center text-xs text-green-400 mb-3">
-                        <p>
-                          Created:{" "}
-                          {new Date(metadata.createdAt).toLocaleDateString()}
-                        </p>
-                        <p>
-                          Updated:{" "}
-                          {new Date(metadata.updatedAt).toLocaleDateString()}
                         </p>
                       </div>
                     </div>

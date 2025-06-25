@@ -18,7 +18,7 @@ interface UploadImageProps {
   setProgress: Dispatch<SetStateAction<number>>;
   imageUrl: string;
   setImageUrl: Dispatch<SetStateAction<string>>;
-  oldImageUrl: string;
+  oldImageUrl?: string;
 }
 
 const UploadImage: React.FC<UploadImageProps> = ({

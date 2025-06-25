@@ -3,6 +3,10 @@ import React, { useState } from "react";
 import { useNftTransactions } from "../../hooks/useNftTransactions";
 
 import { X, HandCoins, Sparkles } from "lucide-react";
+import UploadImage from "@/components/UploadImage";
+import { getUploadUrl } from "@/utils/s3Bucket";
+import axios from "axios";
+import toast from "react-hot-toast";
 
 interface CustomNftModalProps {
   isOpen: boolean;
@@ -25,11 +29,69 @@ const CustomNftModal: React.FC<CustomNftModalProps> = ({
     collection_id: nftCollectionAddress,
   });
 
+  // FILE RELATED STATE VARIABLES
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imageProgress, setImageProgress] = useState(0);
+  const [imageUrl, setImageUrl] = useState("");
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const uploadImage = async () => {
+    setIsLoading(true);
+    setError("");
+
+    try {
+      if (!imageFile) throw new Error("No file selected for upload");
+
+      const url = await getUploadUrl();
+
+      if (!url) throw new Error("Upload URL is undefined or empty");
+
+      const response = await axios.put(url, imageFile, {
+        headers: {
+          "Content-Type": imageFile.type,
+        },
+        onUploadProgress: (progressEvent) => {
+          if (progressEvent.total) {
+            const percentCompleted = Math.round(
+              (progressEvent.loaded * 100) / progressEvent.total
+            );
+            setImageProgress(percentCompleted);
+          }
+        },
+      });
+
+      if (response.status === 200) {
+        const newUrl = url.split("?")[0];
+
+        return newUrl;
+      } else {
+        throw new Error("Profile image upload failed");
+      }
+    } catch (err) {
+      setError("Failed to upload image. Please try again.");
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleFreeMint = async () => {
-    if (!formValues.title || !formValues.description || !formValues.image_url) {
+    if (!formValues.title || !formValues.description) {
       return;
     }
-    await freeMintNft(formValues);
+
+    try {
+      const uploadedImageUrl = await uploadImage();
+      formValues.image_url = uploadedImageUrl || "";
+      await freeMintNft(formValues);
+      onClose();
+      toast.success("Custom NFT Minted");
+    } catch (error) {
+      console.error(error);
+      toast.error("Custom NFT Minting Failed.");
+    }
   };
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -103,22 +165,16 @@ const CustomNftModal: React.FC<CustomNftModalProps> = ({
             />
           </div>
 
-          {/* Image URL Field */}
-          <div className="space-y-2">
-            <label
-              htmlFor="image_url"
-              className="text-sm font-medium text-white/80"
-            >
-              Image URL
-            </label>
-            <input
-              name="image_url"
-              id="image_url"
-              type="text"
-              placeholder="Enter image URL"
-              value={formValues.image_url}
-              onChange={handleInputChange}
-              className="w-full px-4 py-2.5 bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent placeholder:text-white/50 text-white"
+          <div>
+            <UploadImage
+              label="NFT Image"
+              file={imageFile}
+              setFile={setImageFile}
+              progress={imageProgress}
+              setProgress={setImageProgress}
+              imageUrl={imageUrl}
+              setImageUrl={setImageUrl}
+              oldImageUrl={formValues.image_url}
             />
           </div>
         </form>
