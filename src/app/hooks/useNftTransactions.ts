@@ -11,6 +11,7 @@ interface MintingForm {
   image_url: string;
   collection_id: string;
   attributes: string;
+  price: number | null;
 }
 
 export const useNftTransactions = () => {
@@ -73,7 +74,7 @@ export const useNftTransactions = () => {
 
       const txDetails = await suiClient.getTransactionBlock({
         digest,
-        options: { showEvents: true },
+        options: { showEvents: true, showObjectChanges: true },
       });
 
       console.log("Transaction Details:", txDetails);
@@ -89,18 +90,25 @@ export const useNftTransactions = () => {
   };
 
   const fixedPriceMintNFT = async (nftForm: MintingForm, address: string) => {
-    if (!nftForm.collection_id || !address) {
+    if (!nftForm.collection_id || !address || !nftForm.price) {
       toast.error("Please fill in all fields.");
       return;
     }
 
     setIsLoading(true);
 
+    // HARDCODED VALUES TO USE BEFORE CONTRACT UPDATES
+    nftForm.collection_id =
+      "0xf5781a9473653703338da4a8ab7de5225110f8da0ae43bf5221c25da628ac5c7";
+
+    const updatedPackageId =
+      "0x08581cdf574cd7c2aa6c781422681b66d35918ecf632733bcc8110cc79ac15ec";
+
     let txResult;
     try {
       const tx = new Transaction();
       // instead of 100 put the real price of NFT
-      const [payment] = tx.splitCoins(tx.gas, [tx.pure.u64(100)]);
+      const [payment] = tx.splitCoins(tx.gas, [tx.pure.u64(nftForm.price)]);
       const imageUrlBytes = Array.from(
         new TextEncoder().encode(nftForm.image_url)
       );
@@ -110,7 +118,7 @@ export const useNftTransactions = () => {
         .filter(Boolean);
 
       tx.moveCall({
-        target: `0x08581cdf574cd7c2aa6c781422681b66d35918ecf632733bcc8110cc79ac15ec::hashcase_module::fixed_price_mint_nft`,
+        target: `${updatedPackageId}::hashcase_module::fixed_price_mint_nft`,
         arguments: [
           tx.object(nftForm.collection_id),
           payment,

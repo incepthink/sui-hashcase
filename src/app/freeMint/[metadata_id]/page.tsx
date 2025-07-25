@@ -61,6 +61,7 @@ interface Metadata {
   collection_address?: string;
   latitude?: string;
   longitude?: string;
+  price?: string;
 }
 
 interface EmittedNFTInfo {
@@ -118,7 +119,7 @@ export default function NFTPage() {
 
   const { userWalletAddress } = useGlobalAppStore();
 
-  const { freeMintNft } = useNftTransactions();
+  const { freeMintNft, fixedPriceMintNFT } = useNftTransactions();
 
   useEffect(() => {
     if (params.metadata_id) {
@@ -144,9 +145,6 @@ export default function NFTPage() {
 
         const { metadata_instance } = itemData.data;
 
-        console.log("THIS IS METADATA INSTANCE");
-        console.log(metadata_instance);
-
         if (metadata_instance == null) {
           setIsLocked(true);
         } else {
@@ -157,9 +155,6 @@ export default function NFTPage() {
             collection_address:
               metadata_instance?.collection?.contract?.contract_address,
           };
-
-          console.log("FINAL NFT DTA");
-          console.log(finalNftData);
 
           setIsLocked(false);
           setNftData(finalNftData);
@@ -175,10 +170,6 @@ export default function NFTPage() {
         );
 
         const { metadata_instance } = itemData.data;
-        console.log(metadata_instance);
-
-        console.log("THIS IS METADATA INSTANCE");
-        console.log(metadata_instance);
 
         if (metadata_instance == null) {
           setIsLocked(true);
@@ -236,6 +227,10 @@ export default function NFTPage() {
   const handleGetCurrentPositionAndPageRefresh = async () => {
     try {
       const currentLocation = await getCurrentPosition();
+
+      console.log("THIS IS CURRENT POSITION");
+      console.log(currentLocation);
+
       setLocation(currentLocation);
       await fetchNFTData();
     } catch (error) {
@@ -281,7 +276,7 @@ export default function NFTPage() {
   };
 
   const createFreeMintNft = async () => {
-    if (!nftData) return;
+    if (!nftData || !currentAccount?.address) return;
 
     const notifyId = notifyPromise("Minting NFT...", "info");
 
@@ -292,9 +287,16 @@ export default function NFTPage() {
         description: nftData.description,
         image_url: nftData.image_url,
         attributes: nftData.attributes || "",
+        price: nftData.price ? parseFloat(nftData.price) : null,
       };
 
-      const txDetails = await freeMintNft(nftForm);
+      let txDetails;
+
+      if (nftForm.price === null) {
+        txDetails = await freeMintNft(nftForm);
+      } else {
+        txDetails = await fixedPriceMintNFT(nftForm, currentAccount?.address);
+      }
 
       console.log("THE TRANSACTION DETAILS");
       console.log(txDetails);
@@ -333,6 +335,29 @@ export default function NFTPage() {
       setShowSuccessModal(true);
 
       notifyResolve(notifyId, "NFT Minted", "success");
+      toast(
+        <div
+          onClick={() =>
+            window.open(
+              `${window.location.origin}/profile/${currentAccount?.address}`,
+              "_blank"
+            )
+          }
+        >
+          Navigate to the Profile to view NFT
+        </div>,
+        {
+          position: "top-center",
+          autoClose: false,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
+          theme: "light",
+          transition: Bounce,
+        }
+      );
     } catch (error) {
       notifyResolve(notifyId, "Error minting NFT", "error");
       console.error("Error minting NFT:", error);

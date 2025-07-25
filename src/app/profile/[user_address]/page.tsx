@@ -14,6 +14,8 @@ import UpdateProfileModal from "./UpdateProfileModal";
 import ConnectButton from "@/components/ConnectButton";
 import Image from "next/image";
 
+import NeonHeader from "@/components/NeonHeader";
+
 type NFT = {
   attributes?: string[];
   collection_id: string;
@@ -97,16 +99,10 @@ const App: React.FC = () => {
     (item) => item?.data?.type === `${MY_PACKAGE_ID}::hashcase_module::NFT`
   );
 
-  console.log("OWNED NFTS");
-  console.log(filteredNFTs);
-
   const claimedNFTs = myLoyaltyData?.data.filter(
     (item) =>
       item?.data?.type === `${MY_PACKAGE_ID}::hashcase_module::ClaimedNFT`
   );
-
-  console.log("logging the claimed nfts");
-  console.log(claimedNFTs);
 
   //processing the fetched data to only including the content fields
   //content fields contains all the data we need
@@ -252,12 +248,15 @@ const App: React.FC = () => {
       )}
 
       <div className="p-8 max-w-[1600px] mx-auto">
-        <h1 className="text-4xl font-bold text-center mb-8">Owned NFTs </h1>
+        <NeonHeader>Owned NFTs</NeonHeader>
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
           {processedNFTs?.map((nft) => (
-            <div
+            <Link
               key={nft.id.id}
               className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 overflow-hidden shadow-lg transition-all hover:scale-[1.02] hover:bg-white/15"
+              href={`/nft/${nft.id.id}`} // Redirect to the NFT details page
+              passHref // Ensure the link is passed correctly
             >
               {/* NFT Image */}
               <div
@@ -293,25 +292,13 @@ const App: React.FC = () => {
                     Token Number: {nft.token_number}
                   </p>
                 </div>
-
-                {/* Stats Row */}
-                <div className="flex justify-between items-center text-xs text-green-400 mb-3">
-                  <Link
-                    key={nft.id.id} // Using the correct ID field
-                    href={`/nft/${nft.id.id}`} // Redirect to the NFT details page
-                    passHref // Ensure the link is passed correctly
-                  >
-                    <button className="font-semibold text-lg">
-                      Go to NFT Page &#8594;
-                    </button>
-                  </Link>
-                </div>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
 
-        <h1 className="text-4xl font-bold text-center mb-8">Claimed NFTs </h1>
+        <NeonHeader>Claimed NFTs</NeonHeader>
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
           {processedClaimedNFTs?.map((nft) => (
             <div
@@ -348,7 +335,7 @@ const App: React.FC = () => {
                       ? `${nft.collection_id.substring(0, 15)}...`
                       : nft.collection_id}
                   </p>
-                  <p className="text-blue-400">
+                  <p className="text-green-400">
                     Token Number: {nft.token_number}
                   </p>
                 </div>

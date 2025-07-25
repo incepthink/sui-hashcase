@@ -131,6 +131,7 @@ export default function NFTPage() {
         description: nftData.description,
         image_url: nftData.image_url,
         attributes: nftData.attributes || "",
+        price: null,
       };
 
       console.log(nftForm);

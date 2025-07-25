@@ -27,6 +27,7 @@ const CustomNftModal: React.FC<CustomNftModalProps> = ({
     image_url: "",
     attributes: "user, custom, nft",
     collection_id: nftCollectionAddress,
+    price: null,
   });
 
   // FILE RELATED STATE VARIABLES

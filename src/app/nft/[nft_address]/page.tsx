@@ -1,5 +1,5 @@
 "use client";
-import { useSuiClientQuery } from "@mysten/dapp-kit";
+import { useCurrentAccount, useSuiClientQuery } from "@mysten/dapp-kit";
 import { useParams } from "next/navigation";
 import React, { useEffect, useState } from "react";
 
@@ -47,6 +47,8 @@ const NftPage = () => {
   const [unlockableContent, setUnlockableContent] = useState<string>("");
 
   const [address, setAddress] = useState("");
+
+  const currentAccount = useCurrentAccount();
 
   const [upgradeData, setUpgradeData] =
     useState<MetadataInstanceWithMetadataSet | null>(null);
@@ -141,7 +143,7 @@ const NftPage = () => {
     >
       <div className="flex flex-col px-8 md:px-16 min-h-[80vh]">
         <Link
-          href={`/${nftData.creator}`}
+          href={`/profile/${nftData.creator}`}
           className="hidden md:flex items-center justify-start gap-x-2 my-4 px-20"
         >
           <ArrowW />
