@@ -20,7 +20,7 @@ import axiosInstance from "@/utils/axios";
 import { useGlobalAppStore } from "@/store/globalAppStore";
 
 export default function SuiWalletConnect() {
-  const { isUserVerified, setUser, setUserWalletAddress, setOpenModal } =
+  const { isUserVerified, setUser, setUserWalletAddress, setOpenModal, unsetUser } =
     useGlobalAppStore();
 
   const { mutateAsync: signPersonalMessage } = useSignPersonalMessage();
@@ -35,6 +35,7 @@ export default function SuiWalletConnect() {
 
   const [loading, setLoading] = useState(true);
   const [creatingUser, setCreatingUser] = useState(false);
+  const [connectingWallet, setConnectingWallet] = useState(false);
 
   const handleUserCreation = async () => {
     if (isUserVerified) return;
@@ -42,10 +43,9 @@ export default function SuiWalletConnect() {
     const notifyId = notifyPromise("Connecting...", "info");
 
     try {
+      // Always require message signing for authentication
       const response = await axiosInstance.get("auth/wallet/request-token");
-
       const message = response.data.message;
-      console.log(message);
       const authToken = response.data.token;
 
       const signedMessageResponse = await signPersonalMessage({
@@ -73,8 +73,6 @@ export default function SuiWalletConnect() {
         banner_image: user_instance.banner_image,
       };
 
-      //this will set the user state in our global zustand store
-      //it will also set the jwt as a cookie
       setUser(userDataToStoreInGlobalStore, token);
       setUserWalletAddress(currentAccount?.address!);
 
@@ -82,7 +80,6 @@ export default function SuiWalletConnect() {
     } catch (error) {
       console.log(error);
       notifyResolve(notifyId, "Failed to login", "error");
-      //   return false;
     } finally {
       setOpenModal(false);
       setCreatingUser(false);
@@ -94,43 +91,136 @@ export default function SuiWalletConnect() {
   const ranEffect = useRef(false);
 
   useEffect(() => {
-    if (currentAccount && ranEffect.current === true) {
-      if (!isUserVerified && !creatingUser) {
-        setCreatingUser(true);
-        console.log("call the user create server api");
-        handleUserCreation();
-      }
-    }
+    // Remove automatic authentication - let user manually trigger it
     setLoading(false);
-
-    return () => {
-      console.log("unmounted");
-      ranEffect.current = true;
-    };
   }, [currentAccount]);
 
   const handleWalletConnect = async (wallet: any) => {
+    setConnectingWallet(true);
+    const notifyId = notifyPromise(`Connecting to ${wallet.name}...`, "info");
+
     try {
+      // First, connect to the wallet
       await connect({ wallet });
       console.log("connected to", wallet.name);
-    } catch (error) {
+      
+      // Wait a bit for the currentAccount to be available
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Get the wallet address - use currentAccount if available, otherwise use wallet address
+      const walletAddress = currentAccount?.address || wallet.accounts?.[0]?.address;
+      
+      if (!walletAddress) {
+        throw new Error("No wallet address available");
+      }
+      
+      // After connection, immediately request a signature for authentication
+      // This ensures at least one signature is required
+      const response = await axiosInstance.get("auth/wallet/request-token");
+      const message = response.data.message;
+      const authToken = response.data.token;
+
+      const signedMessageResponse = await signPersonalMessage({
+        message: new TextEncoder().encode(message),
+      });
+
+      const res = await axiosInstance.post("auth/sui-wallet/login", {
+        signature: signedMessageResponse.signature,
+        address: walletAddress,
+        token: authToken,
+      });
+
+      const token = res.data.token;
+      const user_instance = res.data.user_instance;
+
+      const userDataToStoreInGlobalStore = {
+        id: user_instance.id,
+        walletAddress: user_instance.sui_wallet_address,
+        email: user_instance.email,
+        badges: user_instance.badges,
+        user_name: user_instance.username || "guest_user",
+        description:
+          user_instance.description || "this is a guest_user description",
+        profile_image: user_instance.profile_image,
+        banner_image: user_instance.banner_image,
+      };
+
+      setUser(userDataToStoreInGlobalStore, token);
+      setUserWalletAddress(walletAddress);
+      
+      console.log("Wallet connected and authenticated");
+      notifyResolve(notifyId, `Successfully connected to ${wallet.name}!`, "success");
+    } catch (error: any) {
       console.log("Failed to connect to the wallet");
+      console.error(error);
+      
+      // Clear user data immediately
+      unsetUser();
+      setUserWalletAddress("");
+      
+      // If wallet is connected but authentication failed, disconnect it
+      if (currentAccount?.address) {
+        try {
+          // Then disconnect the wallet
+          await disconnect();
+          console.log("Disconnected wallet due to authentication failure");
+        } catch (disconnectError) {
+          console.error("Failed to disconnect wallet:", disconnectError);
+        }
+      }
+      
+      // Double-check after a short delay and force disconnect if still connected
+      setTimeout(async () => {
+        if (currentAccount?.address) {
+          try {
+            await disconnect();
+            console.log("Forced disconnect after delay");
+          } catch (error) {
+            console.error("Failed to force disconnect:", error);
+          }
+        }
+      }, 500);
+      
+      // Show more specific error messages
+      if (error.message === "No wallet address available") {
+        notifyResolve(notifyId, "Wallet connected but no address found", "error");
+      } else if (error.response?.status === 401) {
+        notifyResolve(notifyId, "Authentication failed - please try again", "error");
+      } else if (error.code === 4001) {
+        notifyResolve(notifyId, "User rejected the signature request", "error");
+      } else {
+        notifyResolve(notifyId, "Failed to connect wallet", "error");
+      }
+    } finally {
+      setConnectingWallet(false);
+    }
+  };
+
+  const handleWalletDisconnect = async () => {
+    try {
+      // Clear user data from global store immediately
+      unsetUser();
+      setUserWalletAddress("");
+      // Then disconnect the wallet
+      await disconnect();
+      console.log("Disconnected wallet");
+    } catch (error) {
+      console.log("Failed to disconnect wallet");
       console.error(error);
     }
   };
 
   if (loading) return <div>Loading Wallets...</div>;
 
-  if (currentAccount?.address)
+  // Only show connected state if user is verified (fully authenticated)
+  if (isUserVerified && currentAccount?.address && !connectingWallet) {
     return (
-      <button
-        className="bg-[#ffffff] border-black/20 px-6 py-2 text-black font-semibold rounded-full w-full flex items-center gap-x-8"
-        onClick={() => disconnect()} // Pass the correct wallet
-      >
-        <LucideWalletIcon className="w-5 h-5" />
-        {"Disconnect Wallet"}
-      </button>
+      <div className="bg-green-600 border-black/20 px-6 py-2 text-white font-semibold rounded-full w-full flex items-center gap-x-8 justify-center">
+        <LucideWalletIcon className="w-4 h-4" />
+        Wallet Connected
+      </div>
     );
+  }
 
   if (!wallets || wallets.length === 0) {
     return <div>No wallets were found</div>;
@@ -138,13 +228,22 @@ export default function SuiWalletConnect() {
 
   return wallets.map((wallet) => (
     <button
-      key={wallet.name} // Add a unique key for each button
-      className="bg-[#ffffff] border-black/20 px-6 py-2 text-black font-semibold rounded-full w-full flex items-center gap-x-8"
-      onClick={() => handleWalletConnect(wallet)} // Pass the correct wallet
+      key={wallet.name}
+      disabled={connectingWallet}
+      className="bg-[#ffffff] border-black/20 px-6 py-2 text-black font-semibold rounded-full w-full flex items-center gap-x-8 disabled:opacity-50 disabled:cursor-not-allowed"
+      onClick={() => handleWalletConnect(wallet)}
     >
-      {" "}
-      <Image src={wallet.icon} alt="Sui Logo" width={20} height={20} />
-      {`Connect ${wallet.name} Wallet`}{" "}
+      {connectingWallet ? (
+        <>
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-black"></div>
+          Connecting...
+        </>
+      ) : (
+        <>
+          <Image src={wallet.icon} alt="Sui Logo" width={20} height={20} />
+          {`Connect ${wallet.name} Wallet`}
+        </>
+      )}
     </button>
   ));
 }
