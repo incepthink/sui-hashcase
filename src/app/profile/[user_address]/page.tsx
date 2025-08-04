@@ -150,11 +150,15 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const getCollectionNames = async () => {
-      const axiosResponse = await axiosInstance.get(
-        "/platform/collections-sui"
-      );
-      const collections = axiosResponse.data.suiCollections;
-      setCollections(collections);
+      try {
+        const axiosResponse = await axiosInstance.get(
+          "/platform/collections-sui"
+        );
+        const collections = axiosResponse.data.suiCollections;
+        setCollections(collections);
+      } catch (error) {
+        console.error("Failed to fetch collections:", error);
+      }
     };
 
     getCollectionNames();
@@ -165,26 +169,47 @@ const App: React.FC = () => {
   }, [userAddress]);
 
   const getDatabase = async () => {
-    const response = await axiosInstance.get("/user");
-    console.log(response.data);
+    try {
+      const response = await axiosInstance.get("/user");
+      console.log(response.data);
 
-    const user = response.data.user;
+      const user = response.data.user;
 
-    const newUserData = {
-      profile_image:
-        user.profile_image ||
-        "https://i.pinimg.com/564x/49/cc/10/49cc10386c922de5e2e3c0bb66956e65.jpg",
-      banner_image:
-        user.banner_image ||
-        "https://i.pinimg.com/564x/49/cc/10/49cc10386c922de5e2e3c0bb66956e65.jpg",
+      const newUserData = {
+        profile_image:
+          user.profile_image ||
+          "https://i.pinimg.com/564x/49/cc/10/49cc10386c922de5e2e3c0bb66956e65.jpg",
+        banner_image:
+          user.banner_image ||
+          "https://i.pinimg.com/564x/49/cc/10/49cc10386c922de5e2e3c0bb66956e65.jpg",
 
-      description: user.description || "Hello, I am using Sui Hashcase",
-      user_id: user.id,
-      username: user.username,
-      nfts: 0,
-    };
+        description: user.description || "Hello, I am using Sui Hashcase",
+        user_id: user.id,
+        username: user.username,
+        nfts: 0,
+      };
 
-    setUserData(newUserData);
+      setUserData(newUserData);
+    } catch (error: any) {
+      console.error("Failed to fetch user data:", error);
+      
+      // Handle 401 Unauthorized error
+      if (error.response?.status === 401) {
+        console.log("User not authenticated, showing default profile");
+        // Set default user data when not authenticated
+        setUserData({
+          profile_image: "https://i.pinimg.com/564x/49/cc/10/49cc10386c922de5e2e3c0bb66956e65.jpg",
+          banner_image: "https://i.pinimg.com/564x/49/cc/10/49cc10386c922de5e2e3c0bb66956e65.jpg",
+          description: "Please connect your wallet to view your profile",
+          user_id: "",
+          username: "Guest User",
+          nfts: 0,
+        });
+      } else {
+        // Handle other errors
+        console.error("Unexpected error:", error);
+      }
+    }
   };
 
   const handleUpdateProfile = () => {

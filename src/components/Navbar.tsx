@@ -38,63 +38,65 @@ export const Navbar = () => {
 
   return (
     <div className="bg-[#00041F]">
-      <div className="px-4">
-        <div className="flex items-center justify-between gap-x-4 md:px-20 px-4 py-4">
-          <div className="flex gap-x-4 items-center md:justify-center justify-between w-full md:w-auto">
-            <HashcaseText />
+      <div className="container mx-auto px-6 md:px-8">
+        <div className="flex items-center justify-between py-4">
+          <div className="flex items-center">
+            <Link href="/">
+              <HashcaseText />
+            </Link>
+          </div>
+          
+          <div className="hidden md:flex items-center space-x-8 text-xl">
+            <Link
+              href="/"
+              className="text-white hover:text-gray-300 transition-colors px-3 py-2"
+            >
+              Home
+            </Link>
+            <Link
+              href="/collections"
+              className="text-white hover:text-gray-300 transition-colors px-3 py-2"
+            >
+              Collections
+            </Link>
+            <Link
+              href={`/profile/${user_address}`}
+              className="text-white hover:text-gray-300 transition-colors px-3 py-2"
+            >
+              Profile
+            </Link>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <ConnectButton />
             <div className="md:hidden">
               <Hamburger
                 toggled={isOpen}
                 toggle={setOpen}
                 color="#ffffff"
                 easing="ease-in"
-                size={25}
+                size={24}
               />
             </div>
           </div>
-          <div className="border border-white/10 rounded-full px-4 py-2 hidden md:flex">
-            <div
-              className={`flex gap-x-12 items-center justify-center text-xl text-white ${workSans.className}`}
-            >
-              <Link
-                href="/"
-                className="hover:bg-white/10 hover:backdrop-blur-md rounded-full transition-colors duration-300 px-4 py-2"
-              >
-                Home
-              </Link>
-              <Link
-                href="/collections"
-                className="hover:bg-white/10 hover:backdrop-blur-md rounded-full transition-colors duration-300 px-4 py-2"
-              >
-                Collections
-              </Link>
-              <Link
-                href={`/profile/${user_address}`}
-                className="hover:bg-white/10 hover:backdrop-blur-md rounded-full transition-colors duration-300 px-4 py-2"
-              >
-                Profile
-              </Link>
-            </div>
-          </div>
-
-          <ConnectButton />
         </div>
       </div>
+      
       {isOpen && (
-        <div
-          className={`md:hidden fixed top-16 left-0 w-full z-[9999] bg-[#00041F]/90 backdrop-blur-md text-white flex flex-col items-start px-6 py-4 gap-y-6`}
-        >
-          <Link className="m-4 flex  justify-start" href={"/"}>
-            Home
-          </Link>
-          <Link className="m-4 flex justify-start" href={"/collections"}>
-            Collections
-          </Link>
-          <Link className="m-4 flex justify-start" href={"#"}>
-            Contact Us
-          </Link>
-          <div className="flex w-full my-4">
-            <ConnectButton />
+        <div className="md:hidden bg-[#00041F] border-t border-white/10">
+          <div className="container mx-auto px-6 py-4 space-y-4">
+            <Link className="block text-white py-2" href="/">
+              Home
+            </Link>
+            <Link className="block text-white py-2" href="/collections">
+              Collections
+            </Link>
+            <Link className="block text-white py-2" href={`/profile/${user_address}`}>
+              Profile
+            </Link>
+            <div className="pt-4">
+              <ConnectButton />
+            </div>
           </div>
         </div>
       )}

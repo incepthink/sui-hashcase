@@ -34,33 +34,11 @@ const HeroSection = ({
   scrollToCollections: () => void;
 }) => {
   return (
-    <div className="relative h-[730px] w-full overflow-hidden">
-      {/* Background layer - darker, more transparent */}
-      <div className="absolute top-0 left-0 right-0 h-[690px] z-0">
-        <Image
-          src={backgroundImageHeroSection}
-          alt="Background layer"
-          layout="fill"
-          objectFit="cover"
-          className="bg-opacity-70"
-          priority
-        />
-      </div>
-
-      {/* Foreground layer - brighter */}
-      <div className="absolute inset-0 z-0">
-        <Image
-          src={foregroundImageHeroSection} // Replace with your actual image path
-          alt="Foreground layer"
-          layout="fill"
-          objectFit="cover"
-          className="opacity-80"
-          priority
-        />
-      </div>
+    <div className="relative h-full w-full overflow-hidden">
+     
 
       {/* Content */}
-      <div className="relative z-10 flex flex-col items-center pt-[189px] h-full text-center px-4">
+      <div className="relative z-10 flex flex-col items-center py-20  h-full text-center px-4">
         <div className="max-w-3xl mx-auto">
           <h1 className="text-4xl md:text-5xl font-bold text-white mb-6">
             Discover Unique <span className="text-[#4DA2FF]">Collection</span>

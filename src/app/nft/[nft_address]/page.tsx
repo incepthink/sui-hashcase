@@ -177,14 +177,14 @@ const NftPage = () => {
                   </span>
                 </p>
               </div>
-              <div className="flex items-center justify-center">
+              {/* <div className="flex items-center justify-center">
                 <div className="md:w-8 md:h-8 w-6 h-6 rounded-full bg-[#1E1E1ECC] backdrop-blur-md flex items-center justify-center mr-2">
                   <HeartW />
                 </div>
                 <div className="w-8 h-8 rounded-full bg-[#1E1E1ECC] backdrop-blur-md flex items-center justify-center ml-2">
                   <Send />
                 </div>
-              </div>
+              </div> */}
             </div>
 
             <div className="flex flex-col justify-start gap-y-2 my-4 w-full">
@@ -192,16 +192,16 @@ const NftPage = () => {
                 {nftData.name}
               </p>
               <div className="flex justify-start gap-x-2">
-                <div className="flex items-center justify-center gap-x-2">
+                {/* <div className="flex items-center justify-center gap-x-2">
                   <Image src={Eye} alt="eye" width={20} height={20} />
                   <p className="text-white/50 md:text-lg text-sm">225 views</p>
-                </div>
-                <div className="flex items-center justify-center gap-x-2">
+                </div> */}
+                {/* <div className="flex items-center justify-center gap-x-2">
                   <Heart />
                   <p className="text-white/50 md:text-lg text-sm">
                     100 Favourites
                   </p>
-                </div>
+                </div> */}
               </div>
             </div>
 
@@ -213,7 +213,7 @@ const NftPage = () => {
 
             {unlockableContent && (
               <div className="flex items-center justify-start w-full">
-                <div className="flex items-center md:w-auto w-full justify-between my-4 bg-[#4DA2FF] backdrop-blur-md rounded-lg px-3 py-3 gap-x-2">
+                {/* <div className="flex items-center md:w-auto w-full justify-between my-4 bg-[#4DA2FF] backdrop-blur-md rounded-lg px-3 py-3 gap-x-2">
                   <button
                     onClick={openModal}
                     className="flex items-center gap-x-2"
@@ -224,7 +224,7 @@ const NftPage = () => {
                     </p>
                   </button>
                   <ArrowW className="rotate-180 ml-4" />
-                </div>
+                </div> */}
               </div>
             )}
 

@@ -264,79 +264,52 @@ const MintPage = () => {
   };
 
   return (
-    <div className={`flex flex-col bg-[#00041F] ${workSans.className}`}>
-      <div className="flex flex-col px-8 md:px-16">
+    <div className={`flex flex-col bg-[#00041F] min-h-screen ${workSans.className}`}>
+      <div className="container mx-auto px-6 md:px-8 py-8">
+        {/* Back button */}
         <Link
           href="/"
-          className="hidden md:flex items-center justify-start gap-x-2 my-4 px-20"
+          className="inline-flex items-center gap-2 text-white/70 hover:text-white transition-colors mb-8"
         >
           <ArrowW />
-          <p className="text-2xl text-white/70">back</p>
+          <span className="text-lg">Back</span>
         </Link>
-        <div className="my-4 flex flex-col md:flex-row items-center justify-around md:gap-y-0 gap-y-8">
-          <Image
-            src={Nft}
-            alt="nft"
-            className="md:w-[400px] md:h-[433px] w-[350px] h-[378.88px] rounded-lg"
-          />
-          <div className="flex flex-col items-center justify-center">
-            <div className="flex items-center justify-between w-full">
-              <div>
-                <p className="text-white md:text-2xl text-lg">
-                  By <span className="text-[#4DA2FF]">Hashcase</span>
+
+        {/* Main content */}
+        <div className="grid md:grid-cols-2 gap-12 items-start">
+          {/* NFT Image */}
+          <div className="flex justify-center">
+            <Image
+              src={Nft}
+              alt="HashCase Sui Loyalty NFT"
+              className="w-full max-w-md rounded-lg shadow-lg"
+            />
+          </div>
+
+          {/* Content */}
+          <div className="space-y-8">
+            {/* Header */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <p className="text-white text-lg">
+                  By <span className="text-[#4DA2FF] font-semibold">Hashcase</span>
                 </p>
               </div>
-              <div className="flex items-center justify-center">
-                <div className="md:w-8 md:h-8 w-6 h-6 rounded-full bg-[#1E1E1ECC] backdrop-blur-md flex items-center justify-center mr-2">
-                  <HeartW />
-                </div>
-                <div className="w-8 h-8 rounded-full bg-[#1E1E1ECC] backdrop-blur-md flex items-center justify-center ml-2">
-                  <Send />
-                </div>
-              </div>
-            </div>
-            <div className="flex flex-col justify-start gap-y-2 my-4 w-full">
-              <p className="text-white md:text-4xl text-2xl tracking-wide font-bold">
+              
+              <h1 className="text-white text-3xl md:text-4xl font-bold">
                 HashCase Sui Loyalty NFT
-              </p>
-              <div className="flex justify-start gap-x-2">
-                <div className="flex items-center justify-center gap-x-2">
-                  <Image src={Eye} alt="eye" />
-                  <p className="text-white/50 md:text-lg text-sm">225 views</p>
-                </div>
-                <div className="flex items-center justify-center gap-x-2">
-                  <Heart />
-                  <p className="text-white/50 md:text-lg text-sm">
-                    100 Favourites
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center justify-center my-4">
-              <p className="md:text-xl text-sm text-white">
-                This is a NFT Loyalty Card Which Executes Onchain Loyalty using
-                Hashcase And <br className="hidden md:block" /> Sui
-                Infrastructure.
+              </h1>
+              
+              <p className="text-white/70 text-lg leading-relaxed">
+                This is a NFT Loyalty Card which executes onchain loyalty using Hashcase and Sui infrastructure.
               </p>
             </div>
-            <div className="flex items-center justify-start w-full">
-              <div className="flex items-center md:w-auto w-full justify-between my-4 bg-[#4DA2FF] backdrop-blur-md rounded-lg px-3 py-3 gap-x-2">
-                <button
-                  onClick={handleReveal}
-                  className="flex items-center gap-x-2"
-                >
-                  <EyeW />
-                  <p className="text-white md:text-lg text-sm">
-                    Reveal the Content
-                  </p>
-                </button>
-                <ArrowW className="rotate-180 ml-4" />
-              </div>
-            </div>
-            <div className="flex items-center justify-start my-4 w-full">
+
+            {/* Claim button */}
+            <div className="pt-4">
               <button
                 onClick={handleClaimNFT}
-                className="md:px-6 md:py-3 px-4 py-2 rounded-full md:text-xl text-sm bg-white text-black border-[1px] border-b-4 border-[#4DA2FF] flex items-center gap-x-2"
+                className="w-full md:w-auto px-8 py-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-3"
               >
                 Claim to Hashcase Wallet
                 <ArrowB />
@@ -344,55 +317,67 @@ const MintPage = () => {
             </div>
           </div>
         </div>
-        <hr className="md:m-[100px] m-[20px] bg-gradient-to-r from-transparent via-white to-transparent opacity-20" />
-        <div className="flex items-center justify-center mt-4 mb-8">
-          <div className="bg-[#1A1D35] rounded-lg md:rounded-full p-4 w-full md:text-center text-left text-white md:text-2xl text-lg font-semibold">
-            <p>
+
+        {/* Divider */}
+        <div className="my-16">
+          <hr className="border-white/20" />
+        </div>
+
+        {/* Loyalty info */}
+        <div className="max-w-4xl mx-auto">
+          <div className="bg-white/5 backdrop-blur-sm rounded-lg p-6 md:p-8 border border-white/10">
+            <p className="text-white text-lg md:text-xl text-center">
               The above NFT holds{" "}
-              <span className="text-[#4DA2FF]"> 20 loyalty point(s).</span>{" "}
-              <br className="hidden md:block" />
-              You can receive additional loyalty points from this owner by
-              completing the tasks below.
+              <span className="text-[#4DA2FF] font-semibold">20 loyalty point(s).</span>{" "}
+              You can receive additional loyalty points from this owner by completing the tasks below.
             </p>
           </div>
         </div>
-        <p className="text-center md:text-2xl text-lg font-semibold mt-6 mb-4 text-white">
-          2 Task
-        </p>
-        <div className="flex flex-col md:flex-row items-center justify-center w-full md:gap-x-6 gap-x-0 gap-y-4 md:gap-y-0 mt-4 mb-12">
-          <div className="bg-[#1A1D35] md:p-6 p-4 w-full flex items-center justify-between">
-            <div>
-              <p className="md:text-2xl text-lg text-left mb-2 font-semibold capitalize text-white">
-                Follow On Twitter
-              </p>
-              <p className="text-white/50 md:text-lg text-sm mt-2">
-                Get 20 Points
-              </p>
-            </div>
-            <div className="flex items-end justify-center">
-              <div className="bg-[#FAD64A1A] p-2 rounded-full flex items-center justify-center md:text-lg text-sm text-[#F8924F]">
-                Pending
+
+        {/* Tasks */}
+        <div className="mt-12 max-w-4xl mx-auto">
+          <h2 className="text-white text-2xl font-semibold text-center mb-8">
+            2 Tasks
+          </h2>
+          
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="bg-white/5 backdrop-blur-sm rounded-lg p-6 border border-white/10">
+              <div className="flex items-center justify-between">
+                <div className="space-y-2">
+                  <h3 className="text-white text-xl font-semibold">
+                    Follow On Twitter
+                  </h3>
+                  <p className="text-white/60 text-sm">
+                    Get 20 Points
+                  </p>
+                </div>
+                <div className="bg-yellow-500/20 text-yellow-400 px-4 py-2 rounded-full text-sm font-medium">
+                  Pending
+                </div>
               </div>
             </div>
-          </div>
-          <div className="bg-[#1A1D35] md:p-6 p-4 w-full flex items-center justify-between">
-            <div>
-              <p className="md:text-2xl text-lg text-left mb-2 font-semibold capitalize text-white">
-                Post A Tweet
-              </p>
-              <p className="text-white/50 md:text-lg text-sm mt-2">
-                Get 20 Points
-              </p>
-            </div>
-            <div className="flex items-end justify-end">
-              <div className="bg-[#FAD64A1A] p-2 rounded-full flex items-center justify-center md:text-lg text-sm text-[#F8924F]">
-                Pending
+
+            <div className="bg-white/5 backdrop-blur-sm rounded-lg p-6 border border-white/10">
+              <div className="flex items-center justify-between">
+                <div className="space-y-2">
+                  <h3 className="text-white text-xl font-semibold">
+                    Post A Tweet
+                  </h3>
+                  <p className="text-white/60 text-sm">
+                    Get 20 Points
+                  </p>
+                </div>
+                <div className="bg-yellow-500/20 text-yellow-400 px-4 py-2 rounded-full text-sm font-medium">
+                  Pending
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
+
       <Collectable />
+      
       <Modal
         context="Unlockable Content"
         openModal={isUnlocked}
