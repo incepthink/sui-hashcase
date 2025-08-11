@@ -61,13 +61,13 @@ const App: React.FC = () => {
   // }, [currentAccount, zkloginaddress, router]);
 
   // Update URL when connected wallet changes (only if user is connected)
-  useEffect(() => {
-    const connectedAddress = currentAccount?.address || zkloginaddress;
-    if (connectedAddress && connectedAddress !== userAddressFromUrl) {
-      // Update the URL to reflect the connected wallet
-      router.replace(`/profile/${connectedAddress}`);
-    }
-  }, [currentAccount?.address, zkloginaddress, userAddressFromUrl, router]);
+  // Do NOT auto-redirect to the connected wallet; keep shared URLs stable
+  // useEffect(() => {
+  //   const connectedAddress = currentAccount?.address || zkloginaddress;
+  //   if (!userAddressFromUrl && connectedAddress) {
+  //     router.replace(`/profile/${connectedAddress}`);
+  //   }
+  // }, [currentAccount?.address, zkloginaddress, userAddressFromUrl, router]);
 
   // needing for updating profile
   const [showModal, setShowModal] = useState(false);
@@ -86,7 +86,8 @@ const App: React.FC = () => {
     process.env.NEXT_PUBLIC_CONTRACT_PACKAGE_ID ||
     "0x072920bb06baea0717fbeda59950b97a1205f0196d6ad33878d3120710fafe84";
 
-  const userAddress = currentAccount?.address || zkloginaddress || userAddressFromUrl || "";
+  // Use the URL address if present so shared profiles remain stable; fall back to connected wallet
+  const userAddress = userAddressFromUrl || currentAccount?.address || zkloginaddress || "";
 
   console.log("🔍 DEBUG: Current Account Address:", currentAccount?.address);
   console.log("🔍 DEBUG: ZkLogin Address:", zkloginaddress);
@@ -377,16 +378,13 @@ const App: React.FC = () => {
       )}
 
       <div className="p-8 max-w-[1600px] mx-auto">
-        {currentAccount || zkloginaddress ? (
-          <>
+        <>
             <h1 className="text-4xl font-bold text-center mb-3">Owned NFTs</h1>
             <div className="flex flex-col items-center gap-2 mb-6">
-              <p className="text-white/60 text-xs sm:text-sm break-all mb-4 mt-2">
+              <p className="flex flex-col text-white/60 text-xs sm:text-sm break-all mb-4 mt-2">
                 Address: <span className="px-2 py-1 rounded-full bg-white/5 border border-white/10 text-white/70">{userAddress || "Not connected"}</span>
                 {currentAccount?.address && userAddressFromUrl && currentAccount.address !== userAddressFromUrl && (
-                  <span className="ml-2 text-xs text-blue-400">
-                    (Showing connected wallet, not URL address)
-                  </span>
+                  <span className="ml-2 flex justify-center mt-2 text-xs text-blue-400">(Viewing shared profile; connected as {currentAccount.address.slice(0,6)}...{currentAccount.address.slice(-4)})</span>
                 )}
               </p>
               {/* Toolbar */}
@@ -469,24 +467,8 @@ const App: React.FC = () => {
               </div>
             )}
           </>
-        ) : (
-          <div className="text-center py-16">
-            <div className="max-w-md mx-auto">
-              <div className="w-24 h-24 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-6">
-                <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                </svg>
-              </div>
-              <h2 className="text-2xl font-bold text-white mb-4">Connect Wallet to View NFTs</h2>
-              <p className="text-white/60 mb-6">
-                This profile belongs to <span className="text-blue-400 font-mono">{userAddressFromUrl?.slice(0, 8)}...{userAddressFromUrl?.slice(-6)}</span>. 
-                Connect your wallet to see their NFT collection.
-              </p>
-              <ConnectButton />
-            </div>
-          </div>
-        )}
-
+        
+ 
         {/* <h1 className="text-4xl font-bold text-center mb-8 mt-16">Claimed NFTs</h1> */}
         {/* {processedClaimedNFTs && processedClaimedNFTs.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-8">
