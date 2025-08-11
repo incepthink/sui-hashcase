@@ -37,6 +37,13 @@ export default function SuiWalletConnect() {
   const [creatingUser, setCreatingUser] = useState(false);
   const [connectingWallet, setConnectingWallet] = useState(false);
 
+  // Debug logging
+  useEffect(() => {
+    console.log("Available wallets:", wallets);
+    console.log("Current account:", currentAccount);
+    console.log("Is user verified:", isUserVerified);
+  }, [wallets, currentAccount, isUserVerified]);
+
   const handleUserCreation = async () => {
     if (isUserVerified) return;
 
@@ -77,7 +84,7 @@ export default function SuiWalletConnect() {
       setUserWalletAddress(currentAccount?.address!);
 
       notifyResolve(notifyId, "Connected", "success");
-    } catch (error) {
+    } catch (error: unknown) {
       console.log(error);
       notifyResolve(notifyId, "Failed to login", "error");
     } finally {
@@ -116,19 +123,35 @@ export default function SuiWalletConnect() {
       
       // After connection, immediately request a signature for authentication
       // This ensures at least one signature is required
-      const response = await axiosInstance.get("auth/wallet/request-token");
+      console.log("Requesting authentication token...");
+      
+      // Add timeout for API calls
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error("Request timeout")), 10000)
+      );
+      
+      const response = await Promise.race([
+        axiosInstance.get("auth/wallet/request-token"),
+        timeoutPromise
+      ]) as any;
+      
       const message = response.data.message;
       const authToken = response.data.token;
+      console.log("Received auth token, requesting signature...");
 
       const signedMessageResponse = await signPersonalMessage({
         message: new TextEncoder().encode(message),
       });
+      console.log("Message signed successfully");
 
-      const res = await axiosInstance.post("auth/sui-wallet/login", {
-        signature: signedMessageResponse.signature,
-        address: walletAddress,
-        token: authToken,
-      });
+      const res = await Promise.race([
+        axiosInstance.post("auth/sui-wallet/login", {
+          signature: signedMessageResponse.signature,
+          address: walletAddress,
+          token: authToken,
+        }),
+        timeoutPromise
+      ]) as any;
 
       const token = res.data.token;
       const user_instance = res.data.user_instance;
@@ -150,7 +173,7 @@ export default function SuiWalletConnect() {
       
       console.log("Wallet connected and authenticated");
       notifyResolve(notifyId, `Successfully connected to ${wallet.name}!`, "success");
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.log("Failed to connect to the wallet");
       console.error(error);
       
@@ -164,7 +187,7 @@ export default function SuiWalletConnect() {
           // Then disconnect the wallet
           await disconnect();
           console.log("Disconnected wallet due to authentication failure");
-        } catch (disconnectError) {
+        } catch (disconnectError: unknown) {
           console.error("Failed to disconnect wallet:", disconnectError);
         }
       }
@@ -175,21 +198,30 @@ export default function SuiWalletConnect() {
           try {
             await disconnect();
             console.log("Forced disconnect after delay");
-          } catch (error) {
+          } catch (error: unknown) {
             console.error("Failed to force disconnect:", error);
           }
         }
       }, 500);
       
       // Show more specific error messages
-      if (error.message === "No wallet address available") {
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      const errorResponse = error as any;
+      
+      if (errorMessage === "No wallet address available") {
         notifyResolve(notifyId, "Wallet connected but no address found", "error");
-      } else if (error.response?.status === 401) {
+      } else if (errorResponse?.response?.status === 401) {
         notifyResolve(notifyId, "Authentication failed - please try again", "error");
-      } else if (error.code === 4001) {
+      } else if (errorResponse?.code === 4001) {
         notifyResolve(notifyId, "User rejected the signature request", "error");
+      } else if (errorMessage.includes("Failed to fetch") || errorMessage.includes("TRPCClientError")) {
+        notifyResolve(notifyId, "Network error - please check your connection and try again", "error");
+      } else if (errorMessage.includes("Request timeout")) {
+        notifyResolve(notifyId, "Request timed out - please try again", "error");
+      } else if (errorMessage.includes("Unexpected error") || errorMessage.includes("Oe")) {
+        notifyResolve(notifyId, "Wallet extension error - please try refreshing the page", "error");
       } else {
-        notifyResolve(notifyId, "Failed to connect wallet", "error");
+        notifyResolve(notifyId, `Failed to connect wallet: ${errorMessage}`, "error");
       }
     } finally {
       setConnectingWallet(false);
@@ -204,7 +236,7 @@ export default function SuiWalletConnect() {
       // Then disconnect the wallet
       await disconnect();
       console.log("Disconnected wallet");
-    } catch (error) {
+    } catch (error: unknown) {
       console.log("Failed to disconnect wallet");
       console.error(error);
     }

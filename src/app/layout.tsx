@@ -23,17 +23,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <TanstackProvider>
-      <html lang="en">
-        <body className={clsx(dmSans.className, "antialiased")}>
+    <html lang="en">
+      <body className={clsx(dmSans.className, "antialiased")}>
+        <TanstackProvider>
           <Toaster />
           <Navbar />
           {children}
           <WalletConnectionModal />
           <ToastContainer />
           <Footer />
-        </body>
-      </html>
-    </TanstackProvider>
+        </TanstackProvider>
+      </body>
+    </html>
   );
 }

@@ -12,8 +12,6 @@ import {
   Metadata,
   MetadataSetWithAllMetadataInstances,
 } from "@/utils/modelTypes";
-  
-
 
 interface Collection {
   id: number;
@@ -49,21 +47,9 @@ type Coordinates = {
 export default function NFTPage() {
   const params = useParams();
   const [collectionData, setCollectionData] = useState<Collection | null>(null);
-  const [isLocationEnabled, setIsLocationEnabled] = useState(() => {
-    // Check multiple sources for location state
-    if (typeof window !== 'undefined') {
-      // Check sessionStorage first (persists during browser session)
-      const sessionState = sessionStorage.getItem('locationEnabled');
-      if (sessionState === 'true') return true;
-      
-      // Check URL parameter as fallback
-      const urlParams = new URLSearchParams(window.location.search);
-      const urlState = urlParams.get('location');
-      if (urlState === 'enabled') return true;
-    }
-    return false;
-  });
+  const [isLocationEnabled, setIsLocationEnabled] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
 
   //needed for the NFT modal to function
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -74,36 +60,6 @@ export default function NFTPage() {
 
   const closeModal = () => {
     setIsModalOpen(false);
-  };
-
-  // Function to save location state with multiple fallbacks
-  const saveLocationState = (enabled: boolean) => {
-    setIsLocationEnabled(enabled);
-    
-    if (typeof window !== 'undefined') {
-      // Save to sessionStorage (persists during browser session)
-      sessionStorage.setItem('locationEnabled', enabled.toString());
-      
-      // Update URL parameter as backup
-      const url = new URL(window.location.href);
-      if (enabled) {
-        url.searchParams.set('location', 'enabled');
-      } else {
-        url.searchParams.delete('location');
-      }
-      
-      // Update URL without page reload
-      window.history.replaceState({}, '', url.toString());
-    }
-  };
-
-  // Function to disable location
-  const disableLocation = () => {
-    saveLocationState(false);
-    // Clear the metadata when location is disabled
-    setMetadata([]);
-    setGeofencedMetadata([]);
-    setRandomizedTokenMetadata([]);
   };
 
   function getCurrentPosition(): Promise<Coordinates> {
@@ -136,34 +92,9 @@ export default function NFTPage() {
   const getLocation = async () => {
     setIsLoading(true);
     try {
-      // First fetch collection data if not already fetched
-      if (!collectionData) {
-        const collectionDataResponse = await axiosInstance.get(
-          "/platform/collection-by-address",
-          {
-            params: {
-              contract_address: params.collection_address,
-            },
-          }
-        );
-        const { collection_instance } = collectionDataResponse.data;
-        setCollectionData(collection_instance);
-      }
-
-      // Get user location with better error handling
+      // Get user location
       const { latitude, longitude } = await getCurrentPosition();
-      saveLocationState(true);
-
-      // Fetch all metadata
-      const response = await axiosInstance.get(
-        "platform/metadata/by-collection",
-        {
-          params: {
-            collection_id: collectionData?.id || collectionData?.id,
-          },
-        }
-      );
-      setMetadata(response.data.metadata_instances);
+      setIsLocationEnabled(true);
 
       // Fetch geofenced metadata
       const geofenced = await axiosInstance.get(
@@ -172,27 +103,14 @@ export default function NFTPage() {
           params: {
             user_lat: latitude,
             user_lon: longitude,
-            collection_id: collectionData?.id || collectionData?.id,
+            collection_id: collectionData?.id,
           },
         }
       );
       setGeofencedMetadata(geofenced.data.data);
 
-      // Fetch randomized token metadata
-      const randomizedToken = await axiosInstance.get(
-        "/platform/metadata-set/by-collection",
-        {
-          params: {
-            collection_id: collectionData?.id || collectionData?.id,
-          },
-        }
-      );
-      setRandomizedTokenMetadata(randomizedToken.data.metadataSets);
-
     } catch (error: any) {
       console.error("Location error:", error);
-      
-      // Handle different types of location errors
       if (error.code === 1) {
         alert("Location access denied. Please allow location access in your browser settings and try again.");
       } else if (error.code === 2) {
@@ -207,11 +125,16 @@ export default function NFTPage() {
     }
   };
 
+  const disableLocation = () => {
+    setIsLocationEnabled(false);
+    setGeofencedMetadata([]);
+  };
+
   // Fetch collection data on component mount
   useEffect(() => {
-    const fetchCollectionData = async () => {
+    const fetchNFTData = async () => {
       try {
-        const collectionDataResponse = await axiosInstance.get(
+        const collectionData = await axiosInstance.get(
           "/platform/collection-by-address",
           {
             params: {
@@ -219,90 +142,111 @@ export default function NFTPage() {
             },
           }
         );
-        const { collection_instance } = collectionDataResponse.data;
+        const { collection_instance } = collectionData.data;
+
         setCollectionData(collection_instance);
-      } catch (error) {
-        console.error(error);
-      }
-    };
 
-    if (params.collection_address) {
-      fetchCollectionData();
-    }
-  }, [params.collection_address]);
-
-  // Auto-fetch NFT data if location is already enabled
-  useEffect(() => {
-    const fetchNFTData = async () => {
-      if (isLocationEnabled && collectionData) {
-        setIsLoading(true);
+        // Try to fetch metadata, but don't fail if it doesn't work
         try {
-          // Get current location with retry mechanism
-          let coordinates;
-          try {
-            coordinates = await getCurrentPosition();
-          } catch (locationError) {
-            console.error("Location access failed:", locationError);
-            // If location fails, disable it and show message
-            saveLocationState(false);
-            alert("Location access failed. Please enable location permissions and try again.");
-            return;
-          }
-
-          const { latitude, longitude } = coordinates;
-
-          // Fetch all metadata
           const response = await axiosInstance.get(
             "platform/metadata/by-collection",
             {
               params: {
-                collection_id: collectionData.id,
+                collection_id: collection_instance.id,
               },
             }
           );
           setMetadata(response.data.metadata_instances);
+        } catch (metadataError) {
+          console.log("Metadata not available for this collection:", metadataError);
+          setMetadata([]);
+        }
 
-          // Fetch geofenced metadata
+        // Try to fetch geofenced metadata, but don't fail if it doesn't work
+        try {
+          const { latitude, longitude } = await getCurrentPosition();
           const geofenced = await axiosInstance.get(
             "/platform/metadata/geo-fenced",
             {
               params: {
                 user_lat: latitude,
                 user_lon: longitude,
-                collection_id: collectionData.id,
+                collection_id: collection_instance.id,
               },
             }
           );
           setGeofencedMetadata(geofenced.data.data);
+        } catch (geofencedError) {
+          console.log("Geofenced metadata not available:", geofencedError);
+          setGeofencedMetadata([]);
+        }
 
-          // Fetch randomized token metadata
+        // Try to fetch randomized token metadata, but don't fail if it doesn't work
+        try {
           const randomizedToken = await axiosInstance.get(
             "/platform/metadata-set/by-collection",
             {
               params: {
-                collection_id: collectionData.id,
+                collection_id: collection_instance.id,
               },
             }
           );
           setRandomizedTokenMetadata(randomizedToken.data.metadataSets);
-
-        } catch (error: any) {
-          console.error("Auto-fetch error:", error);
-          // If any API call fails, keep location enabled but show error
-          alert("Failed to fetch NFT data. Please try again.");
-        } finally {
-          setIsLoading(false);
+        } catch (randomizedError) {
+          console.log("Randomized token metadata not available:", randomizedError);
+          setRandomizedTokenMetadata([]);
         }
+      } catch (error) {
+        console.error("Error fetching collection data:", error);
+        setError(error as Error);
       }
     };
 
-    // Add a small delay to ensure component is fully mounted
-    const timer = setTimeout(() => {
+    if (params.collection_address) {
       fetchNFTData();
-    }, 100);
+    }
+  }, [params.collection_address]);
 
-    return () => clearTimeout(timer);
-  }, [isLocationEnabled, collectionData]);
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-[#00041f] to-[#030828] flex items-center justify-center">
+        <div className="text-center max-w-2xl mx-auto px-6">
+          <div className="text-red-400 text-4xl mb-4">⚠️</div>
+          <h2 className="text-2xl font-bold text-white mb-4">Collection API Error</h2>
+          <p className="text-white/80 mb-4">Failed to load collection data from the backend API.</p>
+          
+          {/* Show detailed error info for debugging */}
+          <div className="bg-red-900/20 border border-red-500/30 rounded-lg p-4 mb-6 text-left">
+            <h3 className="text-red-400 font-semibold mb-2">Error Details:</h3>
+            <p className="text-red-300 text-sm mb-2">
+              <strong>Type:</strong> {error.name || 'Unknown'}
+            </p>
+            <p className="text-red-300 text-sm mb-2">
+              <strong>Message:</strong> {error.message || 'No message available'}
+            </p>
+            <p className="text-red-300 text-sm mb-2">
+              <strong>Collection Address:</strong> {params.collection_address}
+            </p>
+            <p className="text-red-300 text-sm">
+              <strong>Endpoint:</strong> /platform/collection-by-address
+            </p>
+          </div>
+          
+          <div className="space-y-3">
+            <button 
+              onClick={() => window.location.reload()} 
+              className="px-6 py-3 bg-[#4DA2FF] text-black rounded-lg hover:bg-[#3a8fef] transition-colors font-semibold"
+            >
+              Retry
+            </button>
+            <div className="text-white/60 text-sm">
+              <p>Check if your backend server is running and the collection exists.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!collectionData) {
     return (
@@ -317,10 +261,21 @@ export default function NFTPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#00041f] to-[#030828]">
-      <div className="bg-gradient-to-b from-[#00041f] to-[#030828] text-white flex flex-col justify-center items-center py-20">
+      <div className="bg-gradient-to-b from-[#00041f] to-[#030828] text-white">
+        {/* Banner Section */}
+        <div className="w-full h-[200px] overflow-hidden">
+          <img
+            src={
+              collectionData.image_uri ||
+              "https://i.pinimg.com/564x/49/cc/10/49cc10386c922de5e2e3c0bb66956e65.jpg"
+            }
+            alt="Banner"
+            className="w-full h-auto"
+          />
+        </div>
 
         {/* Profile Section */}
-        <div className="flex items-center mt-[-30px] p-6 bg-white/5 rounded-lg border border-white/10 w-4/5 mx-auto">
+        <div className="flex items-center mt-[-50px] p-6  shadow-lg rounded-lg w-4/5 mx-auto">
           <div className="flex-shrink-0">
             <img
               src={
@@ -328,142 +283,147 @@ export default function NFTPage() {
                 "https://i.pinimg.com/564x/49/cc/10/49cc10386c922de5e2e3c0bb66956e65.jpg"
               }
               alt="Logo"
-              className="w-20 h-20 rounded-full border-2 border-gray-300"
+              className="w-24 h-24 rounded-full border-2 border-gray-300"
             />
           </div>
-          <div className="ml-6">
-            <h2 className="text-2xl font-semibold text-white">{collectionData.name}</h2>
+          <div className="ml-6 mt-3">
+            <h2 className="text-2xl font-semibold">{collectionData.name}</h2>
             <p className="text-gray-300">{collectionData.description}</p>
           </div>
         </div>
 
-        <div className="p-8 max-w-[1600px] mx-auto w-full">
-          <h1 className="text-4xl font-bold mb-8 text-white text-center">
-            Collection Assets
-          </h1>
-          
-          <div className="flex justify-center items-center gap-4 mb-8">
-            <button
-              onClick={isLocationEnabled ? disableLocation : getLocation}
-              disabled={isLoading}
-              className={`px-6 py-3 rounded-lg font-medium transition-colors ${
-                isLocationEnabled 
-                  ? 'bg-red-600 text-white hover:bg-red-700' 
-                  : 'bg-blue-600 text-white hover:bg-blue-700'
-              } disabled:opacity-50 disabled:cursor-not-allowed`}
-            >
-              {isLoading ? (
-                <div className="flex items-center gap-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  Loading...
-                </div>
-              ) : isLocationEnabled ? (
-                <div className="flex items-center gap-2">
-                  <MapPin className="w-4 h-4" />
-                  Disable Location
-                </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <MapPin className="w-4 h-4" />
-                  Enable Location
-                </div>
-              )}
-            </button>
-            
-            <button
-              onClick={() => openModal()}
-              className="px-6 py-3 rounded-lg font-medium bg-purple-600 text-white hover:bg-purple-700 transition-colors"
-            >
-              Mint Custom NFT
-            </button>
-          </div>
-
-          {!isLocationEnabled ? (
-            // Show enable location message instead of NFTs
-            <div className="flex flex-col items-center justify-center min-h-64 space-y-6">
-              <MapPin className="w-16 h-16 text-blue-400" />
-              <div className="text-center space-y-2">
-                <h2 className="text-2xl font-semibold text-white">
-                  Enable Location to View NFTs
-                </h2>
-                <p className="text-gray-300 max-w-md">
-                  Click the "Enable Location" button above to view available NFTs in your area.
-                </p>
-              </div>
-            </div>
-          ) : (
-            // Show NFTs after location is enabled
-            <>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-                {allMetadata.length > 0 ? (
-                  allMetadata.map((metadata) => (
-                    <Link
-                      key={metadata.id}
-                      className="block"
-                      href={`/freeMint/${metadata.id}`}
-                    >
-                      <div className="bg-white/10 rounded-lg border border-white/20 overflow-hidden hover:bg-white/15 transition-colors">
-                        {/* NFT Image */}
-                        <div className="relative aspect-square">
-                          <img
-                            src={
-                              metadata.image_url ||
-                              "https://via.placeholder.com/300"
-                            }
-                            alt={metadata.title}
-                            className="w-full h-full object-cover"
-                          />
-                          <div className="absolute bottom-0 left-0 right-0 bg-black/70 p-4">
-                            <h3 className="text-lg font-semibold text-white">
-                              {metadata.title}
-                            </h3>
-                          </div>
-                        </div>
-
-                        {/* Card Content */}
-                        <div className="p-4">
-                          <p className="text-sm text-gray-300 line-clamp-2 mb-3">
-                            {metadata.description}
-                          </p>
-                          <div className="flex justify-between text-xs text-gray-400">
-                            <span>Created: {new Date(metadata.createdAt).toLocaleDateString()}</span>
-                            <span>Updated: {new Date(metadata.updatedAt).toLocaleDateString()}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </Link>
-                  ))
+        <div className="p-8 max-w-[1600px] mx-auto">
+          {/* Header toolbar */}
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <h1 className="text-3xl md:text-4xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500 drop-shadow-lg">
+              Collection Assets
+            </h1>
+            <div className="flex items-center gap-3">
+              <span className="hidden md:inline-block text-white/70 text-sm px-3 py-2 rounded-lg border border-white/10 bg-white/5">
+                {allMetadata.length} assets
+              </span>
+              <button
+                onClick={() => openModal()}
+                className="px-4 py-2 rounded-lg font-semibold bg-gradient-to-r from-blue-400 to-purple-500 text-black md:text-white md:bg-transparent md:border md:border-white/20 md:hover:bg-white/10 transition"
+              >
+                Mint Custom NFT
+              </button>
+              <button
+                onClick={isLocationEnabled ? disableLocation : getLocation}
+                disabled={isLoading}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors border ${
+                  isLocationEnabled
+                    ? 'bg-red-600 text-white hover:bg-red-700 border-transparent'
+                    : 'bg-white/10 text-white hover:bg-white/20 border-white/20'
+                } disabled:opacity-50 disabled:cursor-not-allowed`}
+                title="Toggle access to your location for geofenced NFTs"
+              >
+                {isLoading ? (
+                  <div className="flex items-center gap-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    Loading...
+                  </div>
+                ) : isLocationEnabled ? (
+                  <div className="flex items-center gap-2">
+                    <MapPin className="w-4 h-4" /> Disable Location
+                  </div>
                 ) : (
-                  <div className="col-span-full flex flex-col items-center justify-center min-h-48 space-y-4">
-                    <Frown className="w-16 h-16 text-gray-400" />
-                    <div className="text-center">
-                      <p className="text-xl text-gray-300 font-medium">
-                        This Collection does not have any mintable assets.
-                      </p>
-                      <p className="text-gray-500 mt-2">
-                        Check back later or explore other collections.
-                      </p>
-                    </div>
+                  <div className="flex items-center gap-2">
+                    <MapPin className="w-4 h-4" /> Enable Location
                   </div>
                 )}
-              </div>
+              </button>
+            </div>
+          </div>
 
-              {randomizedTokenMetadata?.length > 0 && (
-                <div className="mt-12">
-                  <h3 className="text-2xl font-bold text-white text-center mb-6">
-                    Lucky Draw NFTs
-                  </h3>
+          {/* Assets grid */}
+          <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+            {allMetadata.length > 0 ? (
+              allMetadata.map((metadata) => (
+                <Link
+                  key={metadata.id}
+                  className="block"
+                  href={`/freeMint/${metadata.id}`}
+                >
+                  <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 overflow-hidden shadow-lg transition-all hover:scale-[1.02] hover:bg-white/15">
+                    {/* NFT Image */}
+                    <div className="relative aspect-square">
+                      <img
+                        src={
+                          metadata.image_url ||
+                          "https://via.placeholder.com/300"
+                        }
+                        alt={metadata.title}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
+                        <h3 className="text-xl font-bold text-white">
+                          {metadata.title}
+                        </h3>
+                      </div>
+                    </div>
+
+                    {/* Card Content */}
+                    <div className="p-4 flex flex-col justify-between min-h-[150px]">
+                      {/* Description with line clamp */}
+                      <p className="text-sm text-white/80 line-clamp-2 mb-4">
+                        {metadata.description}
+                      </p>
+
+                      {/* Stats Row */}
+                      <div className="flex justify-between items-center text-xs text-green-400 mb-3">
+                        <p>
+                          Created: {new Date(metadata.createdAt).toLocaleDateString()}
+                        </p>
+                        <p>
+                          Updated: {new Date(metadata.updatedAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+              ))
+            ) : (
+              <div className="col-span-full flex flex-col items-center justify-center min-h-52 space-y-4">
+                <Frown className="w-24 h-24 text-blue-600 animate-bounce" />
+                <p className="text-xl text-gray-400 font-semibold">
+                  This Collection does not have any mintable assets.
+                </p>
+                <p className="text-sm text-gray-500">
+                  Check back later or explore other collections.
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Lucky Draw NFTs Section with Location Control */}
+          {randomizedTokenMetadata?.length > 0 && (
+            <div className="mt-12">
+              <h3 className="py-6 font-bold tracking-widest text-2xl bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500 drop-shadow-lg text-center">
+                Lucky Draw NFTs
+              </h3>
+              {/* Location toggle moved to toolbar above */}
+              {!isLocationEnabled ? (
+                <div className="flex flex-col items-center justify-center min-h-32 space-y-4 bg-white/5 rounded-lg border border-white/10 p-8">
+                  <MapPin className="w-12 h-12 text-blue-400" />
+                  <div className="text-center space-y-2">
+                    <h4 className="text-lg font-semibold text-white">
+                      Enable Location to View Lucky Draw NFTs
+                    </h4>
+                    <p className="text-gray-300 max-w-md">
+                      Use the "Enable Location" button above to view available Lucky Draw NFTs in your area.
+                    </p>
+                  </div>
                 </div>
-              )}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-                {randomizedTokenMetadata?.length > 0 &&
-                  randomizedTokenMetadata?.map((metadataSet) => (
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+                  {randomizedTokenMetadata?.map((metadataSet) => (
                     <Link
                       key={metadataSet.id}
                       className="block"
                       href={`/randomizedMint/${metadataSet.id}`}
                     >
-                      <div className="bg-purple-500/10 rounded-lg border border-purple-400/30 overflow-hidden hover:bg-purple-500/15 transition-colors">
+                      <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 overflow-hidden shadow-lg transition-all hover:scale-[1.02] hover:bg-white/15">
                         {/* NFT Image */}
                         <div className="relative aspect-square">
                           <img
@@ -474,80 +434,88 @@ export default function NFTPage() {
                             alt={metadataSet.name}
                             className="w-full h-full object-cover"
                           />
-                          <div className="absolute bottom-0 left-0 right-0 bg-black/70 p-4">
-                            <h3 className="text-lg font-semibold text-white">
+                          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
+                            <h3 className="text-xl font-bold text-white">
                               {metadataSet.name}
                             </h3>
                           </div>
                         </div>
 
                         {/* Card Content */}
-                        <div className="p-4">
-                          <p className="text-sm text-gray-300 line-clamp-2 mb-3">
+                        <div className="p-4 flex flex-col justify-between min-h-[150px]">
+                          <p className="text-sm text-white/80 line-clamp-2 mb-4">
                             {metadataSet.Collection.description}
                           </p>
-                          <div className="flex justify-between text-xs text-gray-400">
-                            <span>Created: {new Date(metadataSet.createdAt).toLocaleDateString()}</span>
-                            <span>Updated: {new Date(metadataSet.updatedAt).toLocaleDateString()}</span>
+                          <div className="flex justify-between items-center text-xs text-green-400 mb-3">
+                            <p>
+                              Created: {new Date(metadataSet.createdAt).toLocaleDateString()}
+                            </p>
+                            <p>
+                              Updated: {new Date(metadataSet.updatedAt).toLocaleDateString()}
+                            </p>
                           </div>
                         </div>
                       </div>
                     </Link>
                   ))}
-              </div>
-
-              {geofencedMetadata.length > 0 && (
-                <div className="mt-12">
-                  <h3 className="text-2xl font-bold text-white text-center mb-6">
-                    Exclusive Location-Based NFTs
-                  </h3>
                 </div>
               )}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-                {geofencedMetadata.length > 0 &&
-                  geofencedMetadata.map((metadata) => (
-                    <Link
-                      key={metadata.id}
-                      className="block"
-                      href={`/freeMint/${metadata.id}`}
-                    >
-                      <div className="bg-green-500/10 rounded-lg border border-green-400/30 overflow-hidden hover:bg-green-500/15 transition-colors">
-                        {/* NFT Image */}
-                        <div className="relative aspect-square">
-                          <img
-                            src={
-                              metadata.image_url ||
-                              "https://via.placeholder.com/300"
-                            }
-                            alt={metadata.title}
-                            className="w-full h-full object-cover"
-                          />
-                          <div className="absolute top-2 right-2 bg-green-600 text-white px-2 py-1 rounded text-xs font-medium">
-                            EXCLUSIVE
-                          </div>
-                          <div className="absolute bottom-0 left-0 right-0 bg-black/70 p-4">
-                            <h3 className="text-lg font-semibold text-white">
-                              {metadata.title}
-                            </h3>
-                          </div>
-                        </div>
-
-                        {/* Card Content */}
-                        <div className="p-4">
-                          <p className="text-sm text-gray-300 line-clamp-2 mb-3">
-                            {metadata.description}
-                          </p>
-                          <div className="flex justify-between text-xs text-gray-400">
-                            <span>Created: {new Date(metadata.createdAt).toLocaleDateString()}</span>
-                            <span>Updated: {new Date(metadata.updatedAt).toLocaleDateString()}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
-              </div>
-            </>
+            </div>
           )}
+
+          {/* Geofenced NFTs Section */}
+          {geofencedMetadata.length > 0 && (
+            <div className="mt-12">
+              <h3 className="py-6 font-bold tracking-widest text-2xl bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500 drop-shadow-lg text-center">
+                Congratulations, There are Exclusive NFTs available in your
+                location
+              </h3>
+            </div>
+          )}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+            {geofencedMetadata.length > 0 &&
+              geofencedMetadata.map((metadata) => (
+                <Link
+                  key={metadata.id}
+                  className="block"
+                  href={`/freeMint/${metadata.id}`}
+                >
+                  <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 overflow-hidden shadow-lg transition-all hover:scale-[1.02] hover:bg-white/15">
+                    {/* NFT Image */}
+                    <div className="relative aspect-square">
+                      <img
+                        src={
+                          metadata.image_url ||
+                          "https://via.placeholder.com/300"
+                        }
+                        alt={metadata.title}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
+                        <h3 className="text-xl font-bold text-white">
+                          {metadata.title}
+                        </h3>
+                      </div>
+                    </div>
+
+                    {/* Card Content */}
+                    <div className="p-4 flex flex-col justify-between min-h-[150px]">
+                      <p className="text-sm text-white/80 line-clamp-2 mb-4">
+                        {metadata.description}
+                      </p>
+                      <div className="flex justify-between items-center text-xs text-green-400 mb-3">
+                        <p>
+                          Created: {new Date(metadata.createdAt).toLocaleDateString()}
+                        </p>
+                        <p>
+                          Updated: {new Date(metadata.updatedAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+          </div>{" "}
         </div>
       </div>
 

@@ -1,3 +1,5 @@
+'use client';
+
 import { useGlobalAppStore } from "@/store/globalAppStore";
 import { useCurrentAccount } from "@mysten/dapp-kit";
 import { useZkLogin } from "@mysten/enoki/react";
@@ -19,12 +21,12 @@ const ConnectButton = () => {
     // Only show wallet address if user is fully authenticated
     if (isUserVerified && currentAccount?.address) {
       setWalletAddress(
-        currentAccount.address.slice(0, 6) +
+        currentAccount.address.slice(0, 10) +
           "..." +
-          currentAccount.address.slice(-4)
+          currentAccount.address.slice(-8)
       );
     } else if (isUserVerified && address) {
-      setWalletAddress(address.slice(0, 6) + "..." + address.slice(-4));
+      setWalletAddress(address.slice(0, 10) + "..." + address.slice(-8));
     } else {
       // Clear wallet address when not authenticated
       setWalletAddress(null);
@@ -69,8 +71,8 @@ const ConnectButton = () => {
   // If wallet is connected and user is verified, show address and disconnect button
   if (walletAddress && isUserVerified) {
     return (
-      <div className="md:flex hidden items-center gap-x-3 px-4 py-2 border-2 border-b-4 border-[#4DA2FF] text-white font-semibold rounded-full">
-        <div className="flex items-center gap-x-2">
+      <div className="ml-10 md:flex hidden items-center gap-x-3 px-5 py-2.5  border-b-2  text-white w-max font-semibold rounded-full">
+        <div className="flex items-center gap-x-3">
           <Wallet className="w-4 h-4" />
           <span>{walletAddress}</span>
         </div>
@@ -88,7 +90,7 @@ const ConnectButton = () => {
   return (
     <button
       onClick={handleModal}
-      className="md:flex hidden justify-center items-center gap-x-4 px-4 py-2 border-2 border-b-4 border-[#4DA2FF] text-white font-semibold rounded-full"
+      className="md:flex hidden justify-center items-center gap-x-5 px-6 py-2.5 border-b-4  text-white font-semibold rounded-full w-max ml-10"
     >
       Connect
       <Wallet />

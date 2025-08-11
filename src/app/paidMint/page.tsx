@@ -77,8 +77,8 @@ type Coordinates = {
 
 const workSans = Work_Sans({ subsets: ["latin"] });
 
-const testnet_loyalty =
-  process.env.TESTNET_LOYALTY_PACKAGE_ID ||
+const mainnet_loyalty =
+  process.env.MAINNET_LOYALTY_PACKAGE_ID ||
   "0xbdfb6f8ad73a073b500f7ba1598ddaa59038e50697e2dc6e9dedb55af7ae5b49";
 
 export default function NFTPage() {
@@ -310,7 +310,7 @@ export default function NFTPage() {
             target="_blank"
             className="bg-white border-black/20 px-3 py-2 text-black hover:text-blue-500 font-semibold rounded-full w-full overflow-hidden text-ellipsis whitespace-nowrap"
           >
-            https://suiscan.xyz/testnet/object/...
+            https://suiscan.xyz/mainnet/object/...
           </Link>
         </div>
       </Modal> */}

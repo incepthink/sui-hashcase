@@ -3,19 +3,14 @@
 import Image from "next/image";
 import ArrowW from "@/assets/images/arrowW.svg";
 import ArrowB from "@/assets/images/arrowB.svg";
-import Heart from "@/assets/images/heart.svg";
-import HeartW from "@/assets/images/white_heart.svg";
-import Send from "@/assets/images/send-Regular.svg";
 import Eye from "@/assets/images/eye_Icon.png";
-import Nft from "@/assets/nft-token.jpeg";
 import { Work_Sans } from "next/font/google";
 import notify, { notifyPromise, notifyResolve } from "@/utils/notify";
-import { Bounce, toast } from "react-toastify";
 import EyeW from "@/assets/eye-white.svg";
 
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import React, { useContext } from "react";
+import React from "react";
 import Link from "next/link";
 
 import { useZkLogin } from "@mysten/enoki/react";
@@ -27,13 +22,8 @@ import {
   useSignAndExecuteTransaction,
 } from "@mysten/dapp-kit";
 
-import Collectable from "@/components/Collectable";
-import Footer from "@/components/Footer";
-import WalletConnectionModal from "@/components/WalletConnectionModal";
-
 import axiosInstance from "@/utils/axios";
-import { claimNftHelper } from "@/utils/contractHelperFunctions";
-import { useNftTransactions } from "@/app/hooks/useNftTransactions";
+import axios from "axios";
 import UnlockableNft from "./UnlockableNft";
 import MintSuccessModal from "./MintSuccessModal";
 import { useGlobalAppStore } from "@/store/globalAppStore";
@@ -79,8 +69,8 @@ type Coordinates = {
 
 const workSans = Work_Sans({ subsets: ["latin"] });
 
-const testnet_loyalty =
-  process.env.TESTNET_LOYALTY_PACKAGE_ID ||
+const mainnet_loyalty =
+  process.env.MAINNET_LOYALTY_PACKAGE_ID ||
   "0xbdfb6f8ad73a073b500f7ba1598ddaa59038e50697e2dc6e9dedb55af7ae5b49";
 
 export default function NFTPage() {
@@ -94,6 +84,7 @@ export default function NFTPage() {
   });
 
   const [loading, setLoading] = useState(true);
+  const [minting, setMinting] = useState(false);
 
   // states for the modal for showing minting success
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -117,8 +108,6 @@ export default function NFTPage() {
     useSignAndExecuteTransaction();
 
   const { userWalletAddress } = useGlobalAppStore();
-
-  const { freeMintNft } = useNftTransactions();
 
   useEffect(() => {
     if (params.metadata_id) {
@@ -247,98 +236,69 @@ export default function NFTPage() {
   const handleGaslessMintAndTransfer = async () => {
     if (!nftData) return;
 
+    // Check if user is connected
+    if (!currentAccount?.address) {
+      notify("Please connect your wallet first", "error");
+      return;
+    }
+
+    setMinting(true);
     const notifyId = notifyPromise(
       "Minting NFT... this might take some time...",
       "info"
     );
 
+    console.log("NFT DATA", nftData);
+    console.log("CURRENT ACCOUNT", currentAccount);
+    console.log("USER WALLET ADDRESS", userWalletAddress);
+    console.log("ADDRESS", address);
+    console.log("SPONSOR SIGN AND EXECUTE", sponsorSignAndExecute);
     try {
       const nftForm = {
-        collection_id: nftData.collection_address || "", // Replace with the actual Collection object ID
+        collection_id: "0x77d8d09f449b77816e0573ae64ab05ecf14b7e63609cfd6e034c7d15abbb6aba", // Use new collection ID
         title: nftData.title,
-        description: nftData.description,
+        description: nftData.description || "",
         image_url: nftData.image_url,
         attributes: nftData.attributes || "",
       };
 
+      console.log("Minting NFT with data:", {
+        userAddress: currentAccount.address,
+        nftForm
+      });
+
+      // Use localhost:8000 for the backend API
       const mintAndTransferResponse = await axiosInstance.post(
-        "/user/sui-nft/backend-mint",
+        "http://localhost:8000/user/sui-nft/backend-mint",
         {
           nftForm,
         },
         {
-          params: { user_address: currentAccount?.address },
+          params: { user_address: currentAccount.address },
         }
       );
 
-      notifyResolve(notifyId, "NFT Minted... Please Check Wallet", "success");
+      notifyResolve(notifyId, "NFT Minted Successfully! Please Check Your Wallet", "success");
 
-      console.log(mintAndTransferResponse);
-    } catch (error) {
-      notifyResolve(notifyId, "Error minting NFT", "error");
-      console.error(error);
-    }
-  };
-
-  const createFreeMintNft = async () => {
-    if (!nftData) return;
-
-    const notifyId = notifyPromise("Minting NFT...", "info");
-
-    try {
-      const nftForm = {
-        collection_id: nftData.collection_address || "", // Replace with the actual Collection object ID
-        title: nftData.title,
-        description: nftData.description,
-        image_url: nftData.image_url,
-        attributes: nftData.attributes || "",
-      };
-
-      const txDetails = await freeMintNft(nftForm);
-
-      console.log("THE TRANSACTION DETAILS");
-      console.log(txDetails);
-
-      if (!txDetails?.events?.length) {
-        throw new Error("No events found in transaction details.");
-      }
-
-      const emittedNFTsInformation = txDetails.events[0]
-        ?.parsedJson as EmittedNFTInfo;
-
-      if (!emittedNFTsInformation) {
-        throw new Error("Invalid NFT data structure in transaction details.");
-      }
-
-      const { collection_id, mint_price, nft_id, token_number } =
-        emittedNFTsInformation;
-
-      const itemToAdd = {
-        name: nftData.title,
-        description: nftData.description,
-        image_uri: nftData.image_url,
-        collection_id: nftData.collection_id,
-        token_id: parseInt(token_number),
-        metadata_id: nftData.id,
-        type: "buyandclaim",
-        attributes: nftData.attributes || "",
-      };
-
-      //sending the request to add the item
-      const itemResponse = await axiosInstance.post("/user/item/create", {
-        item: itemToAdd,
-      });
-
+      console.log("Mint response:", mintAndTransferResponse.data);
+      
       // Show success modal
       setShowSuccessModal(true);
 
-      notifyResolve(notifyId, "NFT Minted", "success");
-    } catch (error) {
-      notifyResolve(notifyId, "Error minting NFT", "error");
-      console.error("Error minting NFT:", error);
+    } catch (error: any) {
+      console.error("Minting error:", error);
+      
+      let errorMessage = "Error minting NFT";
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      notifyResolve(notifyId, errorMessage, "error");
+    } finally {
+      setMinting(false);
     }
-
-    // console.log(itemResponse);
   };
 
   if (loading) {
@@ -375,7 +335,6 @@ export default function NFTPage() {
       return (
         <div className="h-[80vh] max-w-screen bg-[#00041F] text-white flex flex-col items-center justify-center p-6 text-center gap-5">
           <div className="relative">
-            {/* <Globe className="w-16 h-16 text-blue-400 animate-pulse" /> */}
             <MapPin className="w-16 h-16  text-red-500 animate-bounce" />
           </div>
 
@@ -443,45 +402,16 @@ export default function NFTPage() {
             className="h-96 w-auto"
             src={nftData.image_url}
             alt="nft"
-            // className="rounded-lg"
           />
 
           <div className="flex flex-col items-center justify-center">
-            <div className="flex items-center justify-between w-full">
-              <div>
-                <p className="text-white md:text-2xl text-lg">
-                  By{" "}
-                  <span className="text-[#4DA2FF]">
-                    {nftData.collection_name}
-                  </span>
-                </p>
-              </div>
-              <div className="flex items-center justify-center">
-                <div className="md:w-8 md:h-8 w-6 h-6 rounded-full bg-[#1E1E1ECC] backdrop-blur-md flex items-center justify-center mr-2">
-                  <HeartW />
-                </div>
-                <div className="w-8 h-8 rounded-full bg-[#1E1E1ECC] backdrop-blur-md flex items-center justify-center ml-2">
-                  <Send />
-                </div>
-              </div>
-            </div>
-
             <div className="flex flex-col justify-start gap-y-2 my-4 w-full">
               <p className="text-white md:text-4xl text-2xl tracking-wide font-bold">
                 {nftData.name}
               </p>
-              <div className="flex justify-start gap-x-2">
-                <div className="flex items-center justify-center gap-x-2">
-                  <Image src={Eye} alt="eye" />
-                  <p className="text-white/50 md:text-lg text-sm">225 views</p>
-                </div>
-                <div className="flex items-center justify-center gap-x-2">
-                  <Heart />
-                  <p className="text-white/50 md:text-lg text-sm">
-                    100 Favourites
-                  </p>
-                </div>
-              </div>
+              <p className="text-white md:text-lg text-sm">
+                By <span className="text-[#4DA2FF]">{nftData.collection_name}</span>
+              </p>
             </div>
 
             <div className="flex items-center justify-center my-4">
@@ -490,7 +420,6 @@ export default function NFTPage() {
               </p>
             </div>
 
-            <div className="flex items-center justify-start w-full"></div>
             <div className="flex items-center justify-start w-full">
               <div className="flex items-center md:w-auto w-full justify-between my-4 bg-[#4DA2FF] backdrop-blur-md rounded-lg px-3 py-3 gap-x-2">
                 <button
@@ -508,21 +437,24 @@ export default function NFTPage() {
 
             <div className="flex flex-col gap-4 items-start mt-2 w-full">
               <button
-                onClick={createFreeMintNft}
-                className="md:px-6 md:py-3 px-4 py-2 rounded-full md:text-xl text-sm bg-white text-black border-[1px] border-b-4 border-[#4DA2FF] flex items-center gap-x-2"
-              >
-                Mint the NFT
-                <ArrowB />
-              </button>
-            </div>
-
-            <div className="flex flex-col gap-4 items-start justify-start my-2 w-full">
-              <button
                 onClick={handleGaslessMintAndTransfer}
-                className="md:px-6 md:py-3 px-4 py-2 rounded-full md:text-xl text-sm bg-white text-black border-[1px] border-b-4 border-[#4DA2FF] flex items-center gap-x-2"
+                disabled={minting}
+                className="md:px-6 md:py-3 px-4 py-2 rounded-full md:text-xl text-sm bg-white text-black border-[1px] border-b-4 border-[#4DA2FF] flex items-center gap-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Gasless Mint
-                <ArrowB />
+                {minting ? (
+                  <>
+                    <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Minting...
+                  </>
+                ) : (
+                  <>
+                    Mint NFT
+                    <ArrowB />
+                  </>
+                )}
               </button>
             </div>
           </div>
@@ -584,21 +516,6 @@ export default function NFTPage() {
           nftData={nftData}
         />
       )}
-      {/* <Modal
-        context="Unlockable Content"
-        openModal={isUnlocked}
-        onClose={() => setIsUnlocked(false)}
-      >
-        <div className="flex flex-col justify-center items-center gap-y-4 my-4 mx-4">
-          <Link
-            href={`https://suiscan.xyz/testnet/object/${loyaltyId}`}
-            target="_blank"
-            className="bg-white border-black/20 px-3 py-2 text-black hover:text-blue-500 font-semibold rounded-full w-full overflow-hidden text-ellipsis whitespace-nowrap"
-          >
-            https://suiscan.xyz/testnet/object/...
-          </Link>
-        </div>
-      </Modal> */}
     </div>
   );
 }

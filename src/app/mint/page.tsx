@@ -2,8 +2,6 @@
 
 import React, { useContext, useState } from "react";
 import { useZkLogin } from "@mysten/enoki/react";
-import { Transaction } from "@mysten/sui/transactions";
-import { useSponsorSignAndExecute } from "../hooks/useSponsorSignandExecute";
 import Image from "next/image";
 import ArrowW from "@/assets/images/arrowW.svg";
 import ArrowB from "@/assets/images/arrowB.svg";
@@ -18,133 +16,34 @@ import { notifyPromise, notifyResolve } from "@/utils/notify";
 import { Bounce, toast } from "react-toastify";
 import { AppContext } from "@/context/AppContext";
 import {
+  mintSuiLoyaltyHelper
+} from "@/utils/contractHelperFunctions";
+import {
   ConnectModal,
   useCurrentAccount,
   useSuiClient,
-  useSignAndExecuteTransaction,
 } from "@mysten/dapp-kit";
 import Modal from "@/components/Modal";
 import Logo from "@/assets/icons/sui-sui-logo 1.png";
 import SuietLogo from "@/assets/icons/suietlogo.png";
 import EyeW from "@/assets/eye-white.svg";
 import ZkLogin from "@/components/ZkLogin";
-import {
-  ConnectModal as SuietConnectModal,
-  useWallet,
-} from "@suiet/wallet-kit";
-import "@suiet/wallet-kit/style.css";
 import Collectable from "@/components/Collectable";
 import Footer from "@/components/Footer";
 import WalletConnectionModal from "@/components/WalletConnectionModal";
+import axiosInstance from "@/utils/axios";
 
 const workSans = Work_Sans({ subsets: ["latin"] });
 
-// const tx2 = new Transaction();
-// tx2.moveCall({
-//   target: `${testnet_loyalty!}::loyalty_card::update_loyalty_points`,
-//   arguments: [tx.object(loyaltyId), tx.pure.u64(20)],
-// });
-// tx2.setSender(address!);
-// const resp2 = await sponsorSignAndExecute({
-//   tx: tx2,
-//   options: { showObjectChanges: true, showEffects: true },
-// });
-// console.log("Updated loyalty points");
-// console.log(resp2!.objectChanges);
-
-const testnet_loyalty =
-  process.env.TESTNET_LOYALTY_PACKAGE_ID ||
-  "0xb92dbbdb90ea755f8ea371d3e4658687fc4a1e9f6b13264e358c7d27da7514a7";
-
 const MintPage = () => {
   const { address } = useZkLogin();
-  const wallet = useWallet();
   const currentAccount = useCurrentAccount();
-  const { sponsorSignAndExecute } = useSponsorSignAndExecute();
-  const { mutateAsync: signAndExecuteTransaction } =
-    useSignAndExecuteTransaction();
-
   const suiClient = useSuiClient();
-  const mintLoyalty = async () => {
-    if (!address) {
-      toast.error("Please connect your wallet first", {
-        position: "top-center",
-        autoClose: 5000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
-      });
-      return;
-    }
-
-    const notifyId = notifyPromise("Minting loyalty...", "info");
-    console.log("Minting loyalty...");
-
-    const tx = new Transaction();
-    tx.moveCall({
-      target: `${testnet_loyalty!}::loyalty_card::mint_loyalty`,
-      arguments: [tx.pure.address(address!), tx.pure.u64(Date.now())],
-    });
-    tx.setSender(address!);
-
-    try {
-      const resp = await sponsorSignAndExecute({
-        tx,
-        options: { showObjectChanges: true, showEffects: true },
-      });
-      notifyResolve(notifyId, "Minted new loyalty", "success");
-      console.log("Minted new loyalty, check the response");
-      console.log(resp!.objectChanges);
-      const createdLoyalty = resp!.objectChanges?.find(
-        ({ type, objectType }: any) =>
-          type === "created" &&
-          objectType === `${testnet_loyalty!}::loyalty_card::Loyalty`
-      );
-      if (!createdLoyalty) {
-        notifyResolve(
-          notifyId,
-          "Could not find loyalty in created objects",
-          "error"
-        );
-        console.log("Could not find loyalty in created objects");
-        throw new Error("Error minting new loyalty");
-      }
-      const loyaltyId = (createdLoyalty as any)?.objectId;
-      setLoyaltyId(loyaltyId);
-      console.log("Loyalty ID: ", loyaltyId);
-      toast(
-        <div
-          onClick={() =>
-            window.open(
-              `https://suiscan.xyz/testnet/object/${loyaltyId}`,
-              "_blank"
-            )
-          }
-        >
-          Click to view loyalty on Suiscan
-        </div>,
-        {
-          position: "top-center",
-          autoClose: false,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-          progress: undefined,
-          theme: "light",
-          transition: Bounce,
-        }
-      );
-    } catch (error) {
-      notifyResolve(notifyId, "Error minting loyalty", "error");
-      console.error("Error minting loyalty:", error);
-    }
-  };
 
   const mintSuiLoyalty = async () => {
-    if (!currentAccount) {
+    const userAddress = currentAccount?.address || address;
+    
+    if (!userAddress) {
       toast.error("Please connect your wallet first", {
         position: "top-center",
         autoClose: 5000,
@@ -160,27 +59,33 @@ const MintPage = () => {
     const notifyId = notifyPromise("Minting loyalty...", "info");
     console.log("Minting loyalty...");
 
-    const tx = new Transaction();
-    tx.moveCall({
-      target: `${testnet_loyalty!}::loyalty_card::mint_loyalty`,
-      arguments: [
-        tx.pure.address(currentAccount.address),
-        tx.pure.u64(Date.now()),
-      ],
-    });
-    tx.setSender(address!);
-
     try {
-      await signAndExecuteTransaction({
-        transaction: tx as any,
-        chain: "sui:testnet",
-      });
+      // Use backend API instead of direct transaction signing
+      const mintData = await mintSuiLoyaltyHelper(
+        userAddress,
+        Date.now().toString(),
+        "https://example.com/loyalty-image.jpg" // Default image URL
+      );
+
+      // Call backend minting endpoint
+      const response = await axiosInstance.post(
+        "/platform/sui-nft/backend-mint",
+        {
+          nftForm: mintData.nftForm
+        },
+        {
+          params: {
+            user_address: mintData.user_address
+          }
+        }
+      );
+
       notifyResolve(notifyId, "Minted new loyalty", "success");
       toast(
         <div
           onClick={() =>
             window.open(
-              `https://suiscan.xyz/account/object/${currentAccount.address}`,
+              `https://suiscan.xyz/testnet/account/object/${userAddress}`,
               "_blank"
             )
           }
@@ -206,11 +111,8 @@ const MintPage = () => {
   };
 
   const handleClaimNFT = () => {
-    if (address) {
-      mintLoyalty();
-    } else if (currentAccount) {
-      mintSuiLoyalty();
-    }
+    // Always use the backend minting approach
+    mintSuiLoyalty();
   };
 
   const [isUnlocked, setIsUnlocked] = useState<boolean>(false);

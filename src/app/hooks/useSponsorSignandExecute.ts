@@ -29,7 +29,7 @@ export const useSponsorSignAndExecute = () => {
         onlyTransactionKind: true,
       });
       const sponsorTxBody = {
-        network: "testnet",
+        network: "mainnet",
         txBytes: toB64(txBytes),
         sender: address!,
         allowedAddresses: [address!],
@@ -43,7 +43,7 @@ export const useSponsorSignAndExecute = () => {
       const { bytes, digest: sponsorDigest } = sponsorResponse.data;
       // console.log("Signing transaction block...");
 
-      const signer = await enokiFlow.getKeypair({ network: "testnet" });
+      const signer = await enokiFlow.getKeypair({ network: "mainnet" });
       const { signature } = await signer.signTransaction(fromB64(bytes));
 
       // console.log("Executing transaction block...");

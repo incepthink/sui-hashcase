@@ -48,7 +48,7 @@ export const useLoyaltyPointsTransactions = () => {
       // Execute transaction
       txResult = await signAndExecuteTransaction({
         transaction: tx as any,
-        chain: "sui:testnet",
+        chain: "sui:mainnet",
       });
 
       // Wait before fetching transaction details
@@ -102,7 +102,7 @@ export const useLoyaltyPointsTransactions = () => {
       // Execute transaction
       txResult = await signAndExecuteTransaction({
         transaction: tx as any,
-        chain: "sui:testnet",
+        chain: "sui:mainnet",
       });
 
       // Wait before fetching transaction details

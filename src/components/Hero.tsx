@@ -4,80 +4,108 @@ import { Work_Sans } from "next/font/google";
 import ArrowB from "../assets/images/arrowB.svg";
 import suiBg from "../assets/images/sui-bg.png";
 import Link from "next/link";
+import { Sparkles, Star, Users, Zap, ArrowRight } from "lucide-react";
 
 const workSans = Work_Sans({ subsets: ["latin"] });
+
 export const Hero = () => {
   return (
-    <div className="relative min-h-screen flex py-40">
-      <div className="container mx-auto px-6 md:px-8">
-        <div className="grid md:grid-cols-2 gap-12 items-center">
-          {/* Left side - Text content */}
-          <div className="space-y-8">
-            <div className="space-y-6">
-              <h1 className={`text-4xl md:text-6xl font-bold text-white leading-tight ${workSans.className}`}>
-                Turn your audience into{" "}
-                <span className="text-[#4DA2FF]">Superfans!</span>
-              </h1>
-              
-              <div className="space-y-4">
-                <p className="text-lg text-gray-300 leading-relaxed">
-                  Engage your audience with better, smarter loyalty and rewards campaigns
-                </p>
-                <p className="text-lg text-gray-300 leading-relaxed">
-                  Integrate the power of Web 2.5 into your application with near-zero effort
-                </p>
-              </div>
-            </div>
+    <div className="relative min-h-screen flex items-center justify-center overflow-hidden">
+      {/* Background image */}
+      <div className="absolute inset-0 -z-20">
+        <Image
+          src={suiBg}
+          alt="Sui background"
+          fill
+          priority
+          className="absolute top-0 left-0 w-full h-full object-cover object-center"
+        />
+      </div>
 
-            <div>
-              <Link 
-                href="/mint" 
-                className="inline-flex items-center gap-3 px-8 py-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                Claim Free NFT Now
-                <ArrowB className="w-5 h-5" />
-              </Link>
+      {/* Enhanced decorative background layers */}
+      <div className="pointer-events-none absolute inset-0 -z-10">
+        <div className="absolute inset-0 bg-gradient-to-b from-[#020617]/80 via-[#030b2a]/70 to-[#00041F]/90" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(77,162,255,0.25),transparent_60%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom,rgba(77,162,255,0.15),transparent_55%)]" />
+        <div className="absolute inset-0 opacity-[0.05] bg-[linear-gradient(to_right,rgba(255,255,255,0.35)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.35)_1px,transparent_1px)] bg-[size:40px_40px]" />
+        
+        {/* Animated floating elements */}
+        <div className="absolute top-20 left-10 w-72 h-72 bg-purple-500/20 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-20 right-10 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+        <div className="absolute top-1/2 left-1/4 w-48 h-48 bg-cyan-500/15 rounded-full blur-2xl animate-pulse" style={{ animationDelay: '2s' }}></div>
+      </div>
+
+      <div className="container mx-auto px-6 md:px-8 relative z-10">
+        <div className="text-center max-w-5xl mx-auto">
+          
+
+          {/* Main heading */}
+          <h1 className={`text-5xl md:text-7xl lg:text-8xl font-extrabold tracking-tight text-white leading-tight mb-8 drop-shadow-lg ${workSans.className}`}>
+            Turn your audience into{" "}
+            <span className="relative">
+              <span className="text-transparent bg-clip-text bg-blue-500">
+                Superfans!
+              </span>
+              <div className="absolute -top-2 -right-2 w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center">
+                <Star className="w-3 h-3 text-black" />
+              </div>
+            </span>
+          </h1>
+          
+          {/* Enhanced Description */}
+          <div className="space-y-6 mb-12">
+            <p className="text-xl md:text-2xl text-white/90 leading-relaxed max-w-4xl mx-auto font-medium">
+              Engage your audience with better, smarter loyalty and reward campaigns. 
+              <span className="text-[#4DA2FF] font-semibold"> Integrate the power of Web 2.5</span> into your application with near-zero effort.
+            </p>
+            
+            {/* Feature highlights */}
+            <div className="flex flex-wrap items-center justify-center gap-6 text-white/70">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                <span className="text-sm font-medium">Zero Setup Required</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse" style={{ animationDelay: '0.5s' }}></div>
+                <span className="text-sm font-medium">Instant Rewards</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse" style={{ animationDelay: '1s' }}></div>
+                <span className="text-sm font-medium">Blockchain Powered</span>
+              </div>
             </div>
           </div>
 
-          {/* Right side - Visual element */}
-          <div className="flex justify-center md:justify-end">
-            <div className="relative w-80 h-80 md:w-96 md:h-96">
-              {/* Background gradient */}
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-full blur-3xl"></div>
-              
-              {/* Main container */}
-              <div className="relative w-full h-full  rounded-full border border-white/20 flex items-center justify-center">
-                <div className="text-center space-y-6">
-                  {/* NFT Card */}
-                  <div className="relative w-24 h-32 md:w-28 md:h-36 bg-gradient-to-br from-blue-400/20 to-purple-500/20 rounded-lg border border-white/30 mx-auto transform rotate-3 hover:rotate-0 transition-transform">
-                    <div className="absolute inset-0 bg-gradient-to-br from-blue-500/40 to-purple-500/40 rounded-lg"></div>
-                    <div className="absolute top-2 left-2 w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
-                    <div className="absolute bottom-2 right-2 text-xs text-white font-medium">NFT</div>
-                  </div>
-                  
-                  {/* Location indicator */}
-                  <div className="flex items-center justify-center space-x-2">
-                    <div className="w-2 h-2 bg-blue-400 rounded-full animate-ping"></div>
-                    <span className="text-white text-sm font-medium">Location-based</span>
-                  </div>
-                  
-                  {/* Web3 indicator */}
-                  <div className="text-center">
-                    <div className="text-white font-bold text-lg md:text-xl">Web 2.5</div>
-                    <div className="text-gray-300 text-xs md:text-sm">Hashcase</div>
-                  </div>
-                </div>
-              </div>
-            </div>
+          {/* Enhanced CTA Section */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
+            <Link 
+              href="/mint" 
+              className="group inline-flex items-center gap-3 px-8 py-4 rounded-2xl font-bold text-black bg-gradient-to-r from-[#4DA2FF] to-[#7ab8ff] hover:from-[#3a8fef] hover:to-[#6aa7f0] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#4DA2FF]/30 transition-all duration-300 shadow-[0_20px_40px_-10px_rgba(77,162,255,0.4)] hover:shadow-[0_25px_50px_-15px_rgba(77,162,255,0.5)]"
+            >
+              <Zap className="w-5 h-5" />
+              <span>Claim Free NFT Now</span>
+              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            </Link>
+            
+            <Link 
+              href="/collections" 
+              className="group inline-flex items-center gap-3 px-8 py-4 rounded-2xl font-semibold text-white bg-white/10 backdrop-blur-md border border-white/20 hover:bg-white/20 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/30 transition-all duration-300"
+            >
+              <Users className="w-5 h-5" />
+              <span>Explore Collections</span>
+              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            </Link>
           </div>
+
+          {/* Stats Section */}
+
         </div>
       </div>
 
-      {/* Bottom section */}
-      <div className="absolute bottom-0 left-0 right-0">
-        <div className="bg-white/5 backdrop-blur-sm border-t border-white/10">
-         
+      {/* Scroll indicator */}
+      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
+        <div className="w-6 h-10 border-2 border-white/30 rounded-full flex justify-center">
+          <div className="w-1 h-3 bg-white/60 rounded-full mt-2 animate-pulse"></div>
         </div>
       </div>
     </div>

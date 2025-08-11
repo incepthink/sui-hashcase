@@ -30,7 +30,7 @@ const FREE_MINT_PACKAGE_ID =
   "0xc1f0384f465cba489120cc12c9a427aab994d9ed233f1036402dfb353f19d2b9";
 
 const MY_PACKAGE_ID =
-  "0x072920bb06baea0717fbeda59950b97a1205f0196d6ad33878d3120710fafe84";
+  "0x48534ac3dd3df77cb4d6e17e05d2bd7961d5352e10fb01561184828d2aa3248e";
 
 const createOwnerCapTx = async (adminCapId: string, forAddress: string) => {
   const tx = new Transaction();
@@ -71,21 +71,21 @@ const mintSuiLoyaltyHelper = async (
   uniqueId: string,
   image_url: string
 ) => {
-  // console.log(address, uniqueId, image_url);
+  // Use backend API instead of direct Move function call
+  const nftForm = {
+    collection_id: "0x89bc3618d299a703910681aa47b4cb1c344c4ff2bc2d4932bfaf185afe457b0f", // package ID as collection
+    title: uniqueId,
+    description: "Custom NFT",
+    image_url: image_url,
+    attributes: "custom,nft"
+  };
 
-  const tx = new Transaction();
-  tx.moveCall({
-    target: `0xbdfb6f8ad73a073b500f7ba1598ddaa59038e50697e2dc6e9dedb55af7ae5b49::loyalty_card::mint_loyalty`,
-    arguments: [
-      tx.pure.address(address),
-      tx.pure.string(uniqueId),
-      tx.pure.u64(Date.now()),
-      tx.pure.string(image_url),
-    ],
-  });
-  tx.setSender(address!);
-
-  return tx;
+  // Return the form data for backend processing
+  return {
+    type: 'backend_mint',
+    user_address: address,
+    nftForm: nftForm
+  };
 };
 
 const freeMintNftHelper = async (nftForm: NftForm): Promise<Transaction> => {
@@ -211,11 +211,15 @@ const createCollectionHelper = async (
 const claimNftHelper = async (claimNFTForm: any) => {
   const tx = new Transaction();
 
+  // Use the same package ID as the profile page
+  const PACKAGE_ID = process.env.NEXT_PUBLIC_CONTRACT_PACKAGE_ID ||
+    "0x072920bb06baea0717fbeda59950b97a1205f0196d6ad33878d3120710fafe84";
+
   // console.log(claimNFTForm);
 
   // Add collection object (must be mutable)
   tx.moveCall({
-    target: `${MY_PACKAGE_ID}::hashcase_module::claim_nft`,
+    target: `${PACKAGE_ID}::hashcase_module::claim_nft`,
     arguments: [
       tx.object(claimNFTForm.collection_id), // Collection object (must be mutable)
       tx.object(claimNFTForm.nft_id), // NFT object (user must own this)

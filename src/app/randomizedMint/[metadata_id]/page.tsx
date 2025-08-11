@@ -2,20 +2,13 @@
 
 import Image from "next/image";
 import ArrowW from "@/assets/images/arrowW.svg";
-import ArrowB from "@/assets/images/arrowB.svg";
-import Heart from "@/assets/images/heart.svg";
-import HeartW from "@/assets/images/white_heart.svg";
-import Send from "@/assets/images/send-Regular.svg";
 import Eye from "@/assets/images/eye_Icon.png";
-import Nft from "@/assets/nft-token.jpeg";
 import { Work_Sans } from "next/font/google";
 import { notifyPromise, notifyResolve } from "@/utils/notify";
-import { Bounce, toast } from "react-toastify";
-import EyeW from "@/assets/eye-white.svg";
 
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import React, { useContext } from "react";
+import React from "react";
 import Link from "next/link";
 
 import { useZkLogin } from "@mysten/enoki/react";
@@ -27,13 +20,7 @@ import {
   useSignAndExecuteTransaction,
 } from "@mysten/dapp-kit";
 
-import Collectable from "@/components/Collectable";
-import Footer from "@/components/Footer";
-import WalletConnectionModal from "@/components/WalletConnectionModal";
-
 import axiosInstance from "@/utils/axios";
-import { claimNftHelper } from "@/utils/contractHelperFunctions";
-import { useNftTransactions } from "@/app/hooks/useNftTransactions";
 import UnlockableNft from "./UnlockableNft";
 import MintSuccessModal from "./MintSuccessModal";
 
@@ -48,8 +35,8 @@ import {
 
 const workSans = Work_Sans({ subsets: ["latin"] });
 
-const testnet_loyalty =
-  process.env.TESTNET_LOYALTY_PACKAGE_ID ||
+const mainnet_loyalty =
+  process.env.MAINNET_LOYALTY_PACKAGE_ID ||
   "0xbdfb6f8ad73a073b500f7ba1598ddaa59038e50697e2dc6e9dedb55af7ae5b49";
 
 export default function NFTPage() {
@@ -83,8 +70,6 @@ export default function NFTPage() {
   const currentAccount = useCurrentAccount();
   const { mutateAsync: signAndExecuteTransaction } =
     useSignAndExecuteTransaction();
-
-  const { freeMintNft } = useNftTransactions();
 
   useEffect(() => {
     const fetchNFTData = async () => {
@@ -135,49 +120,27 @@ export default function NFTPage() {
 
       console.log(nftForm);
 
-      const txDetails = await freeMintNft(nftForm);
-      // console.log(txDetails);
+      // Use gasless mint instead of direct blockchain call
+      const mintAndTransferResponse = await axiosInstance.post(
+        "/user/sui-nft/backend-mint",
+        {
+          nftForm,
+        },
+        {
+          params: { user_address: currentAccount?.address },
+        }
+      );
 
-      if (!txDetails?.events?.length) {
-        throw new Error("No events found in transaction details.");
-      }
+      notifyResolve(notifyId, "NFT Minted... Please Check Wallet", "success");
 
-      const emittedNFTsInformation = txDetails.events[0]
-        ?.parsedJson as EmittedNFTInfo;
-
-      if (!emittedNFTsInformation) {
-        throw new Error("Invalid NFT data structure in transaction details.");
-      }
-
-      const { collection_id, mint_price, nft_id, token_number } =
-        emittedNFTsInformation;
-
-      const itemToAdd = {
-        name: nftData.title,
-        description: nftData.description,
-        image_uri: nftData.image_url,
-        collection_id: nftData.collection_id,
-        token_id: parseInt(token_number),
-        metadata_id: nftData.id,
-        type: "buyandclaim",
-        attributes: nftData.attributes || "",
-      };
-
-      //sending the request to add the item
-      const itemResponse = await axiosInstance.post("/user/item/create", {
-        item: itemToAdd,
-      });
+      console.log(mintAndTransferResponse);
 
       // Show success modal
       setShowSuccessModal(true);
-
-      notifyResolve(notifyId, "NFT Minted", "success");
     } catch (error) {
       notifyResolve(notifyId, "Error minting NFT", "error");
       console.error("Error minting NFT:", error);
     }
-
-    // console.log(itemResponse);
   };
 
   // Carousel settings
@@ -196,8 +159,8 @@ export default function NFTPage() {
   }
 
   return (
-    <div className={`flex flex-col bg-[#00041F] ${workSans.className}`}>
-      <div className="flex flex-col px-8 md:px-16">
+    <div className={`flex flex-col bg-[#00041F] ${workSans.className} h-screen py-20`}>
+      <div className="flex flex-col px-8 md:px-10">
         <Link
           href="/collections"
           className="hidden md:flex items-center justify-start gap-x-2 my-4 px-20"
@@ -209,7 +172,6 @@ export default function NFTPage() {
         {/* Metadata Set Info Section */}
         <div className="my-4 flex flex-col md:flex-row items-center justify-around md:gap-y-0 gap-y-8">
           {/* Carousel for Metadata Images */}
-
           <div className="w-full md:w-1/2">
             <Slider {...sliderSettings}>
               {metadataSet?.metadata?.map((item) => (
@@ -224,32 +186,9 @@ export default function NFTPage() {
             </Slider>
           </div>
 
-          <div>
-            {metadataSet?.metadata?.map((item) => (
-              <div key={item.id}>{item.title}</div>
-            ))}
-          </div>
-
           {/* Metadata Set Details */}
           <div className="flex flex-col items-center justify-center w-full md:w-1/2">
-            <div className="flex items-center justify-between w-full">
-              <div>
-                <p className="text-white md:text-2xl text-lg">
-                  Set:{" "}
-                  <span className="text-[#4DA2FF]">{metadataSet.name}</span>
-                </p>
-              </div>
-              <div className="flex items-center justify-center">
-                <div className="md:w-8 md:h-8 w-6 h-6 rounded-full bg-[#1E1E1ECC] backdrop-blur-md flex items-center justify-center mr-2">
-                  <HeartW />
-                </div>
-                <div className="w-8 h-8 rounded-full bg-[#1E1E1ECC] backdrop-blur-md flex items-center justify-center ml-2">
-                  <Send />
-                </div>
-              </div>
-            </div>
-
-            <div className="flex flex-col justify-start gap-y-2 my-4 w-full">
+            <div className="flex flex-col justify-start gap-y-2 my-4 w-full ml-20">
               <p className="text-white md:text-4xl text-2xl tracking-wide font-bold">
                 {metadataSet.name}
               </p>
@@ -260,16 +199,10 @@ export default function NFTPage() {
                     Randomized: {metadataSet.isRandomized ? "Yes" : "No"}
                   </p>
                 </div>
-                <div className="flex items-center justify-center gap-x-2">
-                  <Heart />
-                  <p className="text-white/50 md:text-lg text-sm">
-                    Upgradable: {metadataSet.isUpgradable ? "Yes" : "No"}
-                  </p>
-                </div>
               </div>
             </div>
 
-            <div className="flex items-center justify-start w-full">
+            <div className="flex items-center justify-start w-full ml-20">
               <div className="flex flex-col flex-wrap gap-2">
                 {metadataSet?.metadata?.map((item) => (
                   <div
@@ -287,7 +220,7 @@ export default function NFTPage() {
               </div>
             </div>
 
-            <div className="flex items-center justify-start w-full my-4">
+            <div className="flex items-center justify-start w-full my-4 ml-20">
               <div className="flex items-center md:w-auto w-full justify-between my-4 backdrop-blur-md rounded-lg px-3 py-3 gap-x-2">
                 <button
                   onClick={createFreeMintNft}
