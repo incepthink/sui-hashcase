@@ -8,7 +8,7 @@ Sui Hashcase leverages the power of Next.js and the SUI blockchain to offer a se
 
 ## Prerequisites
 
-Before you begin, ensure you have the following installed:
+<!-- Before you begin, ensure you have the following installed: -->
 
 - Node.js (v14 or later)
 - npm (v6 or later)
