@@ -94,10 +94,10 @@ class ContractAnalyzer {
       const data = await response.json();
       
       if (data.data?.content?.modules) {
-        const module = data.data.content.modules.find((m: any) => m.name === moduleName);
+        const moduleData = data.data.content.modules.find((m: any) => m.name === moduleName);
         
-        if (module) {
-          const func = module.functions?.find((f: any) => f.name === functionName);
+        if (moduleData) {
+          const func = moduleData.functions?.find((f: any) => f.name === functionName);
           
           if (func) {
             console.log(`\n🎯 Function: ${moduleName}::${functionName}`);

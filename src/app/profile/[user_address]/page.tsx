@@ -399,7 +399,7 @@ const App: React.FC = () => {
         ) : (
           <div className="text-center py-8">
             <p className="text-gray-400 text-lg mb-2">No NFTs found</p>
-            <p className="text-gray-500 text-sm">You don't own any NFTs from this contract yet.</p>
+            <p className="text-gray-500 text-sm">You don&apos;t own any NFTs from this contract yet.</p>
           </div>
         )}
 

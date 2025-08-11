@@ -411,7 +411,7 @@ export default function NFTPage() {
                       Enable Location to View Lucky Draw NFTs
                     </h4>
                     <p className="text-gray-300 max-w-md">
-                      Use the "Enable Location" button above to view available Lucky Draw NFTs in your area.
+                      Use the &quot;Enable Location&quot; button above to view available Lucky Draw NFTs in your area.
                     </p>
                   </div>
                 </div>

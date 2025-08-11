@@ -185,7 +185,7 @@ const LoyaltiesPage = () => {
               No Loyalty Programs Yet
             </h3>
             <p className="text-white/60 text-lg max-w-md mx-auto leading-relaxed">
-              We're working on bringing you amazing loyalty programs. Check back soon for exclusive rewards and benefits!
+              We&apos;re working on bringing you amazing loyalty programs. Check back soon for exclusive rewards and benefits!
             </p>
             
             <div className="mt-8 flex items-center justify-center gap-4 text-white/40">
