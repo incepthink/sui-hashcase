@@ -41,8 +41,8 @@ const App: React.FC = () => {
   });
 
   const [activeTab, setActiveTab] = useState("Base_Assets");
-
   const [collections, setCollections] = useState([]);
+  const [isProfileLoading, setIsProfileLoading] = useState(true);
 
   const currentAccount = useCurrentAccount();
   const { address: zkloginaddress } = useZkLogin();
@@ -52,15 +52,15 @@ const App: React.FC = () => {
     ? params?.user_address[0]
     : (params?.user_address as string | undefined);
 
-  // Block access to profile if no wallet connected
-  useEffect(() => {
-    if (!currentAccount?.address && !zkloginaddress) {
-      toast.error("Please connect your wallet to view your profile");
-      router.replace("/");
-    }
-  }, [currentAccount, zkloginaddress, router]);
+  // Remove the wallet connection requirement - profiles should be publicly viewable
+  // useEffect(() => {
+  //   if (!currentAccount?.address && !zkloginaddress) {
+  //     toast.error("Please connect your wallet to view your profile");
+  //     router.replace("/");
+  //   }
+  // }, [currentAccount, zkloginaddress, router]);
 
-  // Update URL when connected wallet changes
+  // Update URL when connected wallet changes (only if user is connected)
   useEffect(() => {
     const connectedAddress = currentAccount?.address || zkloginaddress;
     if (connectedAddress && connectedAddress !== userAddressFromUrl) {
@@ -205,17 +205,21 @@ const App: React.FC = () => {
 
     getCollectionNames();
 
-    // Only attempt to load user profile if verified and we have an address
-    if (userAddress && isUserVerified) {
+    // Load user profile data for public viewing (no wallet required)
+    if (userAddressFromUrl) {
       getDatabase().catch((err) => {
         if (err?.response?.status === 401) {
-          console.warn("Unauthorized fetching /user; skipping profile hydrate");
+          console.warn("Unauthorized fetching /user; using default profile data");
         } else {
           console.error("Failed to load /user:", err);
         }
+      }).finally(() => {
+        setIsProfileLoading(false);
       });
+    } else {
+      setIsProfileLoading(false);
     }
-  }, [userAddress, isUserVerified]);
+  }, [userAddressFromUrl]);
 
   const getDatabase = async () => {
     const response = await axiosInstance.get("/user");
@@ -258,6 +262,18 @@ const App: React.FC = () => {
 
   // if (isLoading) return <div>Loading...</div>;
 
+  // Show loading spinner while profile data is being fetched
+  if (isProfileLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-[#00041f] to-[#030828] flex items-center justify-center text-white">
+        <div className="flex flex-col items-center">
+          <div className="w-10 h-10 border-4 border-white/30 border-t-white rounded-full animate-spin mb-4"></div>
+          <h2 className="text-xl font-semibold">Loading Profile</h2>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="relative bg-gradient-to-b from-[#00041f] to-[#030828] text-white pb-10">
       {/* Banner Image Background */}
@@ -277,7 +293,7 @@ const App: React.FC = () => {
       </div>
 
       {/* Profile Section */}
-      {currentAccount ? (
+      {currentAccount || zkloginaddress ? (
         <div className="relative z-20 flex flex-col items-center -mt-16">
           {/* Profile Image */}
           <div className="w-32 h-32 rounded-full border-4 border-white overflow-hidden bg-white z-20">
@@ -299,15 +315,54 @@ const App: React.FC = () => {
             <p className="text-blue-400 text-sm">{userData.description}</p>
           </div>
 
-          {/* Action Buttons */}
-          <div className="mt-2 flex items-center gap-3">
-            <button
-              onClick={() => setShowModal(true)}
-              className="flex items-center text-white text-sm font-medium hover:underline"
-            >
-              Edit Profile
-              <MdEdit className="ml-1 text-blue-400 text-lg" />
-            </button>
+          {/* Action Buttons - Only show if viewing own profile */}
+          {(currentAccount?.address === userAddress || zkloginaddress === userAddress) && (
+            <div className="mt-2 flex items-center gap-3">
+              <button
+                onClick={() => setShowModal(true)}
+                className="flex items-center text-white text-sm font-medium hover:underline"
+              >
+                Edit Profile
+                <MdEdit className="ml-1 text-blue-400 text-lg" />
+              </button>
+              <button
+                onClick={() => setShowShareModal(true)}
+                className="flex items-center text-white text-sm font-medium hover:underline"
+              >
+                Share Profile
+                <svg className="ml-1 w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342A3 3 0 109 12c0-.482-.114-.938-.316-1.342m0 2.684l6.632 3.316m-6.632-6l6.632-3.316" />
+                </svg>
+              </button>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="relative z-20 flex flex-col items-center -mt-16">
+          {/* Profile Image */}
+          <div className="w-32 h-32 rounded-full border-4 border-white overflow-hidden bg-white z-20">
+            <Image
+              src={
+                userData.profile_image ||
+                "https://i.pinimg.com/564x/49/cc/10/49cc10386c922de5e2e3c0bb66956e65.jpg"
+              }
+              alt="Profile"
+              width={128}
+              height={128}
+              className="object-cover w-full h-full"
+            />
+          </div>
+
+          {/* User Info */}
+          <div className="text-center mt-4">
+            <h2 className="text-xl font-semibold">{userData.username}</h2>
+            <p className="text-blue-400 text-sm">{userData.description}</p>
+            <p className="text-white/60 text-sm mt-2">Public Profile</p>
+          </div>
+
+          {/* Connect Wallet Button for non-connected users */}
+          <div className="mt-4 flex items-center gap-3">
+            <ConnectButton />
             <button
               onClick={() => setShowShareModal(true)}
               className="flex items-center text-white text-sm font-medium hover:underline"
@@ -319,101 +374,116 @@ const App: React.FC = () => {
             </button>
           </div>
         </div>
-      ) : (
-        <div className="flex gap-2 my-4 items-center justify-center">
-          <p className="text-2xl font-semibold">Profile</p>
-          <ConnectButton />
-        </div>
       )}
 
       <div className="p-8 max-w-[1600px] mx-auto">
-        <h1 className="text-4xl font-bold text-center mb-3">Owned NFTs</h1>
-        <div className="flex flex-col items-center gap-2 mb-6">
-          <p className="text-white/60 text-xs sm:text-sm break-all mb-4 mt-2">
-            Address: <span className="px-2 py-1 rounded-full bg-white/5 border border-white/10 text-white/70">{userAddress || "Not connected"}</span>
-            {currentAccount?.address && userAddressFromUrl && currentAccount.address !== userAddressFromUrl && (
-              <span className="ml-2 text-xs text-blue-400">
-                (Showing connected wallet, not URL address)
-              </span>
-            )}
-          </p>
-          {/* Toolbar */}
-          <div className="relative w-full max-w-5xl mb-10 border-b border-white/10 rounded-xl px-4 py-4">
-            {/* Centered, wide search */}
-            <div className="mx-auto w-full sm:w-[520px] md:w-[680px]">
-            <div className="absolute right-4 top-1/2 -translate-y-1/2 text-white/70 text-sm">
-              {ownedNfts.length} item{ownedNfts.length === 1 ? "" : "s"}
-            </div>
-
-              <input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search by name, description or token..."
-                className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-white/20"
-              />
-            </div>
-            {/* Item count pinned to the right */}
-            
-          </div>
-        </div>
-        
-        {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-6">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <div key={`skeleton-${i}`} className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm overflow-hidden animate-pulse">
-                <div className="aspect-square bg-white/10" />
-                <div className="p-4 space-y-3">
-                  <div className="h-4 bg-white/10 rounded w-3/4" />
-                  <div className="h-3 bg-white/10 rounded w-full" />
-                  <div className="h-3 bg-white/10 rounded w-2/3" />
+        {currentAccount || zkloginaddress ? (
+          <>
+            <h1 className="text-4xl font-bold text-center mb-3">Owned NFTs</h1>
+            <div className="flex flex-col items-center gap-2 mb-6">
+              <p className="text-white/60 text-xs sm:text-sm break-all mb-4 mt-2">
+                Address: <span className="px-2 py-1 rounded-full bg-white/5 border border-white/10 text-white/70">{userAddress || "Not connected"}</span>
+                {currentAccount?.address && userAddressFromUrl && currentAccount.address !== userAddressFromUrl && (
+                  <span className="ml-2 text-xs text-blue-400">
+                    (Showing connected wallet, not URL address)
+                  </span>
+                )}
+              </p>
+              {/* Toolbar */}
+              <div className="relative w-full max-w-5xl mb-10 border-b border-white/10 rounded-xl px-4 py-4">
+                {/* Centered, wide search */}
+                <div className="mx-auto w-full sm:w-[520px] md:w-[680px]">
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 text-white/70 text-sm">
+                  {ownedNfts.length} item{ownedNfts.length === 1 ? "" : "s"}
                 </div>
-              </div>
-            ))}
-          </div>
-        ) : ownedNfts && ownedNfts.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-8">
-            {ownedNfts?.map((nft: any) => (
-              <div
-                key={nft.id.id}
-                className={`group rounded-2xl bg-white/5 border border-white/10 overflow-hidden backdrop-blur-sm shadow-[0_10px_30px_-15px_rgba(0,0,0,0.5)] transition-all hover:-translate-y-0.5 hover:shadow-[0_20px_50px_-20px_rgba(0,0,0,0.6)] ${density === "compact" ? "" : ""}`}
-              >
-                {/* Image */}
-                <div className={`relative aspect-square`}>
-                  <img
-                    src={nft.image_url || "https://via.placeholder.com/300"}
-                    alt={nft.name}
-                    className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02] cursor-pointer"
-                    onClick={() => handleNFTClick(nft)}
+
+                  <input
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search by name, description or token..."
+                    className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-white/20"
                   />
-                  <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/70 to-transparent" />
                 </div>
-
-                {/* Content */}
-                <div className={`${density === "compact" ? "p-3 space-y-2" : "p-4 space-y-3"}`}>
-                  <h3 className="text-lg font-semibold text-white line-clamp-1">{nft.name}</h3>
-                  <p className="text-sm text-white/70 line-clamp-2">{nft.description}</p>
-
-                  <div className="flex flex-wrap items-center gap-2 pt-2">
-                    <span className="text-xs px-2 py-1 rounded-full bg-white/10 text-blue-200 border border-white/10">Mint: {nft.mint_price}</span>
-                    <span className="text-xs px-2 py-1 rounded-full bg-white/10 text-blue-200 border border-white/10">Token #{nft.token_number}</span>
-                  </div>
-
-                  <div className="pt-3">
-                    <button
-                      onClick={() => handleNFTClick(nft)}
-                      className={`inline-flex w-full items-center justify-center gap-2 rounded-lg border border-blue-400/60 ${density === "compact" ? "px-2 py-1.5 text-xs" : "px-3 py-2 text-sm"} font-medium text-white hover:bg-blue-400/10 transition-colors`}
-                    >
-                      Manage NFT <span className="text-white">→</span>
-                    </button>
-                  </div>
-                </div>
+                {/* Item count pinned to the right */}
+                
               </div>
-            ))}
-          </div>
+            </div>
+            
+            {isLoading ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-6">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={`skeleton-${i}`} className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm overflow-hidden animate-pulse">
+                    <div className="aspect-square bg-white/10" />
+                    <div className="p-4 space-y-3">
+                      <div className="h-4 bg-white/10 rounded w-3/4" />
+                      <div className="h-3 bg-white/10 rounded w-full" />
+                      <div className="h-3 bg-white/10 rounded w-2/3" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : ownedNfts && ownedNfts.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-8">
+                {ownedNfts?.map((nft: any) => (
+                  <div
+                    key={nft.id.id}
+                    className={`group rounded-2xl bg-white/5 border border-white/10 overflow-hidden backdrop-blur-sm shadow-[0_10px_30px_-15px_rgba(0,0,0,0.5)] transition-all hover:-translate-y-0.5 hover:shadow-[0_20px_50px_-20px_rgba(0,0,0,0.6)] ${density === "compact" ? "" : ""}`}
+                  >
+                    {/* Image */}
+                    <div className={`relative aspect-square`}>
+                      <img
+                        src={nft.image_url || "https://via.placeholder.com/300"}
+                        alt={nft.name}
+                        className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02] cursor-pointer"
+                        onClick={() => handleNFTClick(nft)}
+                      />
+                      <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/70 to-transparent" />
+                    </div>
+
+                    {/* Content */}
+                    <div className={`${density === "compact" ? "p-3 space-y-2" : "p-4 space-y-3"}`}>
+                      <h3 className="text-lg font-semibold text-white line-clamp-1">{nft.name}</h3>
+                      <p className="text-sm text-white/70 line-clamp-2">{nft.description}</p>
+
+                      <div className="flex flex-wrap items-center gap-2 pt-2">
+                        <span className="text-xs px-2 py-1 rounded-full bg-white/10 text-blue-200 border border-white/10">Mint: {nft.mint_price}</span>
+                        <span className="text-xs px-2 py-1 rounded-full bg-white/10 text-blue-200 border border-white/10">Token #{nft.token_number}</span>
+                      </div>
+
+                      <div className="pt-3">
+                        <button
+                          onClick={() => handleNFTClick(nft)}
+                          className={`inline-flex w-full items-center justify-center gap-2 rounded-lg border border-blue-400/60 ${density === "compact" ? "px-2 py-1.5 text-xs" : "px-3 py-2 text-sm"} font-medium text-white hover:bg-blue-400/10 transition-colors`}
+                        >
+                          Manage NFT <span className="text-white">→</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-gray-400 text-lg mb-2">No NFTs found</p>
+                <p className="text-gray-500 text-sm">You don&apos;t own any NFTs from this contract yet.</p>
+              </div>
+            )}
+          </>
         ) : (
-          <div className="text-center py-8">
-            <p className="text-gray-400 text-lg mb-2">No NFTs found</p>
-            <p className="text-gray-500 text-sm">You don&apos;t own any NFTs from this contract yet.</p>
+          <div className="text-center py-16">
+            <div className="max-w-md mx-auto">
+              <div className="w-24 h-24 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+              </div>
+              <h2 className="text-2xl font-bold text-white mb-4">Connect Wallet to View NFTs</h2>
+              <p className="text-white/60 mb-6">
+                This profile belongs to <span className="text-blue-400 font-mono">{userAddressFromUrl?.slice(0, 8)}...{userAddressFromUrl?.slice(-6)}</span>. 
+                Connect your wallet to see their NFT collection.
+              </p>
+              <ConnectButton />
+            </div>
           </div>
         )}
 
