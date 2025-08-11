@@ -40,7 +40,7 @@ export const Hero = () => {
           
 
           {/* Main heading */}
-          <h1 className={`text-5xl md:text-7xl lg:text-8xl font-extrabold tracking-tight text-white leading-tight mb-8 drop-shadow-lg ${workSans.className}`}>
+          <h1 className={`text-5xl md:text-5xl lg:text-7xl font-extrabold tracking-tight text-white leading-tight mb-8 drop-shadow-lg ${workSans.className}`}>
             Turn your audience into{" "}
             <span className="relative">
               <span className="text-transparent bg-clip-text bg-blue-500">

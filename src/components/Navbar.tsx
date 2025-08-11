@@ -101,21 +101,21 @@ export const Navbar = () => {
         <div className="md:hidden fixed top-16 left-0 w-full z-[9999] bg-[#00041F]/95 backdrop-blur-md border-t border-white/10 shadow-lg">
           <div className="flex flex-col px-6 py-4 gap-y-1">
             <Link 
-              className="w-full rounded-lg px-4 py-3 hover:bg-white/10 transition-colors text-white font-medium" 
+              className="w-full px-4 py-3  transition-colors text-white font-medium" 
               href={"/"}
               onClick={() => setOpen(false)}
             >
               Home
             </Link>
             <Link 
-              className="w-full rounded-lg px-4 py-3 hover:bg-white/10 transition-colors text-white font-medium" 
+              className="w-full px-4 py-3 hover:text-white/10 transition-colors text-white font-medium" 
               href={"/collections"}
               onClick={() => setOpen(false)}
             >
               Collections
             </Link>
             <Link 
-              className="w-full rounded-lg px-4 py-3 hover:bg-white/10 transition-colors text-white font-medium" 
+              className="w-full px-4 py-3 hover:text-white/10 transition-colors text-white font-medium" 
               href={"/loyalties"}
               onClick={() => setOpen(false)}
             >

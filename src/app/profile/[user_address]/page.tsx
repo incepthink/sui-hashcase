@@ -60,6 +60,15 @@ const App: React.FC = () => {
     }
   }, [currentAccount, zkloginaddress, router]);
 
+  // Update URL when connected wallet changes
+  useEffect(() => {
+    const connectedAddress = currentAccount?.address || zkloginaddress;
+    if (connectedAddress && connectedAddress !== userAddressFromUrl) {
+      // Update the URL to reflect the connected wallet
+      router.replace(`/profile/${connectedAddress}`);
+    }
+  }, [currentAccount?.address, zkloginaddress, userAddressFromUrl, router]);
+
   // needing for updating profile
   const [showModal, setShowModal] = useState(false);
   // Share profile modal
@@ -77,7 +86,7 @@ const App: React.FC = () => {
     process.env.NEXT_PUBLIC_CONTRACT_PACKAGE_ID ||
     "0x072920bb06baea0717fbeda59950b97a1205f0196d6ad33878d3120710fafe84";
 
-  const userAddress = userAddressFromUrl || currentAccount?.address || zkloginaddress || "";
+  const userAddress = currentAccount?.address || zkloginaddress || userAddressFromUrl || "";
 
   console.log("🔍 DEBUG: Current Account Address:", currentAccount?.address);
   console.log("🔍 DEBUG: ZkLogin Address:", zkloginaddress);
@@ -322,6 +331,11 @@ const App: React.FC = () => {
         <div className="flex flex-col items-center gap-2 mb-6">
           <p className="text-white/60 text-xs sm:text-sm break-all mb-4 mt-2">
             Address: <span className="px-2 py-1 rounded-full bg-white/5 border border-white/10 text-white/70">{userAddress || "Not connected"}</span>
+            {currentAccount?.address && userAddressFromUrl && currentAccount.address !== userAddressFromUrl && (
+              <span className="ml-2 text-xs text-blue-400">
+                (Showing connected wallet, not URL address)
+              </span>
+            )}
           </p>
           {/* Toolbar */}
           <div className="relative w-full max-w-5xl mb-10 border-b border-white/10 rounded-xl px-4 py-4">
