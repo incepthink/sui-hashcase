@@ -269,7 +269,7 @@ export default function NFTPage() {
 
       // Use localhost:8000 for the backend API
       const mintAndTransferResponse = await axiosInstance.post(
-        "http://localhost:8000/user/sui-nft/backend-mint",
+        "/user/sui-nft/backend-mint",
         {
           nftForm,
         },
