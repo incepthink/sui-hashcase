@@ -62,6 +62,36 @@ export default function NFTPage() {
     setIsModalOpen(false);
   };
 
+  // Check if location permission is already granted
+  const checkLocationPermission = async () => {
+    if (!navigator.permissions) {
+      return false;
+    }
+    
+    try {
+      const permission = await navigator.permissions.query({ name: 'geolocation' });
+      return permission.state === 'granted';
+    } catch (error) {
+      console.log('Permission API not supported, will check on location request');
+      return false;
+    }
+  };
+
+  // Initialize location state on component mount
+  useEffect(() => {
+    const initLocationState = async () => {
+      const hasPermission = await checkLocationPermission();
+      setIsLocationEnabled(hasPermission);
+      
+      // If we have permission, automatically fetch location data
+      if (hasPermission && collectionData) {
+        getLocationData();
+      }
+    };
+    
+    initLocationState();
+  }, [collectionData]);
+
   function getCurrentPosition(): Promise<Coordinates> {
     return new Promise((resolve, reject) => {
       const options = {
@@ -89,12 +119,13 @@ export default function NFTPage() {
     MetadataSetWithAllMetadataInstances[]
   >([]);
 
-  const getLocation = async () => {
-    setIsLoading(true);
+  // Separate function to get location data (without changing permission state)
+  const getLocationData = async () => {
+    if (!collectionData) return;
+    
     try {
       // Get user location
       const { latitude, longitude } = await getCurrentPosition();
-      setIsLocationEnabled(true);
 
       // Fetch geofenced metadata
       const geofenced = await axiosInstance.get(
@@ -103,12 +134,46 @@ export default function NFTPage() {
           params: {
             user_lat: latitude,
             user_lon: longitude,
-            collection_id: collectionData?.id,
+            collection_id: collectionData.id,
           },
         }
       );
       setGeofencedMetadata(geofenced.data.data);
 
+    } catch (error: any) {
+      console.error("Location error:", error);
+      // Don't show alerts for permission errors if user just toggled off
+      if (isLocationEnabled) {
+        if (error.code === 1) {
+          alert("Location access denied. Please allow location access in your browser settings and try again.");
+        } else if (error.code === 2) {
+          alert("Location unavailable. Please check your device's location services and try again.");
+        } else if (error.code === 3) {
+          alert("Location request timed out. Please try again.");
+        } else {
+          alert("Failed to get location. Please check your browser settings and try again.");
+        }
+      }
+      // Clear geofenced data on error
+      setGeofencedMetadata([]);
+    }
+  };
+
+  const getLocation = async () => {
+    setIsLoading(true);
+    try {
+      // Check if we already have permission
+      const hasPermission = await checkLocationPermission();
+      
+      if (hasPermission) {
+        // We already have permission, just get the data
+        await getLocationData();
+        setIsLocationEnabled(true);
+      } else {
+        // Request permission by trying to get location
+        await getLocationData();
+        setIsLocationEnabled(true);
+      }
     } catch (error: any) {
       console.error("Location error:", error);
       if (error.code === 1) {
@@ -120,6 +185,7 @@ export default function NFTPage() {
       } else {
         alert("Failed to get location. Please check your browser settings and try again.");
       }
+      setIsLocationEnabled(false);
     } finally {
       setIsLoading(false);
     }
@@ -160,25 +226,6 @@ export default function NFTPage() {
         } catch (metadataError) {
           console.log("Metadata not available for this collection:", metadataError);
           setMetadata([]);
-        }
-
-        // Try to fetch geofenced metadata, but don't fail if it doesn't work
-        try {
-          const { latitude, longitude } = await getCurrentPosition();
-          const geofenced = await axiosInstance.get(
-            "/platform/metadata/geo-fenced",
-            {
-              params: {
-                user_lat: latitude,
-                user_lon: longitude,
-                collection_id: collection_instance.id,
-              },
-            }
-          );
-          setGeofencedMetadata(geofenced.data.data);
-        } catch (geofencedError) {
-          console.log("Geofenced metadata not available:", geofencedError);
-          setGeofencedMetadata([]);
         }
 
         // Try to fetch randomized token metadata, but don't fail if it doesn't work
