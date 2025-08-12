@@ -432,7 +432,7 @@ const App: React.FC = () => {
                       <img
                         src={nft.image_url || "https://via.placeholder.com/300"}
                         alt={nft.name}
-                        className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02] cursor-pointer"
+                        className="h-full w-full object-cover transition duration-300 cursor-pointer"
                         onClick={() => handleNFTClick(nft)}
                       />
                       <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/70 to-transparent" />

@@ -14,12 +14,14 @@ import React from "react";
 import Link from "next/link";
 
 import { useZkLogin } from "@mysten/enoki/react";
+import { Transaction } from "@mysten/sui/transactions";
 
 import { useSponsorSignAndExecute } from "../../hooks/useSponsorSignandExecute";
 
 import {
   useCurrentAccount,
   useSignAndExecuteTransaction,
+  useSuiClient,
 } from "@mysten/dapp-kit";
 
 import axiosInstance from "@/utils/axios";
@@ -27,6 +29,7 @@ import axios from "axios";
 import UnlockableNft from "./UnlockableNft";
 import MintSuccessModal from "./MintSuccessModal";
 import { useGlobalAppStore } from "@/store/globalAppStore";
+import { useNftTransactions } from "@/app/hooks/useNftTransactions";
 
 import {
   Globe,
@@ -69,9 +72,9 @@ type Coordinates = {
 
 const workSans = Work_Sans({ subsets: ["latin"] });
 
-const mainnet_loyalty =
-  process.env.MAINNET_LOYALTY_PACKAGE_ID ||
-  "0xbdfb6f8ad73a073b500f7ba1598ddaa59038e50697e2dc6e9dedb55af7ae5b49";
+const testnet_loyalty =
+  process.env.TESTNET_LOYALTY_PACKAGE_ID ||
+  "0xb92dbbdb90ea755f8ea371d3e4658687fc4a1e9f6b13264e358c7d27da7514a7";
 
 export default function NFTPage() {
   const params = useParams();
@@ -85,6 +88,7 @@ export default function NFTPage() {
 
   const [loading, setLoading] = useState(true);
   const [minting, setMinting] = useState(false);
+  const [loyaltyId, setLoyaltyId] = useState<string>("");
 
   // states for the modal for showing minting success
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -106,8 +110,10 @@ export default function NFTPage() {
   const currentAccount = useCurrentAccount();
   const { mutateAsync: signAndExecuteTransaction } =
     useSignAndExecuteTransaction();
+  const suiClient = useSuiClient();
 
   const { userWalletAddress } = useGlobalAppStore();
+  const { freeMintNft } = useNftTransactions();
 
   useEffect(() => {
     if (params.metadata_id) {
@@ -236,68 +242,125 @@ export default function NFTPage() {
   const handleGaslessMintAndTransfer = async () => {
     if (!nftData) return;
 
-    // Check if user is connected
-    if (!currentAccount?.address) {
+    if (!address) {
       notify("Please connect your wallet first", "error");
       return;
     }
 
-    setMinting(true);
-    const notifyId = notifyPromise(
-      "Minting NFT... this might take some time...",
-      "info"
-    );
+    const notifyId = notifyPromise("Minting loyalty...", "info");
+    console.log("Minting loyalty...");
 
-    console.log("NFT DATA", nftData);
-    console.log("CURRENT ACCOUNT", currentAccount);
-    console.log("USER WALLET ADDRESS", userWalletAddress);
-    console.log("ADDRESS", address);
-    console.log("SPONSOR SIGN AND EXECUTE", sponsorSignAndExecute);
+    const tx = new Transaction();
+    tx.moveCall({
+      target: `${testnet_loyalty!}::loyalty_card::mint_loyalty`,
+      arguments: [tx.pure.address(address!), tx.pure.u64(Date.now())],
+    });
+    tx.setSender(address!);
+
     try {
-      const nftForm = {
-        collection_id: "0x77d8d09f449b77816e0573ae64ab05ecf14b7e63609cfd6e034c7d15abbb6aba", // Use new collection ID
-        title: nftData.title,
-        description: nftData.description || "",
-        image_url: nftData.image_url,
-        attributes: nftData.attributes || "",
-      };
-
-      console.log("Minting NFT with data:", {
-        userAddress: currentAccount.address,
-        nftForm
+      const resp = await sponsorSignAndExecute({
+        tx,
+        options: { showObjectChanges: true, showEffects: true },
       });
-
-      // Use localhost:8000 for the backend API
-      const mintAndTransferResponse = await axiosInstance.post(
-        "/user/sui-nft/backend-mint",
-        {
-          nftForm,
-        },
-        {
-          params: { user_address: currentAccount.address },
-        }
+      notifyResolve(notifyId, "Minted new loyalty", "success");
+      console.log("Minted new loyalty, check the response");
+      console.log(resp!.objectChanges);
+      const createdLoyalty = resp!.objectChanges?.find(
+        ({ type, objectType }: any) =>
+          type === "created" &&
+          objectType === `${testnet_loyalty!}::loyalty_card::Loyalty`
       );
-
-      notifyResolve(notifyId, "NFT Minted Successfully! Please Check Your Wallet", "success");
-
-      console.log("Mint response:", mintAndTransferResponse.data);
+      if (!createdLoyalty) {
+        notifyResolve(
+          notifyId,
+          "Could not find loyalty in created objects",
+          "error"
+        );
+        console.log("Could not find loyalty in created objects");
+        throw new Error("Error minting new loyalty");
+      }
+      const loyaltyId = (createdLoyalty as any)?.objectId;
+      setLoyaltyId(loyaltyId);
+      console.log("Loyalty ID: ", loyaltyId);
       
       // Show success modal
       setShowSuccessModal(true);
-
     } catch (error: any) {
-      console.error("Minting error:", error);
+      notifyResolve(notifyId, "Error minting loyalty", "error");
+      console.error("Error minting loyalty:", error);
+    }
+  };
+
+  const createFreeMintNft = async () => {
+    if (!nftData) return;
+
+    if (!currentAccount) {
+      notify("Please connect your wallet first", "error");
+      return;
+    }
+
+    const notifyId = notifyPromise("Minting loyalty...", "info");
+    console.log("Minting loyalty...");
+
+    const tx = new Transaction();
+    tx.moveCall({
+      target: `${testnet_loyalty!}::loyalty_card::mint_loyalty`,
+      arguments: [
+        tx.pure.address(currentAccount.address),
+        tx.pure.u64(Date.now()),
+      ],
+    });
+    tx.setSender(address!);
+
+    try {
+      await signAndExecuteTransaction({
+        transaction: tx as any,
+        chain: "sui:testnet",
+      });
+      notifyResolve(notifyId, "Minted new loyalty", "success");
       
-      let errorMessage = "Error minting NFT";
-      if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
-      } else if (error.message) {
-        errorMessage = error.message;
+      // Show success modal
+      setShowSuccessModal(true);
+    } catch (error) {
+      notifyResolve(notifyId, "Error minting loyalty", "error");
+      console.error("Error minting loyalty:", error);
+    }
+  };
+
+  const handleClaimNFT = () => {
+    if (address) {
+      handleGaslessMintAndTransfer();
+    } else if (currentAccount) {
+      createFreeMintNft();
+    }
+  };
+
+  const handleReveal = async () => {
+    let hashcaseData = [];
+    try {
+      const { data } = await suiClient.getOwnedObjects({
+        owner: currentAccount?.address || address || "",
+        filter: {
+          StructType:
+            "0xb92dbbdb90ea755f8ea371d3e4658687fc4a1e9f6b13264e358c7d27da7514a7::loyalty_card::Loyalty",
+        },
+        options: {
+          showDisplay: true,
+          showContent: true,
+          showType: true,
+        },
+      });
+      if (data) {
+        hashcaseData = data;
       }
-      
-      notifyResolve(notifyId, errorMessage, "error");
-    } finally {
-      setMinting(false);
+    } catch (error) {
+      notify("Error in Fetching NFT", "error");
+      console.log(error);
+    }
+    if (hashcaseData.length > 0) {
+      openModal();
+    } else {
+      notify("You need to mint this NFT first!", "error");
     }
   };
 
@@ -423,7 +486,7 @@ export default function NFTPage() {
             <div className="flex items-center justify-start w-full">
               <div className="flex items-center md:w-auto w-full justify-between my-4 bg-[#4DA2FF] backdrop-blur-md rounded-lg px-3 py-3 gap-x-2">
                 <button
-                  onClick={openModal}
+                  onClick={handleReveal}
                   className="flex items-center gap-x-2"
                 >
                   <EyeW />
@@ -437,7 +500,7 @@ export default function NFTPage() {
 
             <div className="flex flex-col gap-4 items-start mt-2 w-full">
               <button
-                onClick={handleGaslessMintAndTransfer}
+                onClick={handleClaimNFT}
                 disabled={minting}
                 className="md:px-6 md:py-3 px-4 py-2 rounded-full md:text-xl text-sm bg-white text-black border-[1px] border-b-4 border-[#4DA2FF] flex items-center gap-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
@@ -451,7 +514,7 @@ export default function NFTPage() {
                   </>
                 ) : (
                   <>
-                    Mint NFT
+                    Claim to Hashcase Wallet
                     <ArrowB />
                   </>
                 )}

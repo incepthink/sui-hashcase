@@ -187,14 +187,14 @@ const CollectionsPage: React.FC = () => {
                 href={`/collection/${contractAddress}`}
                 className="block group"
               >
-                <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 overflow-hidden shadow-lg transition-all duration-300 hover:scale-[1.02] hover:bg-white/15 hover:border-[#4DA2FF]/50 group-hover:shadow-[#4DA2FF]/20">
+                <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 overflow-hidden shadow-lg transition-all duration-300 hover:bg-white/15 hover:border-[#4DA2FF]/50 group-hover:shadow-[#4DA2FF]/20">
                   {/* Image Section */}
                   <div className="relative w-full aspect-square overflow-hidden">
                     <Image
                       src={backgroundImageHeroSection}
                       alt={collectionName}
                       fill
-                      className="object-cover transition-transform duration-300 group-hover:scale-110"
+                      className="object-cover transition-transform duration-300 "
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                     
