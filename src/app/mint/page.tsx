@@ -293,7 +293,7 @@ const MintPage = () => {
               </p>
             </div>
 
-            {/* Reveal button */}
+            
          
 
             {/* Claim button */}
