@@ -294,7 +294,7 @@ const MintPage = () => {
             </div>
 
             {/* Reveal button */}
-
+         
 
             {/* Claim button */}
             <div className="pt-4">
