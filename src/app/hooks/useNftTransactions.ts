@@ -29,7 +29,7 @@ export const useNftTransactions = () => {
   //we get the packageId used to call the transactions
   const packageId =
     process.env.NEXT_PUBLIC_CONTRACT_PACKAGE_ID ||
-    "0x48534ac3dd3df77cb4d6e17e05d2bd7961d5352e10fb01561184828d2aa3248e";
+    "0xea46060a8a4750de4ce91e6b8a2119d35becbeaef939c09557d0773c7f7c20a0";
 
   const freeMintNft = async (nftForm: MintingForm) => {
     if (!nftForm.collection_id) {
@@ -46,7 +46,7 @@ export const useNftTransactions = () => {
 
       txResult = await signAndExecuteTransaction({
         transaction: tx as any,
-        chain: "sui:testnet",
+        chain: "sui:mainnet",
       });
 
       // Wait before fetching transaction details
@@ -110,7 +110,7 @@ export const useNftTransactions = () => {
 
       txResult = await signAndExecuteTransaction({
         transaction: tx as any,
-        chain: "sui:testnet",
+        chain: "sui:mainnet",
       });
 
       // Wait before fetching transaction details
@@ -151,7 +151,7 @@ export const useNftTransactions = () => {
 
       txResult = await signAndExecuteTransaction({
         transaction: tx as any,
-        chain: "sui:testnet",
+        chain: "sui:mainnet",
       });
 
       // Wait before fetching transaction details
@@ -210,7 +210,7 @@ export const useNftTransactions = () => {
 
       txResult = await signAndExecuteTransaction({
         transaction: tx as any,
-        chain: "sui:testnet",
+        chain: "sui:mainnet",
       });
 
       // Wait before fetching transaction details
@@ -272,7 +272,7 @@ export const useNftTransactions = () => {
 
       const txResult = await signAndExecuteTransaction({
         transaction: tx as any,
-        chain: "sui:testnet",
+        chain: "sui:mainnet",
       });
 
       await new Promise((resolve) => setTimeout(resolve, 1000));

@@ -73,8 +73,8 @@ type Coordinates = {
 const workSans = Work_Sans({ subsets: ["latin"] });
 
 const testnet_loyalty =
-  process.env.TESTNET_LOYALTY_PACKAGE_ID ||
-  "0xb92dbbdb90ea755f8ea371d3e4658687fc4a1e9f6b13264e358c7d27da7514a7";
+  process.env.NEXT_PUBLIC_CONTRACT_PACKAGE_ID ||
+  "0xea46060a8a4750de4ce91e6b8a2119d35becbeaef939c09557d0773c7f7c20a0";
 
 export default function NFTPage() {
   const params = useParams();
@@ -247,47 +247,28 @@ export default function NFTPage() {
       return;
     }
 
-    const notifyId = notifyPromise("Minting loyalty...", "info");
-    console.log("Minting loyalty...");
-
-    const tx = new Transaction();
-    tx.moveCall({
-      target: `${testnet_loyalty!}::loyalty_card::mint_loyalty`,
-      arguments: [tx.pure.address(address!), tx.pure.u64(Date.now())],
-    });
-    tx.setSender(address!);
+    const notifyId = notifyPromise("Minting NFT...", "info");
+    console.log("Minting NFT via admin free mint...");
 
     try {
-      const resp = await sponsorSignAndExecute({
-        tx,
-        options: { showObjectChanges: true, showEffects: true },
+      // Call the public platform NFT mint API
+      const response = await axiosInstance.post('/platform/sui/mint-nft', {
+        collection_id: "0xdd8720b9dd4e46d9cbc8f74cb9a4bc7654f46729afddb338e5547826ec95863f", // Use the correct collection ID
+        name: nftData.name || nftData.title || "HashCase NFT", // Use title as fallback
+        description: nftData.description,
+        image_url: nftData.image_url,
+        attributes: nftData.attributes ? nftData.attributes.split(',').map(attr => attr.trim()) : [],
+        recipient: address
       });
-      notifyResolve(notifyId, "Minted new loyalty", "success");
-      console.log("Minted new loyalty, check the response");
-      console.log(resp!.objectChanges);
-      const createdLoyalty = resp!.objectChanges?.find(
-        ({ type, objectType }: any) =>
-          type === "created" &&
-          objectType === `${testnet_loyalty!}::loyalty_card::Loyalty`
-      );
-      if (!createdLoyalty) {
-        notifyResolve(
-          notifyId,
-          "Could not find loyalty in created objects",
-          "error"
-        );
-        console.log("Could not find loyalty in created objects");
-        throw new Error("Error minting new loyalty");
-      }
-      const loyaltyId = (createdLoyalty as any)?.objectId;
-      setLoyaltyId(loyaltyId);
-      console.log("Loyalty ID: ", loyaltyId);
+
+      notifyResolve(notifyId, "NFT minted successfully!", "success");
+      console.log("NFT minted successfully:", response.data);
       
       // Show success modal
       setShowSuccessModal(true);
     } catch (error: any) {
-      notifyResolve(notifyId, "Error minting loyalty", "error");
-      console.error("Error minting loyalty:", error);
+      notifyResolve(notifyId, "Error minting NFT", "error");
+      console.error("Error minting NFT:", error);
     }
   };
 
@@ -299,31 +280,32 @@ export default function NFTPage() {
       return;
     }
 
-    const notifyId = notifyPromise("Minting loyalty...", "info");
-    console.log("Minting loyalty...");
-
-    const tx = new Transaction();
-    tx.moveCall({
-      target: `${testnet_loyalty!}::loyalty_card::mint_loyalty`,
-      arguments: [
-        tx.pure.address(currentAccount.address),
-        tx.pure.u64(Date.now()),
-      ],
-    });
-    tx.setSender(address!);
+    const notifyId = notifyPromise("Minting NFT...", "info");
+    console.log("Minting NFT via admin free mint...");
+    console.log("nftData:", nftData);
+    console.log("nftData.name:", nftData.name);
+    console.log("nftData.title:", nftData.title);
+    console.log("nftData.collection_address:", nftData.collection_address);
 
     try {
-      await signAndExecuteTransaction({
-        transaction: tx as any,
-        chain: "sui:testnet",
+      // Call the public platform NFT mint API
+      const response = await axiosInstance.post('/platform/sui/mint-nft', {
+        collection_id: "0xdd8720b9dd4e46d9cbc8f74cb9a4bc7654f46729afddb338e5547826ec95863f", // Use the correct collection ID
+        name: nftData.name || nftData.title || "HashCase NFT", // Use title as fallback
+        description: nftData.description,
+        image_url: nftData.image_url,
+        attributes: nftData.attributes ? nftData.attributes.split(',').map(attr => attr.trim()) : [],
+        recipient: currentAccount.address
       });
-      notifyResolve(notifyId, "Minted new loyalty", "success");
+
+      notifyResolve(notifyId, "NFT minted successfully!", "success");
+      console.log("NFT minted successfully:", response.data);
       
       // Show success modal
       setShowSuccessModal(true);
     } catch (error) {
-      notifyResolve(notifyId, "Error minting loyalty", "error");
-      console.error("Error minting loyalty:", error);
+      notifyResolve(notifyId, "Error minting NFT", "error");
+      console.error("Error minting NFT:", error);
     }
   };
 
@@ -341,8 +323,7 @@ export default function NFTPage() {
       const { data } = await suiClient.getOwnedObjects({
         owner: currentAccount?.address || address || "",
         filter: {
-          StructType:
-            "0xb92dbbdb90ea755f8ea371d3e4658687fc4a1e9f6b13264e358c7d27da7514a7::loyalty_card::Loyalty",
+          Package: testnet_loyalty, // Use mainnet package ID
         },
         options: {
           showDisplay: true,
@@ -351,7 +332,11 @@ export default function NFTPage() {
         },
       });
       if (data) {
-        hashcaseData = data;
+        // Filter for admin-minted NFTs
+        hashcaseData = data.filter((item: any) => {
+          const type = item?.data?.type;
+          return type && type.includes('::hashcase_module::') && type.includes('NFT');
+        });
       }
     } catch (error) {
       notify("Error in Fetching NFT", "error");
@@ -484,7 +469,7 @@ export default function NFTPage() {
             </div>
 
             <div className="flex items-center justify-start w-full">
-              <div className="flex items-center md:w-auto w-full justify-between my-4 bg-[#4DA2FF] backdrop-blur-md rounded-lg px-3 py-3 gap-x-2">
+              {/* <div className="flex items-center md:w-auto w-full justify-between my-4 bg-[#4DA2FF] backdrop-blur-md rounded-lg px-3 py-3 gap-x-2">
                 <button
                   onClick={handleReveal}
                   className="flex items-center gap-x-2"
@@ -495,7 +480,7 @@ export default function NFTPage() {
                   </p>
                 </button>
                 <ArrowW className="rotate-180 ml-4" />
-              </div>
+              </div> */}
             </div>
 
             <div className="flex flex-col gap-4 items-start mt-2 w-full">
@@ -514,7 +499,7 @@ export default function NFTPage() {
                   </>
                 ) : (
                   <>
-                    Claim to Hashcase Wallet
+                    Mint NFT
                     <ArrowB />
                   </>
                 )}

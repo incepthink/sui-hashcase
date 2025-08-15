@@ -15,16 +15,12 @@ export const useLoyaltyPointsTransactions = () => {
 
   const packageId =
     process.env.NEXT_PUBLIC_CONTRACT_PACKAGE_ID ||
-    "0xdd9cd4161d083f8ae99adb03dbce45b400263f49975f4c48a6e74488dea285ee";
+    "0xea46060a8a4750de4ce91e6b8a2119d35becbeaef939c09557d0773c7f7c20a0";
   const treasuryCapId =
     process.env.NEXT_PUBLIC_TREASURY_CAP ||
-    "0xacd90a0531d5de71ded1d80d2d01d78caec275490f8a2075dbc0d9d1fdff28c8";
+    "0xa197e2c1dd489eef6507833e7f167b6aa814c07434df843e9c89b78acf57c7dd";
 
   const addLoyaltyPoints = async (userTokenId: string, amount: string) => {
-    userTokenId =
-      userTokenId ||
-      "0x4215804794fb9bc9b01b0148b9caaba82cea4194ca1ccb2cd383e95403682081";
-
     if (!treasuryCapId || !userTokenId || !amount) {
       toast.error("Please fill in all fields.");
       return;
@@ -37,11 +33,11 @@ export const useLoyaltyPointsTransactions = () => {
       // Create transaction
       const tx = new Transaction();
       tx.moveCall({
-        target: `${packageId}::loyalty_points::add_points`,
+        target: `${packageId}::loyalty::reward_user`,
         arguments: [
           tx.object(treasuryCapId),
-          tx.object(userTokenId),
           tx.pure.u64(Number(amount)),
+          tx.pure.address(userTokenId),
         ],
       });
 
@@ -76,10 +72,6 @@ export const useLoyaltyPointsTransactions = () => {
   };
 
   const spendLoyaltyPoints = async (userTokenId: string, amount: string) => {
-    userTokenId =
-      userTokenId ||
-      "0x4215804794fb9bc9b01b0148b9caaba82cea4194ca1ccb2cd383e95403682081";
-
     if (!treasuryCapId || !userTokenId || !amount) {
       toast.error("Please fill in all fields.");
       return;
@@ -92,7 +84,7 @@ export const useLoyaltyPointsTransactions = () => {
       // Create transaction
       const tx = new Transaction();
       tx.moveCall({
-        target: `${packageId}::loyalty_points::spend_points`,
+        target: `${packageId}::loyalty::spend_points`,
         arguments: [
           tx.object(treasuryCapId),
           tx.object(userTokenId),

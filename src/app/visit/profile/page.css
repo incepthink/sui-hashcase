@@ -1,0 +1,430 @@
+/* Visit Profile Page Styles */
+.visit-profile-container {
+  min-height: 100vh;
+  background: linear-gradient(to bottom, #00041f, #030828);
+}
+
+.profile-banner {
+  position: relative;
+  width: 100%;
+  height: 200px;
+  overflow: hidden;
+}
+
+.profile-banner-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 10;
+}
+
+.profile-section {
+  position: relative;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: -4rem;
+}
+
+.profile-image {
+  width: 8rem;
+  height: 8rem;
+  border-radius: 50%;
+  border: 4px solid white;
+  overflow: hidden;
+  background: white;
+  z-index: 20;
+}
+
+.profile-image img {
+  object-fit: cover;
+  width: 100%;
+  height: 100%;
+}
+
+.user-info {
+  text-align: center;
+  margin-top: 1rem;
+}
+
+.user-info h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: white;
+}
+
+.user-info p {
+  color: #60a5fa;
+  font-size: 0.875rem;
+}
+
+.shared-profile-label {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+}
+
+.nfts-section {
+  padding: 2rem;
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+.nfts-section h1 {
+  font-size: 2.25rem;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 0.75rem;
+  color: white;
+}
+
+.address-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  margin-top: 0.5rem;
+}
+
+.address-label {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.75rem;
+  line-height: 1rem;
+  word-break: break-all;
+}
+
+.address-badge {
+  padding: 0.25rem 0.5rem;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+
+.toolbar {
+  position: relative;
+  width: 100%;
+  max-width: 80rem;
+  margin-bottom: 2.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.75rem;
+  padding: 1rem;
+}
+
+.search-container {
+  margin: 0 auto;
+  width: 100%;
+  max-width: 680px;
+}
+
+.item-count {
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.875rem;
+}
+
+.search-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: white;
+  font-size: 0.875rem;
+}
+
+.search-input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.search-input:focus {
+  outline: none;
+  ring: 2px;
+  ring-color: rgba(255, 255, 255, 0.2);
+}
+
+.nfts-grid {
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);
+  gap: 2rem;
+}
+
+@media (min-width: 640px) {
+  .nfts-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 768px) {
+  .nfts-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (min-width: 1280px) {
+  .nfts-grid {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
+
+.nft-card {
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 10px 30px -15px rgba(0, 0, 0, 0.5);
+  transition: all 0.2s ease;
+}
+
+.nft-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 20px 50px -20px rgba(0, 0, 0, 0.6);
+}
+
+.nft-image {
+  position: relative;
+  aspect-ratio: 1;
+}
+
+.nft-image img {
+  height: 100%;
+  width: 100%;
+  object-fit: cover;
+  transition: duration-300;
+  cursor: pointer;
+}
+
+.nft-image-overlay {
+  position: absolute;
+  inset-x: 0;
+  bottom: 0;
+  height: 33.333333%;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.7), transparent);
+}
+
+.nft-content {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.nft-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: white;
+  line-clamp: 1;
+}
+
+.nft-description {
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.7);
+  line-clamp: 2;
+}
+
+.nft-badges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding-top: 0.5rem;
+}
+
+.nft-badge {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #bfdbfe;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.nft-button {
+  display: inline-flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(96, 165, 250, 0.6);
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: white;
+  transition: colors 0.2s ease;
+}
+
+.nft-button:hover {
+  background: rgba(96, 165, 250, 0.1);
+}
+
+.no-nfts {
+  text-align: center;
+  padding: 2rem 0;
+}
+
+.no-nfts h3 {
+  color: #9ca3af;
+  font-size: 1.125rem;
+  margin-bottom: 0.5rem;
+}
+
+.no-nfts p {
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+.share-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+}
+
+.share-modal-content {
+  background: #111827;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  width: 100%;
+  max-width: 28rem;
+  margin: 0 1rem;
+  padding: 1.25rem;
+  animation: fade-in-50 zoom-in-95 duration-500;
+}
+
+.share-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.share-modal-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: white;
+}
+
+.share-modal-close {
+  color: rgba(255, 255, 255, 0.6);
+  transition: color 0.2s ease;
+}
+
+.share-modal-close:hover {
+  color: white;
+}
+
+.share-modal-description {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.875rem;
+  margin-bottom: 0.75rem;
+}
+
+.share-modal-input-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.share-modal-input {
+  flex: 1;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: white;
+  font-size: 0.875rem;
+}
+
+.share-modal-copy-button {
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  background: white;
+  color: black;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: background-color 0.2s ease;
+}
+
+.share-modal-copy-button:hover {
+  background: rgba(255, 255, 255, 0.9);
+}
+
+/* Loading skeleton */
+.skeleton {
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  overflow: hidden;
+  backdrop-filter: blur(4px);
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.skeleton-image {
+  aspect-ratio: 1;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.skeleton-content {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.skeleton-line {
+  height: 1rem;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 0.25rem;
+}
+
+.skeleton-line-75 {
+  width: 75%;
+}
+
+.skeleton-line-full {
+  width: 100%;
+}
+
+.skeleton-line-66 {
+  width: 66.666667%;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes fade-in-50 {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes zoom-in-95 {
+  from {
+    transform: scale(0.95);
+  }
+  to {
+    transform: scale(1);
+  }
+} 

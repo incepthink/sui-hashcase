@@ -1,7 +1,7 @@
 "use client";
 import { useSuiClientQuery } from "@mysten/dapp-kit";
 import { useParams, useRouter } from "next/navigation";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 
 import Link from "next/link";
 import Image from "next/image";
@@ -12,13 +12,7 @@ import { Hash, Download, Edit3, ArrowLeft } from "lucide-react";
 
 import { useNftTransactions } from "@/app/hooks/useNftTransactions";
 import axiosInstance from "@/utils/axios";
-import UnlockableNft from "./UnlockableNft";
 import toast from "react-hot-toast";
-import {
-  Collection,
-  Metadata,
-  MetadataInstanceWithMetadataSet,
-} from "@/utils/modelTypes";
 
 const workSans = Work_Sans({ subsets: ["latin"] });
 
@@ -38,13 +32,8 @@ const NftPage = () => {
   };
 
   const { claimNFT, updateNftMetadata } = useNftTransactions();
-  const [collection, setCollection] = useState<Collection | null>(null);
-  const [unlockableContent, setUnlockableContent] = useState<string>("");
   const [address, setAddress] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-
-  const [upgradeData, setUpgradeData] =
-    useState<MetadataInstanceWithMetadataSet | null>(null);
 
   const handleClaimNft = async (collection_id: string, nftId: string) => {
     if (!address.trim()) {
@@ -58,14 +47,6 @@ const NftPage = () => {
       
       // Claim NFT on the blockchain
       await claimNFT(collection_id, nftId);
-
-      // Place the order
-      await axiosInstance.post("/user/order/create", {
-        collection_id: collection?.id,
-        token_id: nftData.token_number,
-        address: address,
-        status: "order_placed",
-      });
       
       toast.success("NFT claimed successfully!");
     } catch (error) {
@@ -77,17 +58,12 @@ const NftPage = () => {
   };
 
   const handleUpdateMetadata = async (collection_id: string, nftId: string) => {
-    if (!upgradeData) {
-      toast.error("No upgrade data available for this NFT");
-      return;
-    }
-    
     setIsLoading(true);
     try {
       const updateForm = {
-        name: upgradeData.title!,
-        description: upgradeData.description,
-        imageUrl: upgradeData.image_url,
+        name: nftData.name + " (Updated)",
+        description: nftData.description + " (Updated)",
+        imageUrl: nftData.image_url,
         collectionId: collection_id,
         attributes: "super, good",
         nftId: nftId,
@@ -113,47 +89,6 @@ const NftPage = () => {
   });
 
   const nftData = (nft?.data?.content as any)?.fields;
-
-  // Set collectionAddress only when nftData changes
-  useEffect(() => {
-    const getUnlockableContentForCollection = async () => {
-      if (nftData?.collection_id) {
-        try {
-          const collectionData = await axiosInstance.get(
-            "/platform/collection-by-address",
-            {
-              params: {
-                contract_address: nftData.collection_id,
-              },
-            }
-          );
-          const { collection_instance } = collectionData.data;
-
-          setCollection(collection_instance);
-          setUnlockableContent(collection_instance.contract.unlockable_content);
-
-          // Try to get upgrade data, but don't fail if it's not available
-          try {
-            const upgrade = await axiosInstance.get("/platform/metadata/next", {
-              params: {
-                collection_id: collection_instance.id,
-                token_id: nftData.token_number,
-              },
-            });
-            setUpgradeData(upgrade.data.metadata_instance);
-          } catch (upgradeError) {
-            console.log("Upgrade data not available for this NFT:", upgradeError);
-            // Don't set upgrade data if the endpoint fails
-            setUpgradeData(null);
-          }
-        } catch (error) {
-          console.error("Error fetching collection data:", error);
-        }
-      }
-    };
-
-    getUnlockableContentForCollection();
-  }, [nftData]);
 
   if (nftLoading) {
     return (
@@ -284,48 +219,21 @@ const NftPage = () => {
 
               {/* Update Metadata Button */}
               <button
-                onClick={() => handleUpdateMetadata(nftData.collection_id, nftData.id.id)}
-                disabled={isLoading || !upgradeData}
-                className="flex items-center justify-center gap-3 w-full px-6 py-4 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 disabled:from-gray-600 disabled:to-gray-700 disabled:cursor-not-allowed rounded-xl font-semibold text-white transition-all duration-200 shadow-lg hover:shadow-xl"
+                disabled={true}
+                className="flex items-center justify-center gap-3 w-full px-6 py-4 bg-gray-600 rounded-xl font-semibold text-white/50 cursor-not-allowed"
               >
-                {isLoading ? (
-                  <>
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    Updating...
-                  </>
-                ) : !upgradeData ? (
-                  <>
-                    <Edit3 size={20} />
-                    No Update Available
-                  </>
-                ) : (
-                  <>
-                    <Edit3 size={20} />
-                    Update Metadata
-                  </>
-                )}
+                <Edit3 size={20} />
+                No Update Available
               </button>
 
               {/* Reveal Content Button (if available) */}
-              {unlockableContent && (
-                <button
-                  onClick={openModal}
-                  className="flex items-center justify-center gap-3 w-full px-6 py-4 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-400 hover:to-purple-500 rounded-xl font-semibold text-white transition-all duration-200 shadow-lg hover:shadow-xl"
-                >
-                
-                  Reveal Unlockable Content
-                </button>
-              )}
+              {/* The unlockableContent functionality is removed, so this button is no longer relevant */}
             </div>
           </div>
         </div>
       </div>
 
-      <UnlockableNft
-        isOpen={isModalOpen}
-        unlockableContent={unlockableContent}
-        closeModal={closeModal}
-      />
+      {/* The UnlockableNft component is removed as unlockable content functionality is removed */}
     </div>
   );
 };

@@ -1,6 +1,6 @@
 import { SuiClient } from "@mysten/sui/client";
 
-const MAINNET_PACKAGE_ID = "0x48534ac3dd3df77cb4d6e17e05d2bd7961d5352e10fb01561184828d2aa3248e";
+const MAINNET_PACKAGE_ID = "0xea46060a8a4750de4ce91e6b8a2119d35becbeaef939c09557d0773c7f7c20a0";
 
 class ContractAnalyzer {
   private client: SuiClient;

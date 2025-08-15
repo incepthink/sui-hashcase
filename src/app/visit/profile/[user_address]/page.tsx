@@ -4,13 +4,12 @@ import { useSuiClientQuery, useCurrentAccount } from "@mysten/dapp-kit";
 
 import { useZkLogin } from "@mysten/enoki/react";
 import { useParams, useRouter } from "next/navigation";
-import "./page.css";
+import "../page.css";
 import { MdEdit } from "react-icons/md";
 
 import axiosInstance from "@/utils/axios";
 import Link from "next/link";
 import { useGlobalAppStore } from "@/store/globalAppStore";
-import UpdateProfileModal from "./UpdateProfileModal";
 import ConnectButton from "@/components/ConnectButton";
 import Image from "next/image";
 import { toast } from "react-hot-toast";
@@ -28,7 +27,7 @@ type NFT = {
   token_number: string;
 };
 
-const App: React.FC = () => {
+const VisitProfilePage: React.FC = () => {
   const [userData, setUserData] = useState({
     profile_image:
       "https://i.pinimg.com/564x/49/cc/10/49cc10386c922de5e2e3c0bb66956e65.jpg",
@@ -52,27 +51,10 @@ const App: React.FC = () => {
     ? params?.user_address[0]
     : (params?.user_address as string | undefined);
 
-  // Remove the wallet connection requirement - profiles should be publicly viewable
-  // useEffect(() => {
-  //   if (!currentAccount?.address && !zkloginaddress) {
-  //     toast.error("Please connect your wallet to view your profile");
-  //     router.replace("/");
-  //   }
-  // }, [currentAccount, zkloginaddress, router]);
-
-  // Update URL when connected wallet changes (only if user is connected)
-  // Do NOT auto-redirect to the connected wallet; keep shared URLs stable
-  // useEffect(() => {
-  //   const connectedAddress = currentAccount?.address || zkloginaddress;
-  //   if (!userAddressFromUrl && connectedAddress) {
-  //     router.replace(`/profile/${connectedAddress}`);
-  //   }
-  // }, [currentAccount?.address, zkloginaddress, userAddressFromUrl, router]);
-
   // needing for updating profile
   const [showModal, setShowModal] = useState(false);
   // Share profile modal
-  const [showShareModal,  setShowShareModal] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
 
   const handleNFTClick = (nft: NFT) => {
     // Redirect to the dedicated NFT page
@@ -86,8 +68,8 @@ const App: React.FC = () => {
     process.env.NEXT_PUBLIC_CONTRACT_PACKAGE_ID ||
     "0xea46060a8a4750de4ce91e6b8a2119d35becbeaef939c09557d0773c7f7c20a0";
 
-  // Use the URL address if present so shared profiles remain stable; fall back to connected wallet
-  const userAddress = userAddressFromUrl || currentAccount?.address || zkloginaddress || "";
+  // Use the URL address for shared profiles
+  const userAddress = userAddressFromUrl || "";
 
   console.log("🔍 DEBUG: Current Account Address:", currentAccount?.address);
   console.log("🔍 DEBUG: ZkLogin Address:", zkloginaddress);
@@ -157,21 +139,6 @@ const App: React.FC = () => {
 
   console.log("🔍 DEBUG: All unique NFTs:", uniqueNFTs);
 
-  // Direct query to check the specific NFT we just minted
-  const { data: specificNFT } = useSuiClientQuery(
-    "getObject",
-    {
-      id: "0x94374cd21bb64e240105b9016f5c7571c7e4392b9c3a7846226d4bee0eea6685",
-      options: {
-        showDisplay: true,
-        showContent: true,
-        showType: true,
-      },
-    }
-  );
-
-  console.log("🔍 DEBUG: Specific NFT query:", specificNFT);
-
   //processing the fetched data to only including the content fields
   //content fields contains all the data we need
   const processedNFTs = uniqueNFTs?.map(
@@ -203,36 +170,6 @@ const App: React.FC = () => {
   const processedClaimedNFTs = claimedNFTs?.map(
     (nft) => (nft.data?.content as any).fields
   );
-
-  // Query objects only if we have a valid address
-  const { data: hashcaseData } = useSuiClientQuery("getOwnedObjects", {
-    owner: userAddress,
-    filter: {
-      Package: MY_PACKAGE_ID,
-    },
-    options: {
-      showDisplay: true,
-      showContent: true,
-      showType: true,
-    },
-  });
-
-  // const { data: suiFrensData } = useSuiClientQuery("getOwnedObjects", {
-  //   owner: userAddress,
-  //   filter: {
-  //     Package: SUI_FRENS_Package_ID,
-  //   },
-  //   options: {
-  //     showDisplay: true,
-  //     showContent: true,
-  //     showType: true,
-  //   },
-  // });
-
-  // const suiurl =
-  //   suiFrensData?.data
-  //     ?.map((item: any) => item?.data?.display?.data?.image_url)
-  //     .filter((url: string | undefined) => url) || [];
 
   const { isUserVerified } = useGlobalAppStore();
 
@@ -292,7 +229,7 @@ const App: React.FC = () => {
   };
 
   const handleShareProfile = async () => {
-    // Use the new visit profile URL structure
+    // Use the same visit profile URL structure
     const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
     const visitProfileUrl = `${baseUrl}/visit/profile/${userAddress}`;
     
@@ -304,8 +241,6 @@ const App: React.FC = () => {
       toast.error("Failed to copy link");
     }
   };
-
-  // if (isLoading) return <div>Loading...</div>;
 
   // Show loading spinner while profile data is being fetched
   if (isProfileLoading) {
@@ -338,98 +273,48 @@ const App: React.FC = () => {
       </div>
 
       {/* Profile Section */}
-      {currentAccount || zkloginaddress ? (
-        <div className="relative z-20 flex flex-col items-center -mt-16">
-          {/* Profile Image */}
-          <div className="w-32 h-32 rounded-full border-4 border-white overflow-hidden bg-white z-20">
-            <Image
-              src={
-                userData.profile_image ||
-                "https://i.pinimg.com/564x/49/cc/10/49cc10386c922de5e2e3c0bb66956e65.jpg"
-              }
-              alt="Profile"
-              width={128}
-              height={128}
-              className="object-cover w-full h-full"
-            />
-          </div>
-
-          {/* User Info */}
-          <div className="text-center mt-4">
-            <h2 className="text-xl font-semibold">{userData.username}</h2>
-            <p className="text-blue-400 text-sm">{userData.description}</p>
-          </div>
-
-          {/* Action Buttons - Only show if viewing own profile */}
-          {(currentAccount?.address === userAddress || zkloginaddress === userAddress) && (
-            <div className="mt-2 flex items-center gap-3">
-              <button
-                onClick={() => setShowModal(true)}
-                className="flex items-center text-white text-sm font-medium hover:underline"
-              >
-                Edit Profile
-                <MdEdit className="ml-1 text-blue-400 text-lg" />
-              </button>
-              <button
-                onClick={() => setShowShareModal(true)}
-                className="flex items-center text-white text-sm font-medium hover:underline"
-              >
-                Share Profile
-                <svg className="ml-1 w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342A3 3 0 109 12c0-.482-.114-.938-.316-1.342m0 2.684l6.632 3.316m-6.632-6l6.632-3.316" />
-                </svg>
-              </button>
-            </div>
-          )}
+      <div className="relative z-20 flex flex-col items-center -mt-16">
+        {/* Profile Image */}
+        <div className="w-32 h-32 rounded-full border-4 border-white overflow-hidden bg-white z-20">
+          <Image
+            src={
+              userData.profile_image ||
+              "https://i.pinimg.com/564x/49/cc/10/49cc10386c922de5e2e3c0bb66956e65.jpg"
+            }
+            alt="Profile"
+            width={128}
+            height={128}
+            className="object-cover w-full h-full"
+          />
         </div>
-      ) : (
-        <div className="relative z-20 flex flex-col items-center -mt-16">
-          {/* Profile Image */}
-          <div className="w-32 h-32 rounded-full border-4 border-white overflow-hidden bg-white z-20">
-            <Image
-              src={
-                userData.profile_image ||
-                "https://i.pinimg.com/564x/49/cc/10/49cc10386c922de5e2e3c0bb66956e65.jpg"
-              }
-              alt="Profile"
-              width={128}
-              height={128}
-              className="object-cover w-full h-full"
-            />
-          </div>
 
-          {/* User Info */}
-          <div className="text-center mt-4">
-            <h2 className="text-xl font-semibold">{userData.username}</h2>
-            <p className="text-blue-400 text-sm">{userData.description}</p>
-            <p className="text-white/60 text-sm mt-2">Public Profile</p>
-          </div>
-
-          {/* Connect Wallet Button for non-connected users */}
-          <div className="mt-4 flex items-center gap-3">
-            <ConnectButton />
-            <button
-              onClick={() => setShowShareModal(true)}
-              className="flex items-center text-white text-sm font-medium hover:underline"
-            >
-              Share Profile
-              <svg className="ml-1 w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342A3 3 0 109 12c0-.482-.114-.938-.316-1.342m0 2.684l6.632 3.316m-6.632-6l6.632-3.316" />
-              </svg>
-            </button>
-          </div>
+        {/* User Info */}
+        <div className="text-center mt-4">
+          <h2 className="text-xl font-semibold">{userData.username}</h2>
+          <p className="text-blue-400 text-sm">{userData.description}</p>
+          <p className="text-white/60 text-sm mt-2">Shared Profile</p>
         </div>
-      )}
+
+        {/* Share Profile Button */}
+        <div className="mt-4 flex items-center gap-3">
+          <button
+            onClick={() => setShowShareModal(true)}
+            className="flex items-center text-white text-sm font-medium hover:underline"
+          >
+            Share Profile
+            <svg className="ml-1 w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342A3 3 0 109 12c0-.482-.114-.938-.316-1.342m0 2.684l6.632 3.316m-6.632-6l6.632-3.316" />
+            </svg>
+          </button>
+        </div>
+      </div>
 
       <div className="p-8 max-w-[1600px] mx-auto">
         <>
             <h1 className="text-4xl font-bold text-center mb-3">Owned NFTs</h1>
             <div className="flex flex-col items-center gap-2 mb-6">
               <p className="flex flex-col text-white/60 text-xs sm:text-sm break-all mb-4 mt-2">
-                Address: <span className="px-2 py-1 rounded-full bg-white/5 border border-white/10 text-white/70">{userAddress || "Not connected"}</span>
-                {currentAccount?.address && userAddressFromUrl && currentAccount.address !== userAddressFromUrl && (
-                  <span className="ml-2 flex justify-center mt-2 text-xs text-blue-400">(Viewing shared profile; connected as {currentAccount.address.slice(0,6)}...{currentAccount.address.slice(-4)})</span>
-                )}
+                Address: <span className="px-2 py-1 rounded-full bg-white/5 border border-white/10 text-white/70">{userAddress || "Not found"}</span>
               </p>
               {/* Toolbar */}
               <div className="relative w-full max-w-5xl mb-10 border-b border-white/10 rounded-xl px-4 py-4">
@@ -507,75 +392,11 @@ const App: React.FC = () => {
             ) : (
               <div className="text-center py-8">
                 <p className="text-gray-400 text-lg mb-2">No NFTs found</p>
-                <p className="text-gray-500 text-sm">You don&apos;t own any NFTs from this contract yet.</p>
+                <p className="text-gray-500 text-sm">This address doesn&apos;t own any NFTs from this contract yet.</p>
               </div>
             )}
           </>
-        
- 
-        {/* <h1 className="text-4xl font-bold text-center mb-8 mt-16">Claimed NFTs</h1> */}
-        {/* {processedClaimedNFTs && processedClaimedNFTs.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-8">
-            {processedClaimedNFTs?.map((nft) => (
-              <div
-                key={nft.id.id}
-                className="group rounded-2xl bg-white/5 border border-white/10 overflow-hidden backdrop-blur-sm shadow-[0_10px_30px_-15px_rgba(0,0,0,0.5)] transition-all hover:-translate-y-0.5 hover:shadow-[0_20px_50px_-20px_rgba(0,0,0,0.6)]"
-              >
-                <div className="relative aspect-square">
-                  <img
-                    src={nft.image_url || "https://via.placeholder.com/300"}
-                    alt={nft.name}
-                    className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02] cursor-pointer"
-                    onClick={() => openModal(nft)}
-                  />
-                  <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/70 to-transparent" />
-                </div>
-
-                <div className="p-4 space-y-3">
-                  <h3 className="text-lg font-semibold text-white line-clamp-1">{nft.name}</h3>
-                  <p className="text-sm text-white/70 line-clamp-2">{nft.description}</p>
-
-                  <div className="flex flex-wrap items-center gap-2 pt-2">
-                    <span className="text-xs px-2 py-1 rounded-full bg-white/10 text-blue-200 border border-white/10">Mint: {nft.mint_price}</span>
-                    <span className="text-xs px-2 py-1 rounded-full bg-white/10 text-blue-200 border border-white/10">Token #{nft.token_number}</span>
-                  </div>
-
-                  <div className="pt-3">
-                    <button
-                      onClick={() => openModal(nft)}
-                      className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-blue-400/60 px-3 py-2 text-sm font-medium text-white hover:bg-blue-400/10 transition-colors"
-                    >
-                      Manage NFT <span className="text-white">→</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-8">
-            <p className="text-gray-400 text-lg">No claimed NFTs yet.</p>
-          </div>
-        )} */}
       </div>
-
-      {/* Render the modal conditionally */}
-      {showModal && (
-        <UpdateProfileModal
-          userData={userData}
-          onClose={() => setShowModal(false)}
-          onUpdate={handleUpdateProfile}
-        />
-      )}
-
-      {/* NFT action modal */}
-      {/* NFTModal
-        nft={selectedModalNft}
-        isOpen={isModalOpen}
-        onClose={closeModal}
-        onClaimNFT={handleClaimNFT}
-        onUpdateMetadata={handleUpdateMetadata}
-      /> */}
 
       {/* Share Profile Modal */}
       {showShareModal && (
@@ -593,7 +414,7 @@ const App: React.FC = () => {
                 </svg>
               </button>
             </div>
-            <p className="text-white/70 text-sm mb-3">Share this link to let others view your profile:</p>
+            <p className="text-white/70 text-sm mb-3">Share this link to let others view this profile:</p>
             <div className="flex items-center gap-2">
               <input
                 readOnly
@@ -614,4 +435,4 @@ const App: React.FC = () => {
   );
 };
 
-export default App;
+export default VisitProfilePage; 

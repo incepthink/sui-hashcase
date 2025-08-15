@@ -24,13 +24,13 @@ interface NftForm {
 }
 
 const PACKAGE_ID =
-  "0xc1f0384f465cba489120cc12c9a427aab994d9ed233f1036402dfb353f19d2b9";
+  "0xea46060a8a4750de4ce91e6b8a2119d35becbeaef939c09557d0773c7f7c20a0";
 
 const FREE_MINT_PACKAGE_ID =
-  "0xc1f0384f465cba489120cc12c9a427aab994d9ed233f1036402dfb353f19d2b9";
+  "0xea46060a8a4750de4ce91e6b8a2119d35becbeaef939c09557d0773c7f7c20a0";
 
 const MY_PACKAGE_ID =
-  "0x48534ac3dd3df77cb4d6e17e05d2bd7961d5352e10fb01561184828d2aa3248e";
+  "0xea46060a8a4750de4ce91e6b8a2119d35becbeaef939c09557d0773c7f7c20a0";
 
 const createOwnerCapTx = async (adminCapId: string, forAddress: string) => {
   const tx = new Transaction();
@@ -73,7 +73,7 @@ const mintSuiLoyaltyHelper = async (
 ) => {
   // Use backend API instead of direct Move function call
   const nftForm = {
-    collection_id: "0x89bc3618d299a703910681aa47b4cb1c344c4ff2bc2d4932bfaf185afe457b0f", // package ID as collection
+    collection_id: "0xdd8720b9dd4e46d9cbc8f74cb9a4bc7654f46729afddb338e5547826ec95863f", // mainnet collection ID
     title: uniqueId,
     description: "Custom NFT",
     image_url: image_url,
