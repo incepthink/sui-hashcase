@@ -307,26 +307,26 @@ export default function NFTPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#00041f] to-[#030828]">
+    <div className="min-h-screen bg-gradient-to-b from-[#00041f] to-[#030828] py-20">
       <div className="bg-gradient-to-b from-[#00041f] to-[#030828] text-white">
         {/* Banner Section */}
-        <div className="w-full h-[200px] overflow-hidden">
+        {/* <div className="w-full h-[200px] overflow-hidden">
           <img
             src={
-              collectionData.image_uri ||
+              
               "https://i.pinimg.com/564x/49/cc/10/49cc10386c922de5e2e3c0bb66956e65.jpg"
             }
             alt="Banner"
-            className="w-full h-auto"
+            className=" "
           />
-        </div>
+        </div> */}
 
         {/* Profile Section */}
-        <div className="flex items-center mt-[-50px] p-6  shadow-lg rounded-lg w-4/5 mx-auto">
+        <div className="flex items-center mt-[-50px] p-6  shadow-lg rounded-lg w-4/5 mx-auto ">
           <div className="flex-shrink-0">
             <img
               src={
-                collectionData.image_uri ||
+                // collectionData.image_uri ||
                 "https://i.pinimg.com/564x/49/cc/10/49cc10386c922de5e2e3c0bb66956e65.jpg"
               }
               alt="Logo"
@@ -342,7 +342,7 @@ export default function NFTPage() {
         <div className="p-8 max-w-[1600px] mx-auto">
           {/* Header toolbar */}
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <h1 className="text-3xl md:text-4xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500 drop-shadow-lg">
+            <h1 className="text-3xl md:text-4xl font-extrabold bg-clip-text text-transparent  drop-shadow-lg text-gray-200">
               Collection Assets
             </h1>
             <div className="flex items-center gap-3">
@@ -351,7 +351,7 @@ export default function NFTPage() {
               </span>
               <button
                 onClick={() => openModal()}
-                className="px-4 py-2 rounded-lg font-semibold bg-gradient-to-r from-blue-400 to-purple-500 text-black md:text-white md:bg-transparent md:border md:border-white/20 md:hover:bg-white/10 transition"
+                className="px-4 py-2 rounded-lg font-semibold bg-gradient-to-r from-blue-600 to-blue-800 text-black md:text-white md:bg-transparent md:border md:border-white/20 md:hover:bg-white/10 transition"
               >
                 Mint Custom NFT
               </button>
@@ -384,7 +384,7 @@ export default function NFTPage() {
           </div>
 
           {/* Assets grid */}
-          <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+          <div className="mt-20 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
             {allMetadata.length > 0 ? (
               allMetadata.map((metadata) => (
                 <Link
@@ -392,7 +392,7 @@ export default function NFTPage() {
                   className="block"
                   href={`/freeMint/${metadata.id}`}
                 >
-                  <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 overflow-hidden shadow-lg transition-all hover:scale-[1.02] hover:bg-white/15">
+                  <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 overflow-hidden shadow-lg transition-all hover:bg-white/15">
                     {/* NFT Image */}
                     <div className="relative aspect-square">
                       <img
