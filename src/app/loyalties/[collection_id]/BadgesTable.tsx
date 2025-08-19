@@ -55,8 +55,13 @@ const BadgesTable = ({ owner_id }: { owner_id: number }) => {
       const response = await axiosInstance.post(
         "/user/achievements/add-badge",
         {
-          owner_id,
           badge_id,
+        },
+        {
+          params: {
+            owner_id,
+            user_id: 1,
+          },
         }
       );
 

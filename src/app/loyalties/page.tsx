@@ -21,7 +21,8 @@ const LoyaltiesPage = () => {
     const fetchCollections = async () => {
       try {
         const response = await axiosInstance.get("/platform/collections-sui");
-        const collectionsData = response.data?.suiCollections;
+        // Backend returns { collections, currentPage, totalPages, ... }
+        const collectionsData = response.data?.collections || response.data?.suiCollections;
         setCollections(Array.isArray(collectionsData) ? collectionsData : []);
       } catch (error) {
         console.error("Error fetching collections:", error);

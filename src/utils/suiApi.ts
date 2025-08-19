@@ -31,7 +31,7 @@ export class SuiApiService {
   private baseUrl: string;
 
   constructor() {
-    this.baseUrl = process.env.NEXT_PUBLIC_API || 'http://localhost:8000';
+    this.baseUrl = process.env.NEXT_PUBLIC_API || 'http://localhost:8001';
   }
 
   /**

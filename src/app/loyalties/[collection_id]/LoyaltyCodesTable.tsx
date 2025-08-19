@@ -45,13 +45,31 @@ const LoyaltyCodesTable = ({ owner_id }: { owner_id: number }) => {
     }
   };
 
+  const fetchOffChainPoints = async () => {
+    try {
+      const response = await axiosInstance.get("/platform/getLoyaltyPoints", {
+        params: { user_id: 1, owner_id },
+      });
+      setOffChainPointsState(response.data.points || 0);
+    } catch (error) {
+      console.error("Error fetching off-chain points:", error);
+    }
+  };
+
   const handleAddLoyalty = async (code: string, value: number | undefined) => {
     try {
       const loyaltyResponse = await axiosInstance.post(
-        "user/achievements/add-points",
-        { code, value },
+        "/user/achievements/add-points",
+        {
+          loyalty: {
+            code,
+            value: Number(value ?? 0),
+            type: undefined,
+          },
+        },
         {
           params: {
+            user_id: 1,
             owner_id: owner_id,
           },
         }
@@ -71,10 +89,11 @@ const LoyaltyCodesTable = ({ owner_id }: { owner_id: number }) => {
   const performDailyCheckIn = async () => {
     try {
       const checkInResponse = await axiosInstance.post(
-        "user/achievements/extend-streak",
+        "/user/achievements/extend-streak",
         null,
         {
           params: {
+            user_id: 1,
             owner_id: owner_id,
           },
         }
@@ -94,7 +113,7 @@ const LoyaltyCodesTable = ({ owner_id }: { owner_id: number }) => {
 
   useEffect(() => {
     getLoyaltyCodesAndPoints();
-    performDailyCheckIn();
+    fetchOffChainPoints();
 
     // if (user.id) handleDailyCheckIn();
   }, []);

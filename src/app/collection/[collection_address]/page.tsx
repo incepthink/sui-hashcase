@@ -3,6 +3,7 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import Link from "next/link";
+import NftCard from "@/components/NftCard";
 import React, { useContext } from "react";
 
 import axiosInstance from "@/utils/axios";
@@ -180,9 +181,9 @@ export default function NFTPage() {
   >([]);
 
   // Separate function to get location data (without changing permission state)
-  const getLocationData = async () => {
-    if (!collectionData) return;
-    
+  const getLocationData = async (): Promise<boolean> => {
+    if (!collectionData) return false;
+
     try {
       // Get user location
       const { latitude, longitude } = await getCurrentPosition();
@@ -199,48 +200,54 @@ export default function NFTPage() {
         }
       );
       setGeofencedMetadata(geofenced.data.data);
+      return true;
+    } catch (err: unknown) {
+      const anyErr = err as any;
+      const code = typeof anyErr?.code === "number" ? anyErr.code : undefined;
+      const message = anyErr?.message || "Unknown error";
+      console.warn("Location error:", message);
 
-    } catch (error: any) {
-      console.error("Location error:", error);
-      // Don't show alerts for permission errors if user just toggled off
       if (isLocationEnabled) {
-        if (error.code === 1) {
+        if (code === 1) {
           alert("Location access denied. Please allow location access in your browser settings and try again.");
-        } else if (error.code === 2) {
+        } else if (code === 2) {
           alert("Location unavailable. Please check your device's location services and try again.");
-        } else if (error.code === 3) {
+        } else if (code === 3) {
           alert("Location request timed out. Please try again.");
-        } else {
-          alert("Failed to get location. Please check your browser settings and try again.");
         }
       }
-      // Clear geofenced data on error
       setGeofencedMetadata([]);
+      return false;
     }
   };
 
   const getLocation = async () => {
     setIsLoading(true);
     try {
+      // Optimistically enable section so user sees the toggle effect immediately
+      setIsLocationEnabled(true);
+
       // Check if we already have permission
       const hasPermission = await checkLocationPermission();
       
       if (hasPermission) {
         // We already have permission, just get the data
-        await getLocationData();
-        setIsLocationEnabled(true);
+        const ok = await getLocationData();
+        setIsLocationEnabled(!!ok);
       } else {
         // Request permission by trying to get location
-        await getLocationData();
-        setIsLocationEnabled(true);
+        const ok = await getLocationData();
+        setIsLocationEnabled(!!ok);
       }
-    } catch (error: any) {
-      console.error("Location error:", error);
-      if (error.code === 1) {
+    } catch (err: unknown) {
+      const anyErr = err as any;
+      const code = typeof anyErr?.code === "number" ? anyErr.code : undefined;
+      console.warn("Location error:", anyErr?.message || "Unknown error");
+      if (code === 1) {
         alert("Location access denied. Please allow location access in your browser settings and try again.");
-      } else if (error.code === 2) {
+      } else if (code === 2) {
         alert("Location unavailable. Please check your device's location services and try again.");
-      } else if (error.code === 3) {
+      } else if (code === 3) {
         alert("Location request timed out. Please try again.");
       } else {
         alert("Failed to get location. Please check your browser settings and try again.");
@@ -467,107 +474,26 @@ export default function NFTPage() {
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
                 {mintedNFTs.map((nft: BlockchainNFT) => (
-                  <Link 
+                  <NftCard
                     key={nft.id}
                     href={`/freeMint/${nft.id}`}
-                    className="block bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 overflow-hidden shadow-lg transition-all hover:bg-white/15"
-                  >
-                    {/* NFT Image */}
-                    <div className="relative aspect-square">
-                      <img
-                        src={nft.image_url}
-                        alt={nft.name}
-                        className="w-full h-full object-cover"
-                      />
-                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
-                        <h3 className="text-xl font-bold text-white">
-                          {nft.name}
-                        </h3>
-                      </div>
-                    </div>
-
-                    {/* Card Content */}
-                    <div className="p-4 flex flex-col justify-between min-h-[150px]">
-                      <p className="text-sm text-white/80 line-clamp-2 mb-4">
-                        {nft.description}
-                      </p>
-                      {/* <div className="flex justify-between items-center text-xs text-green-400 mb-3">
-                        <p>Token ID: {nft.token_id}</p>
-                        <p>Owner {nft.owner}</p>
-                      </div> */}
-
-
+                    imageUrl={nft.image_url}
+                    title={nft.name}
+                    description={nft.description}
+                    footer={
                       <div className="flex justify-center py-5">
                         <button className="border-2 border-gray-700 rounded-xl py-2 px-10 hover:text-white transition-all duration-200 shadow-lg shadow-gray-800">
-                            Mint NFT
+                          Mint NFT
                         </button>
                       </div>
-                    </div>
-                  </Link>
+                    }
+                  />
                 ))}
               </div>
             </div>
           ) : null}
 
-          {/* Globally Available Assets Section */}
-          {allMetadata.length > 0 && (
-            <div className="mt-12">
-              <h3 className="py-6 font-bold tracking-widest text-2xl bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-blue-500 drop-shadow-lg text-center">
-                Globally Available ({allMetadata.length})
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-                {allMetadata.map((metadata) => (
-                  <Link
-                    key={metadata.id}
-                    className="block"
-                    href={`/freeMint/${metadata.id}`}
-                  >
-                    <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-green-400/30 overflow-hidden shadow-lg transition-all hover:scale-[1.02] hover:bg-white/15 relative">
-                      {/* Global Badge */}
-                      <div className="absolute top-2 right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full z-10">
-                        Global
-                      </div>
-                      
-                      {/* NFT Image */}
-                      <div className="relative aspect-square">
-                        <img
-                          src={
-                            metadata.image_url ||
-                            "https://via.placeholder.com/300"
-                          }
-                          alt={metadata.title}
-                          className="w-full h-full object-cover"
-                        />
-                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
-                          <h3 className="text-xl font-bold text-white">
-                            {metadata.title}
-                          </h3>
-                        </div>
-                      </div>
-
-                      {/* Card Content */}
-                      <div className="p-4 flex flex-col justify-between min-h-[150px]">
-                        {/* Description with line clamp */}
-                        <p className="text-sm text-white/80 line-clamp-2 mb-4">
-                          {metadata.description}
-                        </p>
-
-                        {/* Stats Row */}
-                        <div className="flex justify-between items-center text-xs text-green-400 mb-3">
-                          <p>
-                            Created: {new Date(metadata.createdAt).toLocaleDateString()}
-                          </p>
-                          <p>
-                            Updated: {new Date(metadata.updatedAt).toLocaleDateString()}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          )}
+          {/* (Removed) Global assets section per requirement: show only Nearby (location) and Lucky Draw */}
 
           {/* Location Specific Assets Section */}
           {geofencedMetadata.length > 0 && (
@@ -611,19 +537,14 @@ export default function NFTPage() {
                         </p>
 
                         {/* Location Restriction Message */}
-                        <div className="flex items-center gap-2 text-xs text-orange-400 mb-3">
-                          <MapPin className="w-3 h-3" />
-                          <p>Available in specific locations only</p>
-                        </div>
-
-                        {/* Stats Row */}
-                        <div className="flex justify-between items-center text-xs text-orange-400 mb-3">
-                          <p>
-                            Created: {new Date(metadata.createdAt).toLocaleDateString()}
-                          </p>
-                          <p>
-                            Updated: {new Date(metadata.updatedAt).toLocaleDateString()}
-                          </p>
+                        <div className="flex items-center justify-between text-xs text-orange-400 mb-3">
+                          <span className="flex items-center gap-2">
+                            <MapPin className="w-3 h-3" />
+                            <span>Available in specific locations only</span>
+                          </span>
+                          <button className="border-2 border-gray-700 rounded-xl py-1 px-3 text-white hover:text-white transition-all duration-200 shadow-lg shadow-gray-800">
+                            Mint NFT
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -648,71 +569,80 @@ export default function NFTPage() {
           )}
 
           {/* Lucky Draw NFTs Section with Location Control */}
-          {randomizedTokenMetadata?.length > 0 && (
-            <div className="mt-12">
-              <h3 className="py-6 font-bold tracking-widest text-2xl bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500 drop-shadow-lg text-center">
-                Lucky Draw NFTs
-              </h3>
-              {/* Location toggle moved to toolbar above */}
-              {!isLocationEnabled ? (
-                <div className="flex flex-col items-center justify-center min-h-32 space-y-4 bg-white/5 rounded-lg border border-white/10 p-8">
-                  <MapPin className="w-12 h-12 text-blue-400" />
-                  <div className="text-center space-y-2">
-                    <h4 className="text-lg font-semibold text-white">
-                      Enable Location to View Lucky Draw NFTs
-                    </h4>
-                    <p className="text-gray-300 max-w-md">
-                      Use the &quot;Enable Location&quot; button above to view available Lucky Draw NFTs in your area.
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-                  {randomizedTokenMetadata?.map((metadataSet) => (
-                    <Link
-                      key={metadataSet.id}
-                      className="block"
-                      href={`/randomizedMint/${metadataSet.id}`}
-                    >
-                      <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 overflow-hidden shadow-lg transition-all hover:scale-[1.02] hover:bg-white/15">
-                        {/* NFT Image */}
-                        <div className="relative aspect-square">
-                          <img
-                            src={
-                              metadataSet.Collection.image_uri ||
-                              "https://via.placeholder.com/300"
-                            }
-                            alt={metadataSet.name}
-                            className="w-full h-full object-cover"
-                          />
-                          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
-                            <h3 className="text-xl font-bold text-white">
-                              {metadataSet.name}
-                            </h3>
-                          </div>
-                        </div>
+          <div className="mt-12">
+            <h3 className="py-6 font-bold tracking-widest text-2xl bg-clip-text text-transparent text-white drop-shadow-lg text-center">
+              Lucky Draw NFTs
+            </h3>
 
-                        {/* Card Content */}
-                        <div className="p-4 flex flex-col justify-between min-h-[150px]">
-                          <p className="text-sm text-white/80 line-clamp-2 mb-4">
-                            {metadataSet.Collection.description}
-                          </p>
-                          <div className="flex justify-between items-center text-xs text-green-400 mb-3">
-                            <p>
-                              Created: {new Date(metadataSet.createdAt).toLocaleDateString()}
-                            </p>
-                            <p>
-                              Updated: {new Date(metadataSet.updatedAt).toLocaleDateString()}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
+            {randomizedTokenMetadata && randomizedTokenMetadata.length === 0 ? (
+              <div className="flex flex-col items-center justify-center min-h-32 space-y-2 bg-white/5 rounded-lg border border-white/10 p-6 text-white/70">
+                <p>No Lucky Draw NFTs are available for this collection yet.</p>
+              </div>
+            ) : !isLocationEnabled ? (
+              <div className="flex flex-col items-center justify-center min-h-32 space-y-4 bg-white/5 rounded-lg border border-white/10 p-8">
+                <MapPin className="w-12 h-12 text-blue-400" />
+                <div className="text-center space-y-2">
+                  <h4 className="text-lg font-semibold text-white">
+                    Enable Location to View Lucky Draw NFTs
+                  </h4>
+                  <p className="text-gray-300 max-w-md">
+                    Use the &quot;Enable Location&quot; button above to view available Lucky Draw NFTs in your area.
+                  </p>
                 </div>
-              )}
-            </div>
-          )}
+              </div>
+            ) : (
+              <>
+                {(() => {
+                  const geofencedSetIds = new Set(
+                    (geofencedMetadata || [])
+                      .map((m) => m.set_id)
+                      .filter((id) => typeof id === "number") as number[]
+                  );
+                  const allSets = (randomizedTokenMetadata || []).slice();
+                  // Sort: nearby first
+                  allSets.sort((a, b) => {
+                    const aNear = geofencedSetIds.has(a.id) ? 1 : 0;
+                    const bNear = geofencedSetIds.has(b.id) ? 1 : 0;
+                    return bNear - aNear;
+                  });
+
+                  if (allSets.length === 0) {
+                    return (
+                      <div className="flex flex-col items-center justify-center min-h-32 space-y-2 bg-white/5 rounded-lg border border-white/10 p-6 text-white/70">
+                        <p>No Lucky Draw NFTs are available for this collection yet.</p>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+                      {allSets.map((metadataSet) => (
+                        <NftCard
+                          key={metadataSet.id}
+                          href={`/randomizedMint/${metadataSet.id}`}
+                          imageUrl={metadataSet.Collection.image_uri || "https://via.placeholder.com/300"}
+                          title={metadataSet.name}
+                          description={metadataSet.Collection.description}
+                          badge={
+                            geofencedSetIds.has(metadataSet.id)
+                              ? { text: "Nearby", className: "bg-orange-500" }
+                              : undefined
+                          }
+                          footer={
+                            <div className="flex justify-center">
+                              <button className="border-2 border-gray-700 rounded-xl py-2 px-10 hover:text-white transition-all duration-200 shadow-lg shadow-gray-800">
+                                Mint NFT
+                              </button>
+                            </div>
+                          }
+                        />
+                      ))}
+                    </div>
+                  );
+                })()}
+              </>
+            )}
+          </div>
 
           {/* Geofenced NFTs Section */}
           {geofencedMetadata.length > 0 && (

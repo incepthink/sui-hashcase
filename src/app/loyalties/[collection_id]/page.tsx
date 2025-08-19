@@ -57,7 +57,7 @@ const CollectionLoyaltiesPage = () => {
           "/platform/owner-by-collection",
           {
             params: {
-              collection_id: params.collection_id,
+              collection_id: String(params.collection_id),
             },
           }
         );
@@ -112,10 +112,12 @@ const CollectionLoyaltiesPage = () => {
       if (ownerId) {
         setIsLoadingOffChain(true);
         try {
-          // For now, use hardcoded user_id=1 since we know it exists in the database
-          const loyaltyResponse = await axiosInstance.get("/platform/getLoyaltyPoints", {
-            params: { user_id: 1, owner_id: ownerId }
-          });
+          const loyaltyResponse = await axiosInstance.get(
+            "/platform/getLoyaltyPoints",
+            {
+              params: { user_id: 1, owner_id: ownerId },
+            }
+          );
           setOffChainPointsState(loyaltyResponse.data.points || 0);
         } catch (error) {
           console.error("Error fetching off-chain points:", error);
@@ -163,14 +165,8 @@ const CollectionLoyaltiesPage = () => {
     </div>
   );
 
-  if (!fetchedTokenData)
-    return (
-      <div className="w-full min-h-screen flex items-center justify-center bg-gradient-to-br from-[#000212] via-[#03082a] to-[#0a0e3a]">
-        <div className="text-center">
-          <p className="text-white text-lg">Unable to get data from the blockchain</p>
-        </div>
-      </div>
-    );
+  // If wallet not connected or no token found, continue rendering the page
+  // and show on-chain points as 0 with a helpful note instead of blocking the UI.
 
   return (
     <>

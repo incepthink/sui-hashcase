@@ -13,6 +13,7 @@ import { useGlobalAppStore } from "@/store/globalAppStore";
 import UpdateProfileModal from "./UpdateProfileModal";
 import ConnectButton from "@/components/ConnectButton";
 import Image from "next/image";
+import NftCard from "@/components/NftCard";
 import { toast } from "react-hot-toast";
 
 type NFT = {
@@ -465,32 +466,18 @@ const App: React.FC = () => {
             ) : ownedNfts && ownedNfts.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-8">
                 {ownedNfts?.map((nft: any) => (
-                  <div
+                  <NftCard
                     key={nft.id.id}
-                    className={`group rounded-2xl bg-white/5 border border-white/10 overflow-hidden backdrop-blur-sm shadow-[0_10px_30px_-15px_rgba(0,0,0,0.5)] transition-all hover:-translate-y-0.5 hover:shadow-[0_20px_50px_-20px_rgba(0,0,0,0.6)] ${density === "compact" ? "" : ""}`}
-                  >
-                    {/* Image */}
-                    <div className={`relative aspect-square`}>
-                      <img
-                        src={nft.image_url || "https://via.placeholder.com/300"}
-                        alt={nft.name}
-                        className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02] cursor-pointer"
-                        onClick={() => handleNFTClick(nft)}
-                      />
-                      <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/70 to-transparent" />
-                    </div>
-
-                    {/* Content */}
-                    <div className={`${density === "compact" ? "p-3 space-y-2" : "p-4 space-y-3"}`}>
-                      <h3 className="text-lg font-semibold text-white line-clamp-1">{nft.name}</h3>
-                      <p className="text-sm text-white/70 line-clamp-2">{nft.description}</p>
-
-                      <div className="flex flex-wrap items-center gap-2 pt-2">
-                        <span className="text-xs px-2 py-1 rounded-full bg-white/10 text-blue-200 border border-white/10">Mint: {nft.mint_price}</span>
-                        <span className="text-xs px-2 py-1 rounded-full bg-white/10 text-blue-200 border border-white/10">Token #{nft.token_number}</span>
-                      </div>
-
-                      <div className="pt-3">
+                    href={`/nft/${nft.id.id}`}
+                    imageUrl={nft.image_url || "https://via.placeholder.com/300"}
+                    title={nft.name}
+                    description={nft.description}
+                    footer={
+                      <div className="space-y-3">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-xs px-2 py-1 rounded-full bg-white/10 text-blue-200 border border-white/10">Mint: {nft.mint_price}</span>
+                          <span className="text-xs px-2 py-1 rounded-full bg-white/10 text-blue-200 border border-white/10">Token #{nft.token_number}</span>
+                        </div>
                         <button
                           onClick={() => handleNFTClick(nft)}
                           className={`inline-flex w-full items-center justify-center gap-2 rounded-lg border border-blue-400/60 ${density === "compact" ? "px-2 py-1.5 text-xs" : "px-3 py-2 text-sm"} font-medium text-white hover:bg-blue-400/10 transition-colors`}
@@ -498,8 +485,8 @@ const App: React.FC = () => {
                           Manage NFT <span className="text-white">→</span>
                         </button>
                       </div>
-                    </div>
-                  </div>
+                    }
+                  />
                 ))}
               </div>
             ) : (
