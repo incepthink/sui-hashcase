@@ -20,6 +20,7 @@ const ZkLogin = ({ setOpenModal }: ZkLoginProps) => {
   const { state, dispatch } = useContext(AppContext);
 
   const [loading, setLoading] = useState(true);
+  const [redirecting, setRedirecting] = useState(false);
 
   const clientGoogleId = process.env.NEXT_PUBLIC_CLIENT_ID_GOOGLE;
 
@@ -53,7 +54,7 @@ const ZkLogin = ({ setOpenModal }: ZkLoginProps) => {
   }, [address]);
 
   const handleSignIn = () => {
-    setOpenModal(false);
+    setRedirecting(true);
     const protocol = window.location.protocol;
     const host = window.location.host;
 
@@ -71,10 +72,15 @@ const ZkLogin = ({ setOpenModal }: ZkLoginProps) => {
       })
       .then((url) => {
         window.location.href = url;
+      
       })
       .catch((error) => {
         console.error(error);
+        setRedirecting(false);
       });
+
+
+      
   };
 
   if (loading) {
@@ -82,6 +88,7 @@ const ZkLogin = ({ setOpenModal }: ZkLoginProps) => {
   }
 
   if (address) {
+    
     return (
       <button
         onClick={() => {
@@ -95,11 +102,21 @@ const ZkLogin = ({ setOpenModal }: ZkLoginProps) => {
     );
   }
 
+  if (redirecting) {
+    return (
+      <div className="w-full flex flex-col items-center justify-center gap-3 py-4">
+        <div className="h-5 w-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+        <div className="text-white/80 text-sm">Redirecting to Google...</div>
+      </div>
+    );
+  }
+
   return (
     <>
       <button
         className="bg-[#ffffff] border-black/20 px-6 py-2 text-black font-semibold rounded-full w-full flex items-center gap-x-8"
         onClick={handleSignIn}
+        disabled={redirecting}
       >
         <Image src={Google} alt="Google" width={30} height={30} />
         {address

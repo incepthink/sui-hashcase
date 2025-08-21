@@ -78,12 +78,12 @@ export const Navbar = () => {
             </div>
           </div>
 
-          {/* Connect Button */}
-          <div className="flex  w-1/3 justify-end">
+          {/* Connect / Controls - right aligned */}
+          <div className="ml-auto flex items-center gap-3">
             <ConnectButton />
             
             {/* Mobile Menu Button */}
-            <div className="md:hidden ml-4">
+            <div className="md:hidden ml-2">
               <Hamburger
                 toggled={isOpen}
                 toggle={setOpen}

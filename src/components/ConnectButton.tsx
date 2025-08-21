@@ -70,6 +70,7 @@ const ConnectButton = () => {
 
   // If wallet is connected and user is verified, show address and disconnect button
   if (walletAddress && isUserVerified) {
+    
     return (
       <div className="ml-10 md:flex hidden items-center gap-x-3 px-5 py-2.5  border-b-2  text-white border-gray-300 w-max font-semibold rounded-2xl">
         <div className="flex items-center gap-x-3">

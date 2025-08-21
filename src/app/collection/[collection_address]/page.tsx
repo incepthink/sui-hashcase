@@ -13,7 +13,7 @@ import {
   Metadata,
   MetadataSetWithAllMetadataInstances,
 } from "@/utils/modelTypes";
-
+  
 interface Collection {
   id: number;
   name: string;
@@ -232,12 +232,10 @@ export default function NFTPage() {
       
       if (hasPermission) {
         // We already have permission, just get the data
-        const ok = await getLocationData();
-        setIsLocationEnabled(!!ok);
+        await getLocationData();
       } else {
         // Request permission by trying to get location
-        const ok = await getLocationData();
-        setIsLocationEnabled(!!ok);
+        await getLocationData();
       }
     } catch (err: unknown) {
       const anyErr = err as any;
@@ -252,7 +250,7 @@ export default function NFTPage() {
       } else {
         alert("Failed to get location. Please check your browser settings and try again.");
       }
-      setIsLocationEnabled(false);
+      // Keep location enabled; user can disable manually using the toggle
     } finally {
       setIsLoading(false);
     }
@@ -393,7 +391,7 @@ export default function NFTPage() {
 
         {/* Profile Section */}
         <div className="flex items-center mt-[-50px] p-6  shadow-lg rounded-lg w-4/5 mx-auto">
-          <div className="flex-shrink-0 py-20">
+          <div className="flex-shrink-0 py-20 ml-10">
             <img
               src={
                 // collectionData.image_uri ||
@@ -409,29 +407,34 @@ export default function NFTPage() {
           </div>
         </div>
 
-        <div className="p-8 max-w-[1600px] mx-auto">
+        <div className="p-8 max-w-[1400px] mx-auto">
           {/* Header toolbar */}
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <h1 className="text-3xl md:text-4xl font-extrabold bg-clip-text text-transparent text-white font-semibold drop-shadow-lg">
-              Collection Assets
-            </h1>
-            <div className="flex items-center gap-3">
-              <span className="hidden md:inline-block text-white/70 text-sm px-3 py-2 rounded-lg border border-white/10 bg-white/5">
+          <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between mb-8">
+            <div className="text-center md:text-left">
+              <h1 className="text-3xl md:text-4xl font-extrabold bg-clip-text text-transparent  drop-shadow-lg mb-2 text-white/80">
+                Collection Assets
+              </h1>
+              <p className="text-white/60 text-sm md:text-base">
                 {mintedNFTs.length} minted, {allMetadata.length} mintable assets
+              </p>
+            </div>
+            <div className="flex items-center gap-4 justify-center md:justify-end">
+              <span className="text-white/70 text-sm px-4 py-2 rounded-lg border border-white/10 bg-white/5 backdrop-blur-sm">
+                {mintedNFTs.length + allMetadata.length} total assets
               </span>
               <button
                 onClick={() => openModal()}
-                className="px-4 py-2 rounded-lg font-semibold bg-gradient-to-r from-blue-400 to-purple-500 text-black md:text-white md:bg-transparent md:border md:border-white/20 md:hover:bg-white/10 transition"
+                className="px-6 py-3 rounded-xl font-semibold bg-blue-500 hover:bg-blue-600 text-white border-0 transition-all duration-200  shadow-lg" 
               >
                 Mint Custom NFT
               </button>
               <button
                 onClick={isLocationEnabled ? disableLocation : getLocation}
                 disabled={isLoading}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors border ${
+                className={`px-6 py-3 rounded-xl font-semibold transition-all duration-200 border-2 ${
                   isLocationEnabled
-                    ? 'bg-green-600 text-white hover:bg-green-700 border-transparent'
-                    : 'bg-white/10 text-white hover:bg-white/20 border-white/20'
+                    ? 'bg-green-600 text-white border-transparent hover:from-green-600 hover:to-emerald-700 shadow-lg'
+                    : 'bg-white/10 text-white border-white/20 hover:bg-white/20 backdrop-blur-sm'
                 } disabled:opacity-50 disabled:cursor-not-allowed`}
                 title={isLocationEnabled 
                   ? "Location access enabled - Click to disable location tracking" 
@@ -459,21 +462,56 @@ export default function NFTPage() {
           {/* Minted NFTs Section */}
           {isLoadingMinted ? (
             <div className="mt-12 mb-20 py-10">
-              <h3 className="text-white font-semibold text-2xl">
-                Minted NFTs
-              </h3>
+             
               <div className="flex items-center justify-center min-h-32">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
                 <span className="ml-3 text-white">Loading minted NFTs...</span>
               </div>
             </div>
           ) : mintedNFTs.length > 0 ? (
-            <div className="mt-12">
-              <h3 className="py-6 font-bold tracking-widest text-2xl bg-clip-text text-transparent text-white font-semibold drop-shadow-lg text-center">
+            <div className="mt-16">
+              {/* <h3 className="py-6 font-bold tracking-widest text-2xl bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500 drop-shadow-lg text-center">
                 Minted NFTs ({mintedNFTs.length})
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-                {mintedNFTs.map((nft: BlockchainNFT) => (
+              </h3> */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-20">
+                {isLocationEnabled && (randomizedTokenMetadata || [])
+                  .slice()
+                  .sort((a, b) => {
+                    const aImg = !!(a?.Collection?.image_uri);
+                    const bImg = !!(b?.Collection?.image_uri);
+                    return Number(bImg) - Number(aImg);
+                  })
+                  .map((metadataSet) => {
+                  const isNearby = (geofencedMetadata || []).some((m) => m.set_id === metadataSet.id);
+                  return (
+                    <NftCard
+                      key={`lucky-${metadataSet.id}`}
+                      href={`/randomizedMint/${metadataSet.id}`}
+                      imageUrl={metadataSet.Collection.image_uri || "https://via.placeholder.com/300"}
+                      title={metadataSet.name}
+                      description={metadataSet.Collection.description}
+                      badge={{
+                        text: isNearby ? "Lucky Draw • Nearby" : "Lucky Draw",
+                        className: isNearby ? "bg-orange-500" : "bg-purple-600",
+                      }}
+                      footer={
+                        <div className="flex justify-center py-4">
+                          <button className="border-2 border-gray-700 rounded-xl py-2 px-8 font-semibold transition-all duration-200 hover:scale-105 shadow-lg">
+                            Mint NFT
+                          </button>
+                        </div>
+                      }
+                    />
+                  );
+                })}
+                {mintedNFTs
+                  .slice()
+                  .sort((a, b) => {
+                    const aHasHttps = typeof a.image_url === "string" && a.image_url.startsWith("https://");
+                    const bHasHttps = typeof b.image_url === "string" && b.image_url.startsWith("https://");
+                    return Number(bHasHttps) - Number(aHasHttps);
+                  })
+                  .map((nft: BlockchainNFT) => (
                   <NftCard
                     key={nft.id}
                     href={`/freeMint/${nft.id}`}
@@ -481,8 +519,8 @@ export default function NFTPage() {
                     title={nft.name}
                     description={nft.description}
                     footer={
-                      <div className="flex justify-center py-5">
-                        <button className="border-2 border-gray-700 rounded-xl py-2 px-10 hover:text-white transition-all duration-200 shadow-lg shadow-gray-800">
+                      <div className="flex justify-center py-4">
+                        <button className="border-2 border-gray-700 rounded-xl py-2 px-10 hover:text-white transition-all duration-200 shadow-lg shadow-gray-700">
                           Mint NFT
                         </button>
                       </div>
@@ -497,11 +535,11 @@ export default function NFTPage() {
 
           {/* Location Specific Assets Section */}
           {geofencedMetadata.length > 0 && (
-            <div className="mt-12 mb-20">
+            <div className="mt-16 mb-20">
               <h3 className="py-6 font-bold tracking-widest text-2xl bg-clip-text text-transparent bg-gradient-to-r from-orange-400 to-red-500 drop-shadow-lg text-center">
                 Location Specific ({geofencedMetadata.length})
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {geofencedMetadata.map((metadata) => (
                   <div
                     key={metadata.id}
@@ -569,16 +607,12 @@ export default function NFTPage() {
           )}
 
           {/* Lucky Draw NFTs Section with Location Control */}
-          <div className="mt-12">
-            <h3 className="py-6 font-bold tracking-widest text-2xl bg-clip-text text-transparent text-white drop-shadow-lg text-center">
+          <div className="mt-16">
+            <h3 className="py-6 font-semibold tracking-widest text-2xl border-b-2 border-white/20 bg-clip-text text-transparent text-white drop-shadow-lg text-center">
               Lucky Draw NFTs
             </h3>
 
-            {randomizedTokenMetadata && randomizedTokenMetadata.length === 0 ? (
-              <div className="flex flex-col items-center justify-center min-h-32 space-y-2 bg-white/5 rounded-lg border border-white/10 p-6 text-white/70">
-                <p>No Lucky Draw NFTs are available for this collection yet.</p>
-              </div>
-            ) : !isLocationEnabled ? (
+            {!isLocationEnabled ? (
               <div className="flex flex-col items-center justify-center min-h-32 space-y-4 bg-white/5 rounded-lg border border-white/10 p-8">
                 <MapPin className="w-12 h-12 text-blue-400" />
                 <div className="text-center space-y-2">
@@ -615,7 +649,7 @@ export default function NFTPage() {
                   }
 
                   return (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+                    <div className="grid grid-cols-1 mt-20 mb-20 md:grid-cols-2 lg:grid-cols-4 gap-6">
                       {allSets.map((metadataSet) => (
                         <NftCard
                           key={metadataSet.id}
@@ -629,8 +663,8 @@ export default function NFTPage() {
                               : undefined
                           }
                           footer={
-                            <div className="flex justify-center">
-                              <button className="border-2 border-gray-700 rounded-xl py-2 px-10 hover:text-white transition-all duration-200 shadow-lg shadow-gray-800">
+                            <div className="flex justify-center py-4">
+                              <button className="border-2 border-gray-700 rounded-xl py-2 px-8 font-semibold transition-all duration-200 hover:from-green-600 hover:to-emerald-700 hover:scale-105 shadow-lg">
                                 Mint NFT
                               </button>
                             </div>
@@ -653,7 +687,7 @@ export default function NFTPage() {
               </h3>
             </div>
           )}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {geofencedMetadata.length > 0 &&
               geofencedMetadata.map((metadata) => (
                 <Link

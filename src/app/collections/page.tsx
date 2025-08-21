@@ -161,14 +161,14 @@ const CollectionsPage: React.FC = () => {
             <h2 className="text-2xl font-bold text-white mb-2">All Collections</h2>
             <p className="text-white/60">Showing {collections.length} collections</p>
           </div>
-          <div className="flex gap-2">
+          {/* <div className="flex gap-2">
             <button className="px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white hover:bg-white/20 transition-colors">
               Filter
             </button>
             <button className="px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white hover:bg-white/20 transition-colors">
               Sort
             </button>
-          </div>
+          </div> */}
         </div>
 
         {/* Collections Grid */}
@@ -187,7 +187,7 @@ const CollectionsPage: React.FC = () => {
                 href={`/collection/${contractAddress}`}
                 className="block group"
               >
-                <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 overflow-hidden shadow-lg transition-all duration-300 hover:scale-[1.02] hover:bg-white/15 hover:border-[#4DA2FF]/50 group-hover:shadow-[#4DA2FF]/20">
+                <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 overflow-hidden shadow-lg transition-all duration-300">
                   {/* Image Section */}
                   <div className="relative w-full aspect-square overflow-hidden">
                     <Image
