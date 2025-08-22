@@ -2,7 +2,7 @@ import axios from "axios";
 import Cookies from "js-cookie";
 
 const axiosInstance = axios.create({
-  baseURL:  "http://localhost:8001",
+  baseURL:  "https://api.hashcase.co",
 });
 
 axiosInstance.interceptors.request.use(
