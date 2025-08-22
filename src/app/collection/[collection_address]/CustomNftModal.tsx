@@ -104,12 +104,12 @@ const CustomNftModal: React.FC<CustomNftModalProps> = ({
       const response = await axiosInstance.post(
         "/platform/sui/mint-nft",
         {
-          collection_id: "0xdd8720b9dd4e46d9cbc8f74cb9a4bc7654f46729afddb338e5547826ec95863f",
+          collection_id: "0x79e4f927919068602bae38387132f8c0dd52dc3207098355ece9e9ba61eb2290",
           name: formValues.title.trim(),
           description: formValues.description.trim(),
           image_url: formValues.image_url.trim(),
           attributes: formValues.attributes.trim() ? formValues.attributes.split(",").map(attr => attr.trim()) : [],
-          recipient: "0xdd8720b9dd4e46d9cbc8f74cb9a4bc7654f46729afddb338e5547826ec95863f", // Collection address itself
+          recipient: currentAccount?.address || "",
         }
       );
 

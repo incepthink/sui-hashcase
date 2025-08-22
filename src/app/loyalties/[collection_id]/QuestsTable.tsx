@@ -43,14 +43,19 @@ const QuestsTable = ({
   const [currentStreak, setCurrentStreak] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(true);
 
+  console.log("QuestsTable props:", { owner_id, user_id });
+
   const fetchQuests = async () => {
     try {
       setLoading(true);
       const response = await axiosInstance.get("/platform/quest/by-owner", {
-        params: { owner_id },
+        params: { 
+          owner_id,
+          user_id: user_id || undefined // Include user_id to get progress data
+        },
       });
 
-      console.log(response.data.quests);
+      console.log("Quests response:", response.data.quests);
 
       setQuests(response.data.quests);
     } catch (error) {
@@ -63,28 +68,36 @@ const QuestsTable = ({
   const handleQuestAction = async (actionType: string, quest_id: number) => {
     try {
       const questActionResponse = await axiosInstance.post(
-        "/platform/quest/complete-objective-single",
+        "/user/quest/complete-objective-single",
         {
           owner_id,
           quest_id,
-          user_id: 1, // Use hardcoded user_id for now
-          action: { type: actionType },
+          action: { type: actionType || "offchain_demo" },
         }
       );
+
+      console.log("Quest action response:", questActionResponse.data);
 
       // Optimized update - no need to refetch all quests
       setQuests((prevQuests) => {
         return prevQuests.map((quest) => {
           if (quest.id === quest_id) {
             // Update only the specific quest that changed
-            return {
-              ...quest,
-              userProgress: questActionResponse.data.updatedQuest.progress,
-            };
+            // The API returns { achievement, updatedQuest: { questId, progress } }
+            const updatedProgress = questActionResponse.data.updatedQuest?.progress;
+            if (updatedProgress) {
+              return {
+                ...quest,
+                userProgress: updatedProgress,
+              };
+            }
           }
           return quest;
         });
       });
+
+      // Refetch quests to ensure we have the latest data
+      await fetchQuests();
     } catch (error) {
       console.error("Error updating quest:", error);
     }
@@ -136,18 +149,29 @@ const QuestsTable = ({
                 Active: {activeQuests.length}
               </span>
             </div>
-            <div className="bg-[#3f54b4]/50 px-4 py-2 rounded-full flex items-center">
-              <Flame className="w-4 h-4 mr-2 text-red-400" />
-              <span className="text-base font-medium">
-                Streak: {currentStreak}d
-              </span>
-            </div>
+            
           </div>
         </div>
 
         {/* Quests List */}
         <div className="space-y-4 mb-8">
           {quests.map((quest) => {
+            const rules: any = (quest as any).requirement_rules;
+            // Normalize rules: can be array or JSON string
+            let normalizedRules: any[] = [];
+            if (Array.isArray(rules)) normalizedRules = rules;
+            else if (typeof rules === "string") {
+              try {
+                const parsed = JSON.parse(rules);
+                if (Array.isArray(parsed)) normalizedRules = parsed;
+              } catch {}
+            }
+            const actionRule = normalizedRules.find(
+              (r: any) => (
+                r?.field === "action_type" || r?.field === "action"
+              ) && Array.isArray(r?.stringValues) && r.stringValues.length > 0
+            );
+            const requiredActionType = typeof actionRule?.stringValues?.[0] === "string" && actionRule.stringValues[0].length > 0 ? actionRule.stringValues[0] : undefined;
             const progress = quest.userProgress || {
               currentCount: 0,
               requiredCount: quest.required_completions,
@@ -206,17 +230,28 @@ const QuestsTable = ({
                 </div>
 
                 {quest.is_active && !progress.isCompleted && (
-                  <button
-                    onClick={() =>
-                      handleQuestAction(
-                        quest.requirement_rules?.action || "mint_nft",
-                        quest.id
-                      )
-                    }
-                    className="ml-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white"
-                  >
-                    Complete Action
-                  </button>
+                  requiredActionType ? (
+                    <button
+                      onClick={() => handleQuestAction(requiredActionType, quest.id)}
+                      className="ml-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white"
+                    >
+                      Complete Action
+                    </button>
+                  ) : (
+                    <button
+                      disabled
+                      title="This quest requires an unsupported action"
+                      className="ml-4 px-4 py-2 bg-gray-600 rounded-lg text-white opacity-60 cursor-not-allowed"
+                    >
+                      Unavailable
+                    </button>
+                  )
+                )}
+
+                {quest.is_active && progress.isCompleted && (
+                  <div className="ml-4 px-4 py-2 bg-green-600 rounded-lg text-white flex items-center">
+                    <span className="text-sm font-medium">Completed</span>
+                  </div>
                 )}
               </div>
             );

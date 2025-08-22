@@ -60,7 +60,6 @@ const BadgesTable = ({ owner_id }: { owner_id: number }) => {
         {
           params: {
             owner_id,
-            user_id: 1,
           },
         }
       );

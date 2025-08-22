@@ -5,6 +5,7 @@ import axiosInstance from "@/utils/axios";
 
 import { Flame } from "lucide-react";
 import toast from "react-hot-toast";
+import { useGlobalAppStore } from "@/store/globalAppStore";
 
 type Loyalty = {
   id: number;
@@ -12,6 +13,17 @@ type Loyalty = {
   code: string;
   value: number;
   type: string;
+};
+
+type LoyaltyTransaction = {
+  id: number;
+  user_id: number;
+  owner_id: number;
+  code: string;
+  points: number;
+  type: string;
+  status: string;
+  created_at: string;
 };
 
 interface User {
@@ -23,36 +35,42 @@ interface User {
 }
 
 const LoyaltyCodesTable = ({ owner_id }: { owner_id: number }) => {
+  const { user } = useGlobalAppStore();
+  
   // to store the fetched loyalty codes, points data & active streak
   const [loyaltyCodes, setLoyaltyCodes] = useState<Loyalty[]>([]);
+  const [usedCodes, setUsedCodes] = useState<string[]>([]);
   const [offChainPointsState, setOffChainPointsState] = useState(0);
   const [currentStreak, setCurrentStreak] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
 
   const getLoyaltyCodesAndPoints = async () => {
+    const loyaltyResponse = await axiosInstance.get("/platform/get-loyalties", {
+      params: {
+        owner_id: owner_id,
+      },
+    });
+
+    setLoyaltyCodes(loyaltyResponse.data.loyalties);
+  };
+
+  const getUsedLoyaltyCodes = async () => {
+    if (!user?.id) return;
+    
     try {
-      const loyaltyResponse = await axiosInstance.get("/platform/get-loyalties", {
+      const response = await axiosInstance.get("/devapi/user/gettransactions", {
         params: {
+          user_id: user.id,
           owner_id: owner_id,
         },
       });
 
-      setLoyaltyCodes(loyaltyResponse.data.loyalties);
+      // Extract used codes from transactions
+      const usedCodesList = response.data.data.map((transaction: LoyaltyTransaction) => transaction.code);
+      setUsedCodes(usedCodesList);
     } catch (error) {
-      console.error("Error fetching loyalty codes:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const fetchOffChainPoints = async () => {
-    try {
-      const response = await axiosInstance.get("/platform/getLoyaltyPoints", {
-        params: { user_id: 1, owner_id },
-      });
-      setOffChainPointsState(response.data.points || 0);
-    } catch (error) {
-      console.error("Error fetching off-chain points:", error);
+      console.error("Error fetching used loyalty codes:", error);
+      // If no transactions found, set empty array
+      setUsedCodes([]);
     }
   };
 
@@ -60,16 +78,9 @@ const LoyaltyCodesTable = ({ owner_id }: { owner_id: number }) => {
     try {
       const loyaltyResponse = await axiosInstance.post(
         "/user/achievements/add-points",
-        {
-          loyalty: {
-            code,
-            value: Number(value ?? 0),
-            type: undefined,
-          },
-        },
+        { code, value },
         {
           params: {
-            user_id: 1,
             owner_id: owner_id,
           },
         }
@@ -80,8 +91,17 @@ const LoyaltyCodesTable = ({ owner_id }: { owner_id: number }) => {
       );
 
       setOffChainPointsState(loyaltyResponse.data.user.total_points);
-    } catch (error) {
-      toast.error("Loyalty Code has already been used");
+      
+      // Add the code to used codes list
+      setUsedCodes(prev => [...prev, code]);
+    } catch (error: any) {
+      if (error.response?.data?.message === 'Loyalty code already claimed') {
+        toast.error("Loyalty Code has already been used");
+        // Add to used codes if it's already claimed
+        setUsedCodes(prev => [...prev, code]);
+      } else {
+        toast.error("Failed to redeem loyalty code");
+      }
       console.log(error);
     }
   };
@@ -93,7 +113,6 @@ const LoyaltyCodesTable = ({ owner_id }: { owner_id: number }) => {
         null,
         {
           params: {
-            user_id: 1,
             owner_id: owner_id,
           },
         }
@@ -111,26 +130,36 @@ const LoyaltyCodesTable = ({ owner_id }: { owner_id: number }) => {
     }
   };
 
+  const fetchOffChainPoints = async () => {
+    try {
+      const response = await axiosInstance.get(
+        "/user/achievements/get-points",
+        {
+          params: { owner_id },
+        }
+      );
+      const total = (response.data?.total_points ?? response.data?.points) || 0;
+      setOffChainPointsState(total);
+    } catch (error) {
+      console.error("Error fetching off-chain points:", error);
+    }
+  };
+
   useEffect(() => {
     getLoyaltyCodesAndPoints();
     fetchOffChainPoints();
+    performDailyCheckIn();
+    getUsedLoyaltyCodes(); // Fetch used codes on mount
 
     // if (user.id) handleDailyCheckIn();
-  }, []);
+  }, [user?.id]); // Add user.id as dependency
 
   return (
     <div className="bg-gradient-to-b from-[#00041f] to-[#030828] flex flex-col items-center justify-start p-8 text-white">
-      {isLoading ? (
-        <div className="text-center py-8">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-white text-lg">Loading loyalty data...</p>
-        </div>
-      ) : (
-        <>
-          {/* Off-Chain Points */}
-          <h1 className="text-5xl font-extrabold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500 drop-shadow-lg">
-            {`Off-Chain Points: ${offChainPointsState}`}
-          </h1>
+      {/* Off-Chain Points */}
+      <h1 className="text-4xl  font-semibold mb-6 bg-clip-text text-transparent text-white/90 drop-shadow-lg">
+        {`Off-Chain Points: ${offChainPointsState}`}
+      </h1>
 
       {/* Streak Display */}
       <div className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-md shadow-md mb-6">
@@ -153,30 +182,41 @@ const LoyaltyCodesTable = ({ owner_id }: { owner_id: number }) => {
             </tr>
           </thead>
           <tbody>
-            {loyaltyCodes?.map((loyalty) => (
-              <tr
-                key={loyalty.id}
-                className="border-b border-white/20 hover:bg-white/20 transition-all duration-300"
-              >
-                <td className="p-4 font-semibold">
-                  <button
-                    onClick={() =>
-                      handleAddLoyalty(loyalty.code, loyalty.value)
-                    }
-                    className="bg-[#3f54b4] px-2 py-1 rounded-md"
-                  >
-                    {loyalty.code}
-                  </button>
-                </td>
-                <td className="p-4">{loyalty.value}</td>
-                <td className="p-4">{loyalty.type}</td>
-              </tr>
-            ))}
+            {loyaltyCodes?.map((loyalty) => {
+              const isUsed = usedCodes.includes(loyalty.code);
+              
+              return (
+                <tr
+                  key={loyalty.id}
+                  className="border-b border-white/20 hover:bg-white/20 transition-all duration-300"
+                >
+                  <td className="p-4 font-semibold">
+                    {isUsed ? (
+                      <div className="flex items-center gap-2">
+                        <span className="bg-gray-600 px-2 py-1 rounded-md opacity-60">
+                          {loyalty.code}
+                        </span>
+                        <span className="text-green-400 text-sm">✓ Used</span>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() =>
+                          handleAddLoyalty(loyalty.code, loyalty.value)
+                        }
+                        className="bg-[#3f54b4] hover:bg-[#3f54b4]/80 px-2 py-1 rounded-md transition-colors"
+                      >
+                        {loyalty.code}
+                      </button>
+                    )}
+                  </td>
+                  <td className="p-4">{loyalty.value}</td>
+                  <td className="p-4">{loyalty.type}</td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
-        </>
-      )}
     </div>
   );
 };

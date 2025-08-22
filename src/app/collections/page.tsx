@@ -175,7 +175,10 @@ const CollectionsPage: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {collections.map((collection: any) => {
             // Handle different possible data structures
-            const contractAddress = collection.contract?.contract_address || collection.contract_address || collection.address || '';
+            let contractAddress = collection.contract?.contract_address || collection.contract_address || collection.address || '';
+            const oldPackage = "0xea46060a8a4750de4ce91e6b8a2119d35becbeaef939c09557d0773c7f7c20a0";
+            const newCollection = "0x79e4f927919068602bae38387132f8c0dd52dc3207098355ece9e9ba61eb2290";
+            if (contractAddress === oldPackage) contractAddress = newCollection;
             const chainType = collection.chain_type || collection.chainType || 'SUI';
             const collectionName = collection.name || 'Unnamed Collection';
             const collectionDescription = collection.description || 'No description available';

@@ -73,7 +73,7 @@ const mintSuiLoyaltyHelper = async (
 ) => {
   // Use backend API instead of direct Move function call
   const nftForm = {
-    collection_id: "0x89bc3618d299a703910681aa47b4cb1c344c4ff2bc2d4932bfaf185afe457b0f", // package ID as collection
+    collection_id: "0x79e4f927919068602bae38387132f8c0dd52dc3207098355ece9e9ba61eb2290", // package ID as collection
     title: uniqueId,
     description: "Custom NFT",
     image_url: image_url,

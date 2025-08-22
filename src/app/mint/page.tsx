@@ -61,15 +61,72 @@ const MintPage = () => {
 
     try {
       // Use the same working backend API as custom NFT minting
+      // 1) Fetch collection info from DB by address
+      const collectionAddress = "0x79e4f927919068602bae38387132f8c0dd52dc3207098355ece9e9ba61eb2290";
+      const collectionRes = await axiosInstance.get(
+        "/platform/collection-by-address",
+        { params: { contract_address: collectionAddress } }
+      );
+      const collection_instance = collectionRes.data?.collection_instance;
+      if (!collection_instance) {
+        notifyResolve(notifyId, "Collection not found in DB", "error");
+        return;
+      }
+
+      // 2) Build metadata from collection
+      let name: string = collection_instance.name || "";
+      let description: string = collection_instance.description || "";
+      let image_url: string = collection_instance.image_uri || "";
+      let attributes: string[] = collection_instance.attributes
+        ? String(collection_instance.attributes)
+            .split(",")
+            .map((s: string) => s.trim())
+            .filter((s: string) => s.length > 0)
+        : [];
+
+      // 3) If critical fields missing, try DB metadata as fallback
+      if (!image_url || !description) {
+        try {
+          const mdRes = await axiosInstance.get(
+            "platform/metadata/by-collection",
+            { params: { collection_id: collection_instance.id } }
+          );
+          const md = mdRes.data?.metadata_instances?.[0];
+          if (md) {
+            name = md.name || md.title || name;
+            description = md.description || description;
+            image_url = md.image_url || image_url;
+            if (md.attributes) {
+              const parsed = String(md.attributes)
+                .split(",")
+                .map((s: string) => s.trim())
+                .filter((s: string) => s.length > 0);
+              if (parsed.length > 0) attributes = parsed;
+            }
+          }
+        } catch (e) {
+          // Ignore and proceed; backend will validate
+        }
+      }
+
+      if (!name || !description || !image_url) {
+        notifyResolve(
+          notifyId,
+          "Required metadata missing (name/description/image). Configure it in DB.",
+          "error"
+        );
+        return;
+      }
+
       const response = await axiosInstance.post(
         "/platform/sui/mint-nft",
         {
-          collection_id: "0xdd8720b9dd4e46d9cbc8f74cb9a4bc7654f46729afddb338e5547826ec95863f",
-          name: "HashCase Sui Loyalty NFT",
-          description: "This is a NFT Loyalty Card which executes onchain loyalty using Hashcase and Sui infrastructure.",
-          image_url: "https://example.com/loyalty-image.jpg",
-          attributes: ["loyalty", "hashcase", "sui"],
-          recipient: "0xdd8720b9dd4e46d9cbc8f74cb9a4bc7654f46729afddb338e5547826ec95863f", // Collection address itself
+          collection_id: collectionAddress,
+          name,
+          description,
+          image_url,
+          attributes,
+          recipient: userAddress, // Mint to the user
         }
       );
 

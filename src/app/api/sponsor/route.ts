@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { enokiClient } from "../EnokiClient";
-
+import { enokiClient } from "@/utils/enokiClient";
 
 /*
  - Right now any txBlock whose moveCall targets are whitelisted in the Enoki Portal can be sponsored
@@ -12,30 +11,34 @@ import { enokiClient } from "../EnokiClient";
 */
 
 export const POST = async (request: NextRequest) => {
-    const { network, txBytes, sender, allowedAddresses } =
-      await request.json();
-  
-    return enokiClient
-      .createSponsoredTransaction({
-        network,
-        transactionKindBytes: txBytes,
-        sender,
-        allowedAddresses,
-      })
-      .then((resp) => {
-        return NextResponse.json(resp, {
-          status: 200,
-        });
-      })
-      .catch((error) => {
-        console.error(error);
-        return NextResponse.json(
-          {
-            error: "Could not create sponsored transaction block.",
-          },
-          {
-            status: 500,
-          }
-        );
-      });
+  const { network, txBytes, sender, allowedAddresses } = (await request.json()) as {
+    network: string;
+    txBytes: string;
+    sender: string;
+    allowedAddresses?: string[];
   };
+
+  return enokiClient
+    .createSponsoredTransaction({
+      network: network as any,
+      transactionKindBytes: txBytes,
+      sender,
+      allowedAddresses,
+    })
+    .then((resp: unknown) => {
+      return NextResponse.json(resp, {
+        status: 200,
+      });
+    })
+    .catch((error: unknown) => {
+      console.error(error);
+      return NextResponse.json(
+        {
+          error: "Could not create sponsored transaction block.",
+        },
+        {
+          status: 500,
+        }
+      );
+    });
+};

@@ -125,7 +125,7 @@ export default function NFTPage() {
         // If it's an NFT address, try to get the NFT data from the collection
         try {
           // Use the same approach as the collections page - fetch all NFTs from the collection
-          const actualCollectionAddress = "0xdd8720b9dd4e46d9cbc8f74cb9a4bc7654f46729afddb338e5547826ec95863f";
+          const actualCollectionAddress = "0x79e4f927919068602bae38387132f8c0dd52dc3207098355ece9e9ba61eb2290";
           
           const response = await axiosInstance.get(
             "/platform/sui/nfts/by-collection",
@@ -332,7 +332,7 @@ export default function NFTPage() {
     console.log("SPONSOR SIGN AND EXECUTE", sponsorSignAndExecute);
     try {
       const nftForm = {
-        collection_id: "0x77d8d09f449b77816e0573ae64ab05ecf14b7e63609cfd6e034c7d15abbb6aba", // Use new collection ID
+        collection_id: "0x79e4f927919068602bae38387132f8c0dd52dc3207098355ece9e9ba61eb2290", // Use new collection ID
         title: nftData.title,
         description: nftData.description || "",
         image_url: nftData.image_url,
@@ -348,7 +348,7 @@ export default function NFTPage() {
       const mintAndTransferResponse = await axiosInstance.post(
         "/platform/sui/mint-nft",
         {
-          collection_id: nftData?.collection_address || "0xdd8720b9dd4e46d9cbc8f74cb9a4bc7654f46729afddb338e5547826ec95863f",
+          collection_id: nftData?.collection_address || "0x79e4f927919068602bae38387132f8c0dd52dc3207098355ece9e9ba61eb2290",
           name: nftData?.name || "HashCase NFT",
           description: nftData?.description || "A unique HashCase NFT",
           image_url: nftData?.image_url || "https://via.placeholder.com/300",
@@ -468,22 +468,22 @@ export default function NFTPage() {
 
   return (
     <div className={`flex flex-col bg-[#00041F] ${workSans.className}`}>
-      <div className="flex flex-col px-8 md:px-16">
+      <div className="flex flex-col px-6 md:px-10 max-w-6xl mx-auto w-full">
         <Link
           href={`/collections`}
-          className="hidden md:flex items-center justify-start gap-x-2 my-4 px-20"
+          className="hidden md:flex items-center justify-start gap-x-2 my-4"
         >
           <ArrowW />
           <p className="text-2xl text-white/70">back</p>
         </Link>
-        <div className="my-4 flex flex-col md:flex-row items-center justify-around md:gap-y-0 gap-y-8">
+        <div className="my-6 grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
           <img
-            className="h-96 w-auto"
+            className="w-full max-w-md md:max-w-full h-auto rounded-lg"
             src={nftData.image_url}
             alt="nft"
           />
 
-          <div className="flex flex-col items-center justify-center">
+          <div className="flex flex-col items-start justify-center">
             <div className="flex flex-col justify-start gap-y-2 my-4 w-full">
               <p className="text-white md:text-4xl text-2xl tracking-wide font-bold">
                 {nftData.name}
@@ -493,7 +493,7 @@ export default function NFTPage() {
               </p>
             </div>
 
-            <div className="flex items-center justify-center my-4">
+            <div className="flex items-center my-2">
               <p className="md:text-xl text-sm text-white">
                 {nftData.description}
               </p>
@@ -525,25 +525,22 @@ export default function NFTPage() {
             </div>
           </div>
         </div>
-        <div className="flex items-center justify-start my-4 w-full"></div>
-
-        <hr className="md:m-[100px] m-[20px] bg-gradient-to-r from-transparent via-white to-transparent opacity-20" />
-        <div className="flex items-center justify-center mt-4 mb-8">
-          <div className="bg-[#1A1D35] rounded-lg md:rounded-full p-4 w-full md:text-center text-left text-white md:text-2xl text-lg font-semibold">
+        <hr className="my-8 bg-gradient-to-r from-transparent via-white to-transparent opacity-20" />
+        <div className="flex items-center justify-center mb-6">
+          <div className="bg-[#1A1D35] rounded-lg p-4 w-full text-center text-white md:text-2xl text-lg font-semibold">
             <p>
               The above NFT holds{" "}
               <span className="text-[#4DA2FF]"> 20 loyalty point(s).</span>{" "}
-              <br className="hidden md:block" />
               You can receive additional loyalty points from this owner by
               completing the tasks below.
             </p>
           </div>
         </div>
-        <p className="text-center md:text-2xl text-lg font-semibold mt-6 mb-4 text-white">
+        <p className="text-center md:text-2xl text-lg font-semibold mb-4 text-white">
           2 Task
         </p>
-        <div className="flex flex-col md:flex-row items-center justify-center w-full md:gap-x-6 gap-x-0 gap-y-4 md:gap-y-0 mt-4 mb-12">
-          <div className="bg-[#1A1D35] md:p-6 p-4 w-full flex items-center justify-between">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full mb-12">
+          <div className="bg-[#1A1D35] p-4 md:p-6 w-full flex items-center justify-between rounded-lg">
             <div>
               <p className="md:text-2xl text-lg text-left mb-2 font-semibold capitalize text-white">
                 Follow On Twitter
@@ -558,7 +555,7 @@ export default function NFTPage() {
               </div>
             </div>
           </div>
-          <div className="bg-[#1A1D35] md:p-6 p-4 w-full flex items-center justify-between">
+          <div className="bg-[#1A1D35] p-4 md:p-6 w-full flex items-center justify-between rounded-lg">
             <div>
               <p className="md:text-2xl text-lg text-left mb-2 font-semibold capitalize text-white">
                 Post A Tweet

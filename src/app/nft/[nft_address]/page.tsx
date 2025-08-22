@@ -1,5 +1,5 @@
 "use client";
-import { useSuiClientQuery } from "@mysten/dapp-kit";
+import { useCurrentAccount, useSuiClientQuery } from "@mysten/dapp-kit";
 import { useParams, useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
 
@@ -25,6 +25,7 @@ const workSans = Work_Sans({ subsets: ["latin"] });
 const NftPage = () => {
   const params = useParams();
   const router = useRouter();
+  const currentAccount = useCurrentAccount();
 
   //needed for the NFT modal to function
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -40,32 +41,34 @@ const NftPage = () => {
   const { claimNFT, updateNftMetadata } = useNftTransactions();
   const [collection, setCollection] = useState<Collection | null>(null);
   const [unlockableContent, setUnlockableContent] = useState<string>("");
-  const [address, setAddress] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   const [upgradeData, setUpgradeData] =
     useState<MetadataInstanceWithMetadataSet | null>(null);
 
-  const handleClaimNft = async (collection_id: string, nftId: string) => {
-    if (!address.trim()) {
-      toast.error("Please enter an address first");
+  const handleClaimNft = async (collection_id: string) => {
+    if (!currentAccount?.address) {
+      toast.error("Connect your wallet to claim");
       return;
     }
     
     setIsLoading(true);
     try {
       if (!nftData) return;
-      
-      // Claim NFT on the blockchain
-      await claimNFT(collection_id, nftId);
-
-      // Place the order
-      await axiosInstance.post("/user/order/create", {
-        collection_id: collection?.id,
-        token_id: nftData.token_number,
-        address: address,
-        status: "order_placed",
-      });
+      // Build nft form from on-chain display
+      const nftForm = {
+        collection_id,
+        title: String(nftData.name || "NFT"),
+        description: String(nftData.description || ""),
+        image_url: String(nftData.image_url || ""),
+        attributes: JSON.stringify([]),
+      };
+      // Sponsor mint + transfer in backend
+      await axiosInstance.post(
+        "/platform/sui-nft/backend-mint",
+        { nftForm },
+        { params: { user_address: currentAccount.address } }
+      );
       
       toast.success("NFT claimed successfully!");
     } catch (error) {
@@ -184,9 +187,11 @@ const NftPage = () => {
             // Don't set upgrade data if the endpoint fails
             setUpgradeData(null);
           }
-        } catch (error) {
-          console.error("Error fetching collection data:", error);
-          // Set default values when collection data is not available
+        } catch (error: any) {
+          // Swallow 404 (collection missing in DB) and continue rendering
+          if (error?.response?.status !== 404) {
+            console.error("Error fetching collection data:", error);
+          }
           setCollection(null);
           setUnlockableContent("");
         }
@@ -289,7 +294,7 @@ const NftPage = () => {
               <p className="text-white/60">
                 Created by{" "}
                 <span className="text-[#4DA2FF] font-medium">
-                  {nftData.creator ? nftData.creator.slice(0, 10) + '...' : 'Unknown'}
+                  {nftData.creator || 'Unknown'}
                 </span>
               </p>
             </div>
@@ -313,26 +318,14 @@ const NftPage = () => {
               </div>
             </div>
 
-            {/* Address Input */}
-            <div className="space-y-2">
-              <label className="text-white/80 text-sm font-medium">
-                Order Address
-              </label>
-              <input
-                type="text"
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                placeholder="Enter the order address"
-                className="w-full px-4 py-3 bg-white/5 backdrop-blur-sm rounded-xl border border-white/20 focus:outline-none focus:ring-2 focus:ring-[#4DA2FF]/50 focus:border-[#4DA2FF]/50 placeholder:text-white/40 text-white transition-all duration-200"
-              />
-            </div>
+            {/* Claim is now a single click using connected wallet */}
 
             {/* Action Buttons */}
             <div className="flex flex-col gap-4 pt-4">
               {/* Claim NFT Button */}
               <button
-                onClick={() => handleClaimNft(nftData.collection_id, nftData.id?.id || nft_address)}
-                disabled={isLoading || !address.trim()}
+                onClick={() => handleClaimNft(nftData.collection_id)}
+                disabled={isLoading || !currentAccount?.address}
                 className="flex items-center justify-center gap-3 w-full px-6 py-4 bg-gradient-to-r from-[#4DA2FF] to-[#7ab8ff] hover:from-[#3a8fef] hover:to-[#6aa7f0] disabled:from-gray-600 disabled:to-gray-700 disabled:cursor-not-allowed rounded-xl font-semibold text-black transition-all duration-200 shadow-lg hover:shadow-xl"
               >
                 {isLoading ? (
