@@ -181,6 +181,8 @@ const CollectionsPage: React.FC = () => {
             if (contractAddress === oldPackage) contractAddress = newCollection;
             const chainType = collection.chain_type || collection.chainType || 'SUI';
             const collectionName = collection.name || 'Unnamed Collection';
+            const dbCollection = "0x6c7ff54132f7693ad1334e85ff7c5cf2f967b37cc785e51019c42b42a5c38b6f";
+            if (contractAddress === dbCollection) contractAddress = newCollection;
             const collectionDescription = collection.description || 'No description available';
             const collectionId = collection.id || collection.collection_id;
             
