@@ -198,7 +198,7 @@ const CollectionLoyaltiesPage = () => {
               </h1>
 
               <p className="text-lg sm:text-xl text-white/80 mb-8 leading-relaxed">
-                Welcome! You're connected via zk Google login. You can participate in quests and earn loyalty points.
+                Welcome! You&apos;re connected via zk Google login. You can participate in quests and earn loyalty points.
               </p>
 
               <div className="space-y-6 w-full">
