@@ -109,7 +109,7 @@ const CustomNftModal: React.FC<CustomNftModalProps> = ({
           description: formValues.description.trim(),
           image_url: formValues.image_url.trim(),
           attributes: formValues.attributes.trim() ? formValues.attributes.split(",").map(attr => attr.trim()) : [],
-          recipient: currentAccount?.address || "",
+          recipient: "0x79e4f927919068602bae38387132f8c0dd52dc3207098355ece9e9ba61eb2290", // Mint to collection address so it appears in collection assets
         }
       );
 
@@ -279,24 +279,7 @@ const CustomNftModal: React.FC<CustomNftModalProps> = ({
               </div>
 
               {/* Attributes Field */}
-              <div className="space-y-2">
-                <label
-                  htmlFor="attributes"
-                  className="flex items-center gap-2 text-sm font-medium text-white/80"
-                >
-                  <Tag size={16} />
-                  Attributes (Optional)
-                </label>
-                <input
-                  name="attributes"
-                  id="attributes"
-                  type="text"
-                  placeholder="e.g., rarity: legendary, type: character"
-                  value={formValues.attributes}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 bg-white/5 backdrop-blur-sm rounded-xl border border-white/20 focus:outline-none focus:ring-2 focus:ring-[#4DA2FF]/50 focus:border-[#4DA2FF]/50 placeholder:text-white/40 text-white transition-all duration-200"
-                />
-              </div>
+             
             </form>
 
             {/* Preview Section */}

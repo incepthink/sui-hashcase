@@ -32,7 +32,7 @@ const PointsPage = () => {
   const [points, setPoints] = useState<string>("");
   const [userTokenId, setUserTokenId] = useState<string | null>(null);
 
-  const { addLoyaltyPoints, spendLoyaltyPoints } =
+  const { completeQuest, spendLoyaltyPoints } =
     useLoyaltyPointsTransactions();
 
   // Fetch token data
@@ -72,8 +72,9 @@ const PointsPage = () => {
   }, [fetchedTokenData]);
 
   const handleAddLoyaltyPoints = async () => {
-    if (points && userTokenId) {
-      await addLoyaltyPoints(userTokenId, points);
+    if (points) {
+      // Use completeQuest to add points - you might need to adjust this based on your quest system
+      await completeQuest("manual_points_add");
       // Refetch the token data to get updated balance
       const { data } = await refetchTokenData();
       if (data?.data?.[0]?.data?.content) {

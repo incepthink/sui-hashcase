@@ -1,8 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-
 import axiosInstance from "@/utils/axios";
-
 import { Flame } from "lucide-react";
 import toast from "react-hot-toast";
 import { useGlobalAppStore } from "@/store/globalAppStore";
@@ -34,30 +32,45 @@ interface User {
   badges: string;
 }
 
-const LoyaltyCodesTable = ({ owner_id }: { owner_id: number }) => {
-  const { user } = useGlobalAppStore();
+const LoyaltyCodesTable = ({ 
+  owner_id, 
+  onPointsUpdate
+}: { 
+  owner_id: number;
+  onPointsUpdate?: (newPoints: number) => void;
+}) => {
+  const { user, isUserVerified } = useGlobalAppStore();
   
   // to store the fetched loyalty codes, points data & active streak
   const [loyaltyCodes, setLoyaltyCodes] = useState<Loyalty[]>([]);
   const [usedCodes, setUsedCodes] = useState<string[]>([]);
   const [offChainPointsState, setOffChainPointsState] = useState(0);
   const [currentStreak, setCurrentStreak] = useState(0);
+  const [isPageLoading, setIsPageLoading] = useState(false);
 
   const getLoyaltyCodesAndPoints = async () => {
-    const loyaltyResponse = await axiosInstance.get("/platform/get-loyalties", {
-      params: {
-        owner_id: owner_id,
-      },
-    });
+    setIsPageLoading(true);
+    try {
+      // Get loyalty codes
+      const loyaltyResponse = await axiosInstance.get("/platform/get-loyalties", {
+        params: {
+          owner_id: owner_id,
+        },
+      });
 
-    setLoyaltyCodes(loyaltyResponse.data.loyalties);
+      setLoyaltyCodes(loyaltyResponse.data.loyalties);
+    } catch (error) {
+      console.error("Error fetching loyalty codes:", error);
+    } finally {
+      setIsPageLoading(false);
+    }
   };
 
   const getUsedLoyaltyCodes = async () => {
     if (!user?.id) return;
     
     try {
-      const response = await axiosInstance.get("/devapi/user/gettransactions", {
+      const response = await axiosInstance.get("/user/loyalty/transactions", {
         params: {
           user_id: user.id,
           owner_id: owner_id,
@@ -67,42 +80,98 @@ const LoyaltyCodesTable = ({ owner_id }: { owner_id: number }) => {
       // Extract used codes from transactions
       const usedCodesList = response.data.data.map((transaction: LoyaltyTransaction) => transaction.code);
       setUsedCodes(usedCodesList);
-    } catch (error) {
-      console.error("Error fetching used loyalty codes:", error);
-      // If no transactions found, set empty array
-      setUsedCodes([]);
+    } catch (error: any) {
+      // Handle 404 errors silently (user has no transactions yet)
+      if (error.response?.status === 404) {
+        console.log("No loyalty transactions found for user - this is normal for new users");
+        setUsedCodes([]);
+      } else {
+        console.error("Error fetching used loyalty codes:", error);
+        setUsedCodes([]);
+      }
     }
   };
 
   const handleAddLoyalty = async (code: string, value: number | undefined) => {
+    if (!isUserVerified || !user) {
+      toast.error("Please connect your wallet to redeem loyalty codes");
+      return;
+    }
+
+    setIsPageLoading(true);
+    
     try {
+      // Convert frontend type to backend enum type
+      const loyaltyCode = loyaltyCodes.find(lc => lc.code === code);
+      let backendType = loyaltyCode?.type || '';
+      if (backendType === 'one_time_fixed') backendType = 'ONE_FIXED';
+      else if (backendType === 'repeat_fixed') backendType = 'FIXED';
+      else if (backendType === 'repeat_variable') backendType = 'VARIABLE';
+      
+      // Send request with correct schema structure
       const loyaltyResponse = await axiosInstance.post(
         "/user/achievements/add-points",
-        { code, value },
+        {
+          loyalty: {
+            code,
+            value: value || 0,
+            type: backendType
+          }
+        },
         {
           params: {
-            owner_id: owner_id,
-          },
+            owner_id,
+            user_id: user.id
+          }
         }
       );
 
-      toast.success(
-        `${loyaltyResponse.data.message} : Total Points - ${loyaltyResponse.data.user.total_points}`
-      );
+      console.log("Loyalty response:", loyaltyResponse.data);
 
-      setOffChainPointsState(loyaltyResponse.data.user.total_points);
+      // Update off-chain points
+      let newPoints = 0;
+      if (loyaltyResponse.data.user?.total_loyalty_points) {
+        newPoints = loyaltyResponse.data.user.total_loyalty_points;
+        setOffChainPointsState(newPoints);
+      } else if (loyaltyResponse.data.totalPoints) {
+        newPoints = loyaltyResponse.data.totalPoints;
+        setOffChainPointsState(newPoints);
+      }
+
+      toast.success(
+        `Successfully redeemed ${code}! +${value} points added. Total: ${newPoints} points`
+      );
+      
+      // Notify parent component about points update
+      if (onPointsUpdate && newPoints > 0) {
+        onPointsUpdate(newPoints);
+      }
       
       // Add the code to used codes list
       setUsedCodes(prev => [...prev, code]);
+      
+      // Immediately fetch updated points to ensure UI is current
+      await fetchOffChainPoints();
+      
+      // Refresh the page data
+      await getLoyaltyCodesAndPoints();
+      await getUsedLoyaltyCodes();
     } catch (error: any) {
-      if (error.response?.data?.message === 'Loyalty code already claimed') {
-        toast.error("Loyalty Code has already been used");
-        // Add to used codes if it's already claimed
-        setUsedCodes(prev => [...prev, code]);
+      console.error("Full error object:", error);
+      console.error("Error response:", error.response?.data);
+      console.error("Error status:", error.response?.status);
+      
+      if (error.response?.status === 401 || error.response?.status === 403) {
+        toast.error("Authentication failed. Please reconnect your wallet and try again.");
+      } else if (error.response?.data?.message === 'Loyalty code already claimed') {
+        toast.error("This loyalty code has already been claimed.");
+      } else if (error.response?.data?.message === 'Loyalty code not found') {
+        toast.error("Invalid loyalty code.");
       } else {
-        toast.error("Failed to redeem loyalty code");
+        toast.error(`Failed to redeem loyalty code: ${error.response?.data?.message || error.message}`);
       }
-      console.log(error);
+    } finally {
+      setIsPageLoading(false);
     }
   };
 
@@ -125,8 +194,13 @@ const LoyaltyCodesTable = ({ owner_id }: { owner_id: number }) => {
 
       setCurrentStreak(user_achievements.current_streak);
       setOffChainPointsState(user_achievements.total_loyalty_points);
-    } catch (error) {
-      console.log(error);
+    } catch (error: any) {
+      // Handle errors silently for daily check-in
+      if (error.response?.status === 404) {
+        console.log("Daily check-in not available - this is normal for new users");
+      } else {
+        console.log("Daily check-in error:", error);
+      }
     }
   };
 
@@ -140,8 +214,15 @@ const LoyaltyCodesTable = ({ owner_id }: { owner_id: number }) => {
       );
       const total = (response.data?.total_points ?? response.data?.points) || 0;
       setOffChainPointsState(total);
-    } catch (error) {
-      console.error("Error fetching off-chain points:", error);
+    } catch (error: any) {
+      // Handle 404 errors silently (user has no points yet)
+      if (error.response?.status === 404) {
+        console.log("No points found for user - this is normal for new users");
+        setOffChainPointsState(0);
+      } else {
+        console.error("Error fetching off-chain points:", error);
+        setOffChainPointsState(0);
+      }
     }
   };
 
@@ -156,6 +237,16 @@ const LoyaltyCodesTable = ({ owner_id }: { owner_id: number }) => {
 
   return (
     <div className="bg-gradient-to-b from-[#00041f] to-[#030828] flex flex-col items-center justify-start p-8 text-white">
+      {/* Page Loading Spinner */}
+      {isPageLoading && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white/10 backdrop-blur-lg rounded-xl p-8 flex flex-col items-center gap-4">
+            <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+            <p className="text-white text-lg font-semibold">Loading...</p>
+          </div>
+        </div>
+      )}
+      
       {/* Off-Chain Points */}
       <h1 className="text-4xl  font-semibold mb-6 bg-clip-text text-transparent text-white/90 drop-shadow-lg">
         {`Off-Chain Points: ${offChainPointsState}`}
@@ -203,7 +294,8 @@ const LoyaltyCodesTable = ({ owner_id }: { owner_id: number }) => {
                         onClick={() =>
                           handleAddLoyalty(loyalty.code, loyalty.value)
                         }
-                        className="bg-[#3f54b4] hover:bg-[#3f54b4]/80 px-2 py-1 rounded-md transition-colors"
+                        disabled={isPageLoading}
+                        className="bg-[#3f54b4] hover:bg-[#3f54b4]/80 px-2 py-1 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {loyalty.code}
                       </button>

@@ -116,25 +116,7 @@ const Footer = () => {
           </div>
         </div>
 
-        {/* Newsletter Section */}
-        <div className="py-8 border-t border-white/10">
-          <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
-            <div className="text-center lg:text-left">
-              <h3 className="text-white font-semibold text-lg mb-2">Stay Updated</h3>
-              <p className="text-white/70 text-sm">Get the latest updates on new features and releases</p>
-            </div>
-            <div className="flex w-full lg:w-auto max-w-md">
-              <input
-                type="email"
-                placeholder="Enter your email"
-                className="flex-1 px-4 py-3 bg-white/10 border border-white/20 rounded-l-xl text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-[#4DA2FF]/50 focus:border-[#4DA2FF]/50"
-              />
-              <button className="px-6 py-3 bg-gradient-to-r from-[#4DA2FF] to-[#7ab8ff] hover:from-[#3a8fef] hover:to-[#6aa7f0] text-black font-semibold rounded-r-xl transition-all duration-300 hover:scale-105">
-                Subscribe
-              </button>
-            </div>
-          </div>
-        </div>
+      
 
         {/* Bottom Bar */}
         <div className="py-6 border-t border-white/10">

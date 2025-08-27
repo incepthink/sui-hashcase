@@ -4,6 +4,7 @@ import { useParams } from "next/navigation";
 import Image from "next/image";
 
 import axiosInstance from "@/utils/axios";
+import toast from "react-hot-toast";
 
 import { useLoyaltyPointsTransactions } from "@/app/hooks/useLoyaltyPointsTransactions";
 import { useCurrentAccount, useSuiClientQuery } from "@mysten/dapp-kit";
@@ -17,6 +18,7 @@ import { useGlobalAppStore } from "@/store/globalAppStore";
 import LeaderboardTable from "./LeaderboardTable";
 import LoyaltyCodesTable from "./LoyaltyCodesTable";
 import QuestsTable from "./QuestsTable";
+import OnChainQuestsTable from "./OnChainQuestsTable";
 import BadgesTable from "./BadgesTable";
 
 const CollectionLoyaltiesPage = () => {
@@ -34,19 +36,24 @@ const CollectionLoyaltiesPage = () => {
 
   const [ownerId, setOwnerId] = useState<number | null>(null);
   const [onChainPointsState, setOnChainPointsState] = useState(0);
+  const [offChainPointsState, setOffChainPointsState] = useState(0);
   const [points, setPoints] = useState<string>("");
   const [userTokenId, setUserTokenId] = useState<string | null>(null);
 
-  const { addLoyaltyPoints, spendLoyaltyPoints } =
-    useLoyaltyPointsTransactions();
+  const { spendLoyaltyPoints } = useLoyaltyPointsTransactions();
 
   // States to handle the tab change
-  const [activeTab, setActiveTab] = useState<"loyalty" | "quests" | "badges">(
+  const [activeTab, setActiveTab] = useState<"loyalty" | "quests" | "onchain_quests" | "badges">(
     "loyalty"
   );
 
-  const handleTabChange = (tab: "loyalty" | "quests" | "badges") => {
+  const handleTabChange = (tab: "loyalty" | "quests" | "onchain_quests" | "badges") => {
     setActiveTab(tab);
+  };
+
+  // Handle points update from loyalty codes
+  const handlePointsUpdate = (newPoints: number) => {
+    setOffChainPointsState(newPoints);
   };
 
   // Fetch owner data
@@ -69,6 +76,8 @@ const CollectionLoyaltiesPage = () => {
 
     getOwnerData();
   }, [params.collection_id]);
+
+
 
   // Fetch token data
   // Add refetch capability to the query
@@ -114,21 +123,11 @@ const CollectionLoyaltiesPage = () => {
     }
   }, [zkAddress, currentAccount?.address]);
 
-  const handleAddLoyaltyPoints = async () => {
-    if (points && userTokenId) {
-      await addLoyaltyPoints(userTokenId, points);
-      // Refetch the token data to get updated balance
-      const { data } = await refetchTokenData();
-      if (data?.data?.[0]?.data?.content) {
-        const newBalance = (data.data[0].data.content as any)?.fields?.balance;
-        setOnChainPointsState(newBalance);
-      }
-      setPoints(""); // Clear input after operation
-    }
-  };
+  // Removed handleAddLoyaltyPoints - no longer needed
 
   const handleSpendLoyaltyPoints = async () => {
     if (points && userTokenId) {
+      console.log("🔧 Handle Spend Loyalty Points:", { points, userTokenId });
       await spendLoyaltyPoints(userTokenId, points);
       // Refetch the token data to get updated balance
       const { data } = await refetchTokenData();
@@ -137,12 +136,47 @@ const CollectionLoyaltiesPage = () => {
         setOnChainPointsState(newBalance);
       }
       setPoints(""); // Clear input after operation
+    } else {
+      toast.error("Please enter an amount and ensure you have loyalty tokens");
     }
   };
 
-  if (isLoading) return <div>Loading</div>;
+  // Check if wallet is connected and show toast notification
+  useEffect(() => {
+    if (!isWalletConnected) {
+      toast.error("Please connect your wallet to view your loyalty score", {
+        duration: 5000,
+        position: "top-center",
+        style: {
+          background: '#1f2937',
+          color: '#fff',
+          border: '1px solid #374151',
+        },
+      });
+    }
+  }, [isWalletConnected]);
 
-  // Check if wallet is connected
+  if (isLoading) {
+    return (
+      <div className="w-full min-h-[70vh] flex flex-col items-center justify-center bg-gradient-to-br from-[#000212] via-[#03082a] to-[#0a0e3a] px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+        {/* Glowing background elements */}
+        <div className="absolute top-0 left-0 w-1/3 h-full bg-gradient-to-r from-blue-900/20 to-transparent -skew-x-12 -translate-x-1/3"></div>
+        <div className="absolute bottom-0 right-0 w-1/3 h-full bg-gradient-to-l from-purple-900/20 to-transparent skew-x-12 translate-x-1/3"></div>
+        
+        <div className="relative z-10 text-center">
+          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
+          <h1 className="text-4xl sm:text-6xl font-extrabold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-blue-300 via-blue-400 to-purple-500 drop-shadow-lg leading-tight">
+            Loading...
+          </h1>
+          <p className="text-xl sm:text-2xl text-white/80 mb-8 leading-relaxed max-w-2xl">
+            Fetching your loyalty data
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show main content only if wallet is connected
   if (!isWalletConnected) {
     return (
       <div className="w-full min-h-[70vh] flex flex-col items-center justify-center bg-gradient-to-br from-[#000212] via-[#03082a] to-[#0a0e3a] px-4 sm:px-6 lg:px-8 relative overflow-hidden">
@@ -347,19 +381,12 @@ const CollectionLoyaltiesPage = () => {
                   type="number"
                   value={points}
                   onChange={(e) => setPoints(e.target.value)}
-                  placeholder="Enter points amount"
+                  placeholder="Enter points amount to spend"
                   className="w-full px-5 py-4 text-lg rounded-xl bg-white/5 text-white placeholder-white/40 border focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/30"
                 />
               </div>
 
               <div className="flex flex-col sm:flex-row gap-4">
-                <button
-                  onClick={handleAddLoyaltyPoints}
-                  className="flex-1 flex items-center justify-center gap-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 text-white text-lg px-6 py-4 rounded-xl font-medium transition-all duration-300 shadow-lg hover:shadow-blue-500/20 hover:-translate-y-0.5"
-                >
-                  <PlusCircle size={24} className="flex-shrink-0" />
-                  <span>Add Points</span>
-                </button>
                 <button
                   onClick={handleSpendLoyaltyPoints}
                   className="flex-1 flex items-center justify-center gap-3 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-400 hover:to-purple-500 text-white text-lg px-6 py-4 rounded-xl font-medium transition-all duration-300 shadow-lg hover:shadow-purple-500/20 hover:-translate-y-0.5"
@@ -379,6 +406,7 @@ const CollectionLoyaltiesPage = () => {
           {[
             { key: "loyalty", label: "Loyalty Codes" },
             { key: "quests", label: "Quests" },
+            { key: "onchain_quests", label: "On-Chain Quests" },
             { key: "badges", label: "Badges" },
           ].map((tab) => (
             <button
@@ -405,16 +433,22 @@ const CollectionLoyaltiesPage = () => {
         </div>
       </div>
 
-      {ownerId && activeTab === "loyalty" && (
-        <LoyaltyCodesTable owner_id={ownerId} />
+            {ownerId && activeTab === "loyalty" && (
+        <LoyaltyCodesTable
+          owner_id={ownerId}
+          onPointsUpdate={handlePointsUpdate}
+        />
       )}
       {ownerId && activeTab === "loyalty" && (
-        <LeaderboardTable owner_id={ownerId} />
+        <LeaderboardTable 
+          owner_id={ownerId} 
+        />
       )}
 
       {ownerId && activeTab === "badges" && <BadgesTable owner_id={ownerId} />}
 
       {ownerId && activeTab === "quests" && <QuestsTable owner_id={ownerId} user_id={user?.id} />}
+      {ownerId && activeTab === "onchain_quests" && <OnChainQuestsTable owner_id={ownerId} />}
     </>
   );
 };

@@ -1,9 +1,8 @@
 import { useState } from "react";
 import { Transaction } from "@mysten/sui/transactions";
-
-import { useSuiClient, useSignAndExecuteTransaction } from "@mysten/dapp-kit";
-
+import { useSuiClient, useSignAndExecuteTransaction, useCurrentAccount } from "@mysten/dapp-kit";
 import { toast } from "react-hot-toast";
+import axiosInstance from "@/utils/axios";
 
 export const useLoyaltyPointsTransactions = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -12,75 +11,54 @@ export const useLoyaltyPointsTransactions = () => {
   const suiClient = useSuiClient();
   const { mutateAsync: signAndExecuteTransaction } =
     useSignAndExecuteTransaction();
+  const currentAccount = useCurrentAccount();
 
   const packageId =
     process.env.MAINNET_LOYALTY_PACKAGE_ID ||
     "0xbdfb6f8ad73a073b500f7ba1598ddaa59038e50697e2dc6e9dedb55af7ae5b49";
-  const treasuryCapId =
-    process.env.NEXT_PUBLIC_TREASURY_CAP ||
-    "0xacd90a0531d5de71ded1d80d2d01d78caec275490f8a2075dbc0d9d1fdff28c8";
 
-  const addLoyaltyPoints = async (userTokenId: string, amount: string) => {
-    userTokenId =
-      userTokenId ||
-      "0x4215804794fb9bc9b01b0148b9caaba82cea4194ca1ccb2cd383e95403682081";
-
-    if (!treasuryCapId || !userTokenId || !amount) {
-      toast.error("Please fill in all fields.");
+  // Quest-based earning - backend calls contract to give points
+  const completeQuest = async (questType: string) => {
+    console.log("🔧 Completing quest:", { questType, currentAccount: currentAccount?.address });
+    
+    if (!currentAccount?.address) {
+      toast.error("Please connect your wallet first.");
       return;
     }
 
     setIsLoading(true);
-    let txResult;
 
     try {
-      // Create transaction
-      const tx = new Transaction();
-      tx.moveCall({
-        target: `${packageId}::loyalty_points::add_points`,
-        arguments: [
-          tx.object(treasuryCapId),
-          tx.object(userTokenId),
-          tx.pure.u64(Number(amount)),
-        ],
+      // Call backend to complete quest and get on-chain points
+      const response = await axiosInstance.post("/platform/quest/complete", {
+        quest_type: questType,
+        user_address: currentAccount.address
       });
 
-      // Execute transaction
-      txResult = await signAndExecuteTransaction({
-        transaction: tx as any,
-        chain: "sui:mainnet",
-      });
-
-      // Wait before fetching transaction details
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // Fetch transaction details
-      const digest = txResult?.digest || "";
-      await suiClient.waitForTransaction({ digest, timeout: 5_000 });
-
-      const txDetails = await suiClient.getTransactionBlock({
-        digest,
-        options: { showObjectChanges: true },
-      });
-
-      console.log("Transaction Details:", txDetails);
-      toast.success("Points added successfully!");
-      return txDetails;
-    } catch (error) {
-      console.error("Error executing transaction:", error);
-      toast.error("Failed to add points.");
+      console.log("Quest completion response:", response.data);
+      toast.success(`Quest completed! You earned ${response.data.points_earned} points!`);
+      return response.data;
+    } catch (error: any) {
+      console.error("Error completing quest:", error);
+      
+      if (error.response?.status === 400) {
+        toast.error("Quest already completed or not available.");
+      } else if (error.response?.status === 500) {
+        toast.error("Backend error. Please try again.");
+      } else {
+        toast.error("Failed to complete quest. Please try again.");
+      }
       return null;
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Spend on-chain points
   const spendLoyaltyPoints = async (userTokenId: string, amount: string) => {
-    userTokenId =
-      userTokenId ||
-      "0x4215804794fb9bc9b01b0148b9caaba82cea4194ca1ccb2cd383e95403682081";
-
-    if (!treasuryCapId || !userTokenId || !amount) {
+    console.log("🔧 Spending loyalty points:", { userTokenId, amount });
+    
+    if (!userTokenId || !amount) {
       toast.error("Please fill in all fields.");
       return;
     }
@@ -89,16 +67,16 @@ export const useLoyaltyPointsTransactions = () => {
     let txResult;
 
     try {
-      // Create transaction
+      // Create transaction to spend points
       const tx = new Transaction();
       tx.moveCall({
-        target: `${packageId}::loyalty_points::spend_points`,
+        target: `${packageId}::loyalty::spend_points`,
         arguments: [
-          tx.object(treasuryCapId),
+          tx.object("0x0000000000000000000000000000000000000000000000000000000000000006"), // Shared policy
           tx.object(userTokenId),
-          tx.pure.u64(Number(amount)),
         ],
       });
+      
       // Execute transaction
       txResult = await signAndExecuteTransaction({
         transaction: tx as any,
@@ -120,9 +98,9 @@ export const useLoyaltyPointsTransactions = () => {
       console.log("Transaction Details:", txDetails);
       toast.success("Points spent successfully!");
       return txDetails;
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error executing transaction:", error);
-      toast.error("Failed to add points.");
+      toast.error("Failed to spend points. Check if you have enough tokens.");
       return null;
     } finally {
       setIsLoading(false);
@@ -131,7 +109,7 @@ export const useLoyaltyPointsTransactions = () => {
 
   return {
     isLoading,
-    addLoyaltyPoints,
+    completeQuest,
     spendLoyaltyPoints,
   };
 };

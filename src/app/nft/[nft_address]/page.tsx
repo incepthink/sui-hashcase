@@ -46,34 +46,79 @@ const NftPage = () => {
   const [upgradeData, setUpgradeData] =
     useState<MetadataInstanceWithMetadataSet | null>(null);
 
+  // Store collection data for claiming
+  const [collectionData, setCollectionData] = useState<any>(null);
+
   const handleClaimNft = async (collection_id: string) => {
+    console.log("🔄 Starting claim process...");
+    console.log("👤 Current account:", currentAccount);
+    console.log("👤 Current account address:", currentAccount?.address);
+
     if (!currentAccount?.address) {
       toast.error("Connect your wallet to claim");
       return;
     }
-    
+
     setIsLoading(true);
     try {
-      if (!nftData) return;
-      // Build nft form from on-chain display
-      const nftForm = {
-        collection_id,
-        title: String(nftData.name || "NFT"),
-        description: String(nftData.description || ""),
-        image_url: String(nftData.image_url || ""),
-        attributes: JSON.stringify([]),
-      };
-      // Sponsor mint + transfer in backend
-      await axiosInstance.post(
-        "/platform/sui-nft/backend-mint",
-        { nftForm },
-        { params: { user_address: currentAccount.address } }
-      );
-      
-      toast.success("NFT claimed successfully!");
-    } catch (error) {
+      if (!nftData?.id?.id) {
+        toast.error("NFT data not available for claiming");
+        return;
+      }
+
+      // Use collection_id from parameter or fallback to stored collection data
+      let finalCollectionId = collection_id;
+      if (!finalCollectionId && collectionData?.contract?.contract_address) {
+        finalCollectionId = collectionData.contract.contract_address;
+      }
+
+      if (!finalCollectionId) {
+        toast.error("Collection ID not available for this NFT");
+        return;
+      }
+
+      console.log("🔄 Claiming NFT:", {
+        nftId: nftData.id?.id,
+        nftDataId: nftData.id,
+        fullNftData: nftData,
+        collectionId: finalCollectionId,
+        userAddress: currentAccount.address,
+        originalCollectionId: collection_id,
+        fallbackUsed: !collection_id && !!collectionData?.contract?.contract_address
+      });
+
+      // Extract the NFT ID properly
+      let nftId = nftData.id?.id;
+      if (!nftId && nftData.id) {
+        nftId = nftData.id; // Fallback if it's a string directly
+      }
+
+      if (!nftId) {
+        toast.error("Unable to extract NFT ID. Please refresh and try again.");
+        return;
+      }
+
+      console.log("🔄 Using NFT ID for claim:", nftId);
+
+      // Use the proper claim function that calls the smart contract
+      const result = await claimNFT(finalCollectionId, nftId);
+
+      if (result) {
+        toast.success("NFT claimed successfully!");
+        // Refresh the page after a short delay to show the updated state
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000);
+      }
+    } catch (error: any) {
       console.error("Claim error:", error);
-      toast.error("Failed to claim the NFT");
+      if (error.message?.includes("User rejected")) {
+        toast.error("Transaction was cancelled by user.");
+      } else if (error.message?.includes("Unexpected error")) {
+        toast.error("Wallet signing error. Please try again.");
+      } else {
+        toast.error("Failed to claim the NFT. Please check console for details.");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -144,7 +189,7 @@ const NftPage = () => {
     };
   }
 
-  // Debug logging
+  // Debug logging - Check browser console for detailed NFT data
   console.log("🔍 NFT Page Debug:");
   console.log("🔍 NFT Address:", nft_address);
   console.log("🔍 NFT Loading:", nftLoading);
@@ -155,12 +200,17 @@ const NftPage = () => {
   console.log("🔍 NFT Content Fields:", (nft?.data?.content as any)?.fields);
   console.log("🔍 Final NFT Data:", nftData);
 
+  // If you see wallet signing errors, check these values in browser console:
+  console.log("🔍 Collection Data for claiming:", collectionData);
+  console.log("🔍 NFT ID for claiming:", nftData?.id?.id);
+  console.log("🔍 Collection ID for claiming:", nftData?.collection_id);
+
   // Set collectionAddress only when nftData changes
   useEffect(() => {
     const getUnlockableContentForCollection = async () => {
       if (nftData?.collection_id) {
         try {
-          const collectionData = await axiosInstance.get(
+          const response = await axiosInstance.get(
             "/platform/collection-by-address",
             {
               params: {
@@ -168,9 +218,10 @@ const NftPage = () => {
               },
             }
           );
-          const { collection_instance } = collectionData.data;
+          const { collection_instance } = response.data;
 
           setCollection(collection_instance);
+          setCollectionData(collection_instance); // Store for claiming
           setUnlockableContent(collection_instance.contract.unlockable_content);
 
           // Try to get upgrade data, but don't fail if it's not available

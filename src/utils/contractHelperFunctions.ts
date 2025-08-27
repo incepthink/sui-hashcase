@@ -209,24 +209,51 @@ const createCollectionHelper = async (
 };
 
 const claimNftHelper = async (claimNFTForm: any) => {
+  console.log("🔧 claimNftHelper called with:", claimNFTForm);
+
   const tx = new Transaction();
 
   // Use the same package ID as the profile page
   const PACKAGE_ID = process.env.NEXT_PUBLIC_CONTRACT_PACKAGE_ID ||
     "0x072920bb06baea0717fbeda59950b97a1205f0196d6ad33878d3120710fafe84";
 
-  // console.log(claimNFTForm);
+  console.log("📦 Using PACKAGE_ID:", PACKAGE_ID);
 
-  // Add collection object (must be mutable)
+  // Set the sender (this is crucial for the transaction to work)
+  const senderAddress = claimNFTForm.sender || claimNFTForm.user_address;
+  console.log("👤 Setting sender to:", senderAddress);
+  tx.setSender(senderAddress);
+
+  // Set gas budget and gas payment (important for wallet to estimate fees properly)
+  console.log("⛽ Setting gas budget to 50,000,000");
+  tx.setGasBudget(50000000); // 50 million units
+
+  // Note: Gas payment will be handled by the wallet automatically
+  // We don't need to set it manually as the wallet will select coins for payment
+
+  console.log("🔗 Creating moveCall with target:", `${PACKAGE_ID}::hashcase_module::claim_nft`);
+  console.log("📋 Arguments:", {
+    collection_id: claimNFTForm.collection_id,
+    nft_id: claimNFTForm.nft_id
+  });
+
+  // Add collection object (must be mutable) and NFT object (by value)
   tx.moveCall({
     target: `${PACKAGE_ID}::hashcase_module::claim_nft`,
     arguments: [
       tx.object(claimNFTForm.collection_id), // Collection object (must be mutable)
-      tx.object(claimNFTForm.nft_id), // NFT object (user must own this)
+      tx.object(claimNFTForm.nft_id), // NFT object (by value - will be consumed)
     ],
   });
 
+  console.log("✅ Transaction created successfully");
   return tx;
+};
+
+// Debug function for testing transaction creation (can be called from console)
+export const debugClaimNftHelper = async (claimNFTForm: any) => {
+  console.log("🔧 Debug claimNftHelper called with:", claimNFTForm);
+  return await claimNftHelper(claimNFTForm);
 };
 
 // export async function createOwnerCap(adminCapId, recipientAddress, wallet) {

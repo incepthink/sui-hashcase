@@ -8,7 +8,7 @@ import { Work_Sans } from "next/font/google";
 import notify, { notifyPromise, notifyResolve } from "@/utils/notify";
 import EyeW from "@/assets/eye-white.svg";
 
-import { useParams } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import React from "react";
 import Link from "next/link";
@@ -35,6 +35,8 @@ import {
   ArrowLeft,
   MapPinOff,
   Compass,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 
 interface Metadata {
@@ -62,6 +64,15 @@ interface EmittedNFTInfo {
   token_number: string;
 }
 
+interface AvailableNFT {
+  id: string;
+  title: string;
+  name: string;
+  description: string;
+  image_url: string;
+  type: 'randomized' | 'geofenced';
+}
+
 type Coordinates = {
   latitude: number;
   longitude: number;
@@ -75,16 +86,23 @@ const mainnet_loyalty =
 
 export default function NFTPage() {
   const params = useParams();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [nftData, setNftData] = useState<Metadata | null>(null);
+  const [availableNFTs, setAvailableNFTs] = useState<AvailableNFT[]>([]);
+  const [currentNFTIndex, setCurrentNFTIndex] = useState(0);
+  const [preloadedImages, setPreloadedImages] = useState<Set<string>>(new Set());
 
   const [isLocked, setIsLocked] = useState(true);
   const [location, setLocation] = useState<Coordinates>({
     latitude: -1,
     longitude: -1,
   });
+  const [isLocationEnabled, setIsLocationEnabled] = useState(false);
 
   const [loading, setLoading] = useState(true);
   const [minting, setMinting] = useState(false);
+  const [imageLoading, setImageLoading] = useState(true);
 
   // states for the modal for showing minting success
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -109,6 +127,113 @@ export default function NFTPage() {
 
   const { userWalletAddress } = useGlobalAppStore();
 
+
+
+  // Preload images for faster navigation
+  const preloadImage = React.useCallback((imageUrl: string) => {
+    if (!preloadedImages.has(imageUrl)) {
+      const img = new window.Image();
+      img.src = imageUrl;
+      img.onload = () => {
+        setPreloadedImages(prev => new Set(prev).add(imageUrl));
+      };
+    }
+  }, [preloadedImages]);
+
+  // Preload all available NFT images
+  React.useEffect(() => {
+    availableNFTs.forEach(nft => {
+      if (nft.image_url) {
+        preloadImage(nft.image_url);
+      }
+    });
+  }, [availableNFTs, preloadImage]);
+
+  // Navigation functions for randomly selecting NFTs - ultra fast performance with enhanced security
+  const navigateToRandomNFT = React.useCallback(() => {
+    if (availableNFTs.length <= 1) return;
+    
+    // Use crypto.getRandomValues for cryptographically secure randomization
+    const randomBuffer = new Uint32Array(1);
+    crypto.getRandomValues(randomBuffer);
+    
+    // Generate a random index, but avoid the current one
+    let randomIndex;
+    do {
+      randomIndex = randomBuffer[0] % availableNFTs.length;
+      // If we need another random number, generate it
+      if (randomIndex === currentNFTIndex && availableNFTs.length > 1) {
+        crypto.getRandomValues(randomBuffer);
+      }
+    } while (randomIndex === currentNFTIndex && availableNFTs.length > 1);
+    
+    setCurrentNFTIndex(randomIndex);
+    const randomNFT = availableNFTs[randomIndex];
+    
+    // Reset image loading state for new image
+    setImageLoading(true);
+    
+    // Update the NFT data immediately without any delays
+    setNftData(prevData => prevData ? {
+      ...prevData,
+      id: randomNFT.id,
+      title: randomNFT.title,
+      name: randomNFT.name,
+      description: randomNFT.description || 'A unique randomized NFT from HashCase Collection',
+      image_url: randomNFT.image_url,
+    } : null);
+  }, [availableNFTs, currentNFTIndex]);
+
+  // Both arrows now do the same thing - randomly select an NFT
+  const navigateToNextNFT = navigateToRandomNFT;
+  const navigateToPreviousNFT = navigateToRandomNFT;
+
+  // Fetch available NFTs for navigation
+  const fetchAvailableNFTs = async (collectionId: number) => {
+    try {
+      const nftType = searchParams.get('type');
+      
+      if (nftType === 'randomized') {
+        // Fetch randomized metadata sets (no location dependency)
+        const randomizedResponse = await axiosInstance.get(
+          "/platform/metadata-set/by-collection",
+          { params: { collection_id: collectionId } }
+        );
+
+        const available: AvailableNFT[] = [];
+
+        // Add randomized NFTs
+        if (randomizedResponse.data.metadataSets) {
+          randomizedResponse.data.metadataSets.forEach((set: any) => {
+            available.push({
+              id: `rand-${set.id}`,
+              title: set.name,
+              name: set.name,
+              description: set.Collection.description || 'Randomized NFT',
+              image_url: set.Collection.image_uri,
+              type: 'randomized'
+            });
+          });
+        }
+
+        setAvailableNFTs(available);
+        
+        // Find current NFT index
+        const currentId = Array.isArray(params.metadata_id) ? params.metadata_id[0] : params.metadata_id;
+        
+        // If it's a collection-level random NFT, start with the first one
+        if (currentId?.startsWith('rand-collection-')) {
+          setCurrentNFTIndex(0);
+        } else {
+          const currentIndex = available.findIndex(nft => nft.id === currentId);
+          setCurrentNFTIndex(currentIndex >= 0 ? currentIndex : 0);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching available NFTs:", error);
+    }
+  };
+
   useEffect(() => {
     if (params.metadata_id) {
       fetchNFTData();
@@ -120,6 +245,194 @@ export default function NFTPage() {
       // Check if the ID looks like an NFT address (starts with 0x and is 64+ characters)
       const metadataId = Array.isArray(params.metadata_id) ? params.metadata_id[0] : params.metadata_id;
       const isNFTAddress = metadataId?.startsWith('0x') && metadataId.length > 60;
+      const nftType = searchParams.get('type');
+      
+      // For randomized NFTs, we don't need location - they're already unlocked
+      if (nftType === 'randomized') {
+        setIsLocked(false);
+      }
+      
+      // For geolocation NFTs, we need to check location
+      if (nftType === 'geofenced') {
+        // Check if location is enabled and get current position
+        if (!isLocationEnabled) {
+          const locationEnabled = await getLocationData();
+          if (!locationEnabled) {
+            setIsLocked(true);
+            return;
+          }
+        }
+        
+        // Verify the user is within the geofence for this specific NFT
+        if (location.latitude !== -1 && location.longitude !== -1) {
+          try {
+            const geofencedResponse = await axiosInstance.get(
+              "/platform/metadata/geo-fenced",
+              {
+                params: {
+                  user_lat: location.latitude,
+                  user_lon: location.longitude,
+                  collection_id: 1, // Assuming collection ID 1
+                },
+              }
+            );
+            
+            // Check if the current NFT is in the geofenced results
+            const geofencedNFTs = geofencedResponse.data.data || [];
+            const currentNFTInGeofence = geofencedNFTs.find((nft: any) => 
+              nft.id.toString() === metadataId?.replace('geo-', '')
+            );
+            
+            if (currentNFTInGeofence) {
+              setIsLocked(false);
+              setNftData({
+                id: currentNFTInGeofence.id,
+                title: currentNFTInGeofence.title,
+                name: currentNFTInGeofence.title,
+                description: currentNFTInGeofence.description || 'A location-specific NFT',
+                image_url: currentNFTInGeofence.image_url,
+                animation_url: "",
+                collection_id: currentNFTInGeofence.collection_id,
+                token_uri: "",
+                collection_name: "HashCase Collection",
+                collection_address: "0x79e4f927919068602bae38387132f8c0dd52dc3207098355ece9e9ba61eb2290",
+              });
+            } else {
+              setIsLocked(true);
+              return;
+            }
+          } catch (error) {
+            console.error("Error checking geofence:", error);
+            setIsLocked(true);
+            return;
+          }
+        } else {
+          setIsLocked(true);
+          return;
+        }
+      }
+      
+      // Handle randomized NFTs using the same approach as collection page
+      if (nftType === 'randomized') {
+        try {
+          // Handle specific random NFT ID (from collection page)
+          if (metadataId && (metadataId.startsWith('0x') || metadataId.startsWith('rand-'))) {
+            console.log("Fetching specific random NFT:", metadataId);
+            
+            // Fetch minted NFTs to get the actual random NFTs from blockchain
+            const mintedResponse = await axiosInstance.get(
+              "/platform/sui/nfts/by-collection",
+              { params: { collection_id: "0x79e4f927919068602bae38387132f8c0dd52dc3207098355ece9e9ba61eb2290" } }
+            );
+
+            console.log("Minted NFTs response:", mintedResponse.data);
+
+            const allRandomNFTs: any[] = [];
+
+            // Add minted random NFTs (same filtering logic as collection page)
+            if (mintedResponse.data.success && mintedResponse.data.data && mintedResponse.data.data.nfts) {
+              const randomMintedNFTs = mintedResponse.data.data.nfts.filter((nft: any) => {
+                const isRandom = nft.name?.toLowerCase().includes('random') || 
+                               nft.name?.toLowerCase().includes('drop') ||
+                               nft.description?.toLowerCase().includes('randomized');
+                // Filter out Random Drop #4
+                const isNotRandomDrop4 = nft.name !== "Random Drop #4";
+                return isRandom && isNotRandomDrop4;
+              });
+
+              console.log("Found random NFTs:", randomMintedNFTs);
+
+              randomMintedNFTs.forEach((nft: any) => {
+                allRandomNFTs.push({
+                  id: nft.id,
+                  title: nft.name,
+                  name: nft.name,
+                  description: nft.description || 'Randomized NFT',
+                  image_url: nft.image_url,
+                  type: 'minted',
+                  originalData: nft
+                });
+              });
+            }
+
+            if (allRandomNFTs.length > 0) {
+              // Find the specific NFT that was clicked
+              const clickedNFT = allRandomNFTs.find(nft => nft.id === metadataId);
+              const currentNFT = clickedNFT || allRandomNFTs[0];
+              
+              const finalNftData = {
+                id: currentNFT.id,
+                title: currentNFT.title,
+                name: currentNFT.name,
+                description: currentNFT.description || 'A unique randomized NFT from HashCase Collection',
+                image_url: currentNFT.image_url,
+                animation_url: "",
+                collection_id: 0,
+                token_uri: "",
+                collection_name: "HashCase Collection",
+                collection_address: "0x79e4f927919068602bae38387132f8c0dd52dc3207098355ece9e9ba61eb2290",
+              };
+
+              setIsLocked(false);
+              setNftData(finalNftData);
+              
+              // Set available NFTs for navigation
+              setAvailableNFTs(allRandomNFTs);
+              setCurrentNFTIndex(allRandomNFTs.findIndex(nft => nft.id === currentNFT.id));
+              return;
+            }
+          } else {
+            // Handle individual randomized NFT (same as collection page metadata sets)
+            const actualMetadataId = metadataId?.replace('rand-', '') || '';
+            const randomizedResponse = await axiosInstance.get(
+              "/platform/metadata-set/by-id",
+              { params: { metadata_set_id: actualMetadataId } }
+            );
+
+            if (randomizedResponse.data.metadataSet) {
+              const set = randomizedResponse.data.metadataSet;
+              const finalNftData = {
+                id: `rand-${set.id}`,
+                title: set.name,
+                name: set.name,
+                description: set.Collection.description || 'Randomized NFT',
+                image_url: set.Collection.image_uri,
+                animation_url: "",
+                collection_id: set.Collection.id,
+                token_uri: "",
+                collection_name: set.Collection.name,
+                collection_address: set.Collection.contract?.contract_address,
+              };
+
+              setIsLocked(false);
+              setNftData(finalNftData);
+              
+              // Fetch available NFTs for navigation
+              await fetchAvailableNFTs(set.Collection.id);
+              return;
+            }
+          }
+        } catch (randomizedError) {
+          console.error("Error fetching randomized NFT:", randomizedError);
+          // For randomized NFTs, even if there's an error, we should show a fallback
+          // instead of locking the content
+          const fallbackNftData = {
+            id: metadataId || "",
+            title: "Random NFT",
+            name: "Random NFT",
+            description: "A randomized NFT from this collection",
+            image_url: "https://via.placeholder.com/300",
+            animation_url: "",
+            collection_id: 0,
+            token_uri: "",
+            collection_name: "HashCase Collection",
+            collection_address: "0x79e4f927919068602bae38387132f8c0dd52dc3207098355ece9e9ba61eb2290",
+          };
+          setIsLocked(false);
+          setNftData(fallbackNftData);
+          return;
+        }
+      }
       
       if (isNFTAddress) {
         // If it's an NFT address, try to get the NFT data from the collection
@@ -192,10 +505,14 @@ export default function NFTPage() {
         }
       }
 
-      // Only apply geofenced logic for metadata IDs (not NFT addresses)
+
+      
       const locationPermission = await checkLocationPermissions();
 
       if (locationPermission == true) {
+        console.log("🔍 Geofencing Check:");
+        console.log("   User Location:", { lat: location.latitude, lon: location.longitude });
+        
         const itemData = await axiosInstance.get(
           "/platform/metadata/geofenced-by-id",
           {
@@ -209,8 +526,11 @@ export default function NFTPage() {
 
         const { metadata_instance } = itemData.data;
 
-        console.log("THIS IS METADATA INSTANCE");
-        console.log(metadata_instance);
+        console.log("   NFT Location:", { 
+          lat: metadata_instance?.latitude, 
+          lon: metadata_instance?.longitude 
+        });
+        console.log("   Metadata Instance:", metadata_instance);
 
         if (metadata_instance == null) {
           setIsLocked(true);
@@ -228,6 +548,9 @@ export default function NFTPage() {
 
           setIsLocked(false);
           setNftData(finalNftData);
+          
+          // Fetch available NFTs for navigation
+          await fetchAvailableNFTs(metadata_instance.collection.id);
         }
       } else {
         const itemData = await axiosInstance.get(
@@ -258,6 +581,9 @@ export default function NFTPage() {
 
           setIsLocked(false);
           setNftData(finalNftData);
+          
+          // Fetch available NFTs for navigation
+          await fetchAvailableNFTs(metadata_instance.collection.id);
         }
       }
     } catch (error) {
@@ -298,6 +624,28 @@ export default function NFTPage() {
       );
     });
   }
+
+  const getLocationData = async (): Promise<boolean> => {
+    try {
+      const { latitude, longitude } = await getCurrentPosition();
+      setLocation({ latitude, longitude });
+      setIsLocationEnabled(true);
+      return true;
+    } catch (err: unknown) {
+      const anyErr = err as any;
+      const code = typeof anyErr?.code === "number" ? anyErr.code : undefined;
+      console.warn("Location error:", anyErr?.message || "Unknown error");
+      if (code === 1) {
+        alert("Location access denied. Please allow location access in your browser settings and try again.");
+      } else if (code === 2) {
+        alert("Location unavailable. Please check your device's location services and try again.");
+      } else if (code === 3) {
+        alert("Location request timed out. Please try again.");
+      }
+      setIsLocationEnabled(false);
+      return false;
+    }
+  };
 
   const handleGetCurrentPositionAndPageRefresh = async () => {
     try {
@@ -383,9 +731,9 @@ export default function NFTPage() {
   if (loading) {
     return (
       <div className="h-[70vh] max-w-screen bg-[#00041F] flex justify-center items-center text-center">
-        <>
+        <div className="text-center">
           <svg
-            className="animate-spin h-12 w-12 text-blue-500"
+            className="animate-spin h-12 w-12 text-blue-500 mx-auto mb-4"
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
             viewBox="0 0 24 24"
@@ -404,7 +752,8 @@ export default function NFTPage() {
               d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
             ></path>
           </svg>
-        </>
+          <p className="text-white text-lg">Loading NFT data...</p>
+        </div>
       </div>
     );
   }
@@ -456,8 +805,10 @@ export default function NFTPage() {
               This NFT is not accessible in your current region
             </p>
             <p className="text-blue-300 text-sm">
-              The content you&apos;re trying to view has geographical
-              restrictions
+              You need to be within 15km of the NFT&apos;s location to access it
+            </p>
+            <p className="text-yellow-300 text-xs">
+              Your location: {location.latitude.toFixed(4)}, {location.longitude.toFixed(4)}
             </p>
           </div>
         </div>
@@ -470,42 +821,97 @@ export default function NFTPage() {
     <div className={`flex flex-col bg-[#00041F] ${workSans.className}`}>
       <div className="flex flex-col px-6 md:px-10 max-w-6xl mx-auto w-full">
         <Link
-          href={`/collections`}
+          href={`/collection/${nftData?.collection_address || '0x79e4f927919068602bae38387132f8c0dd52dc3207098355ece9e9ba61eb2290'}`}
           className="hidden md:flex items-center justify-start gap-x-2 my-4"
         >
           <ArrowW />
           <p className="text-2xl text-white/70">back</p>
         </Link>
-        <div className="my-6 grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
-          <img
-            className="w-full max-w-md md:max-w-full h-auto rounded-lg"
-            src={nftData.image_url}
-            alt="nft"
-          />
-
-          <div className="flex flex-col items-start justify-center">
-            <div className="flex flex-col justify-start gap-y-2 my-4 w-full">
-              <p className="text-white md:text-4xl text-2xl tracking-wide font-bold">
-                {nftData.name}
-              </p>
-              <p className="text-white md:text-lg text-sm">
-                By <span className="text-[#4DA2FF]">{nftData.collection_name}</span>
-              </p>
+        <div className="my-12 grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
+          {/* NFT Image with Navigation */}
+          <div className="relative flex justify-center lg:justify-start">
+            <div className="relative w-full max-w-md lg:max-w-lg xl:max-w-xl">
+              {/* Loading Spinner */}
+              {imageLoading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-gray-800 rounded-2xl z-10">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
+                </div>
+              )}
+              
+              <img
+                className="w-full h-auto rounded-2xl transition-opacity duration-300 shadow-2xl border border-white/10"
+                src={nftData.image_url}
+                alt="nft"
+                style={{ 
+                  opacity: imageLoading ? 0 : 1 
+                }}
+                onLoad={() => {
+                  setImageLoading(false);
+                  preloadImage(nftData.image_url);
+                }}
+                onError={() => setImageLoading(false)}
+              />
             </div>
+            
+            {/* Navigation Arrows - Only show if there are multiple NFTs available */}
+            {availableNFTs.length > 1 && (
+              <>
+                {/* Previous Arrow */}
+                <button
+                  onClick={navigateToPreviousNFT}
+                  className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition-all duration-200 backdrop-blur-sm"
+                  title="Previous NFT"
+                >
+                  <ChevronLeft className="w-6 h-6" />
+                </button>
+                
+                {/* Next Arrow */}
+                <button
+                  onClick={navigateToNextNFT}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition-all duration-200 backdrop-blur-sm"
+                  title="Next NFT"
+                >
+                  <ChevronRight className="w-6 h-6" />
+                </button>
+                
+                {/* NFT Counter */}
+                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-black/50 text-white px-3 py-1 rounded-full text-sm backdrop-blur-sm">
+                  {currentNFTIndex + 1} / {availableNFTs.length}
+                </div>
+              </>
+            )}
+          </div>
 
-            <div className="flex items-center my-2">
-              <p className="md:text-xl text-sm text-white">
+                      <div className="flex flex-col items-start justify-center w-full">
+              <div className="flex flex-col justify-start gap-y-6 my-8 w-full">
+                <div className="flex items-center gap-4 flex-wrap">
+                  <p className="text-white md:text-5xl text-3xl tracking-wide font-bold">
+                    {nftData.name}
+                  </p>
+                  {searchParams.get('type') === 'randomized' && (
+                    <span className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-sm font-semibold rounded-full shadow-lg">
+                      🎲 RANDOM
+                    </span>
+                  )}
+                </div>
+                <p className="text-white md:text-xl text-base">
+                  By <span className="text-[#4DA2FF] font-semibold">{nftData.collection_name}</span>
+                </p>
+              </div>
+
+            <div className="flex items-start my-6">
+              <p className="md:text-xl text-base text-white leading-relaxed max-w-2xl">
                 {nftData.description}
               </p>
             </div>
 
             
 
-            <div className="flex flex-col gap-4 items-start mt-2 w-full">
+            <div className="flex flex-col gap-6 items-start mt-6 w-full">
               <button
                 onClick={handleGaslessMintAndTransfer}
                 disabled={minting}
-                className="md:px-6 md:py-3 px-4 py-2 rounded-full md:text-xl text-sm bg-white text-black border-[1px] border-b-4 border-[#4DA2FF] flex items-center gap-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="md:px-8 md:py-4 px-6 py-3 rounded-full md:text-xl text-sm bg-white text-black border-[1px] border-b-4 border-[#4DA2FF] flex items-center gap-x-3 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transition-all duration-200"
               >
                 {minting ? (
                   <>

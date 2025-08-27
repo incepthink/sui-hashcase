@@ -6,6 +6,7 @@ import { useZkLogin } from "@mysten/enoki/react";
 import { LeaderboardPeriod } from "@/utils/enums";
 import axiosInstance from "@/utils/axios";
 import { useGlobalAppStore } from "@/store/globalAppStore";
+import toast from "react-hot-toast";
 
 type LeaderboardEntry = {
   user_id: number;
@@ -33,7 +34,11 @@ type LeaderboardResponse = {
   userRank?: UserRank;
 };
 
-const LeaderboardTable = ({ owner_id }: { owner_id: number }) => {
+const LeaderboardTable = ({ 
+  owner_id 
+}: { 
+  owner_id: number;
+}) => {
   const currentAccount = useCurrentAccount();
   const { address: zkAddress } = useZkLogin();
   const { user } = useGlobalAppStore();
@@ -49,6 +54,41 @@ const LeaderboardTable = ({ owner_id }: { owner_id: number }) => {
 
   // Check if any wallet is connected (Sui wallet or zk Google login)
   const isWalletConnected = !!(currentAccount?.address || zkAddress);
+
+  // Function to manually refresh leaderboard data
+  const refreshLeaderboard = async () => {
+    if (!isWalletConnected) return;
+    
+    setIsLoading(true);
+    try {
+      const userId = user?.id;
+      
+      console.log("Manually refreshing leaderboard for user:", userId, "owner:", owner_id);
+
+      const response = await axiosInstance.get("/platform/new-leaderboard", {
+        params: {
+          owner_id: owner_id,
+          user_id: userId,
+          page: 1,
+          page_size: 10,
+        },
+      });
+      
+      const leaderboard: LeaderboardResponse = response.data.leaderboard;
+      console.log("Refreshed leaderboard data:", leaderboard);
+      
+      setLeaderboardData(leaderboard.rows || []);
+      setUserRank(leaderboard.userRank || null);
+      
+      // Show success toast
+      toast.success("Leaderboard updated with latest rankings!");
+    } catch (error: any) {
+      console.error("Error refreshing leaderboard:", error);
+      toast.error("Failed to refresh leaderboard");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
     const getLeaderboardData = async () => {
@@ -169,9 +209,24 @@ const LeaderboardTable = ({ owner_id }: { owner_id: number }) => {
 
   return (
     <div className="flex flex-col justify-start items-center gap-6 w-full h-full  bg-gradient-to-b from-[#00041f] to-[#030828] p-8 shadow-lg">
-      <h1 className="text-4xl font-extrabold mb-6 text-white/90 drop-shadow-md">
-        Leaderboard
-      </h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-4xl font-extrabold text-white/90 drop-shadow-md">
+          Leaderboard
+          {isLoading && (
+            <span className="ml-3 text-blue-400 text-sm">
+              <span className="animate-spin">⟳</span> Refreshing...
+            </span>
+          )}
+        </h1>
+        {/* <button
+          onClick={refreshLeaderboard}
+          disabled={isLoading}
+          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
+        >
+          <span className={isLoading ? "animate-spin" : ""}>⟳</span>
+          Refresh
+        </button> */}
+      </div>
 
       {/* Time Period Buttons */}
       <div className="flex justify-start items-center gap-6 w-full max-w-6xl mx-auto">
