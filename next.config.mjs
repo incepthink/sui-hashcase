@@ -52,6 +52,11 @@ const nextConfig = {
         hostname: "i.pinimg.com",
         pathname: "/**", // allow all paths under this domain
       },
+      {
+        protocol: "https",
+        hostname: "client-uploads.nyc3.digitaloceanspaces.com",
+        pathname: "/**", // allow all paths under this domain
+      },
     ],
   },
 };

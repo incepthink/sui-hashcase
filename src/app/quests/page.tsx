@@ -1,6 +1,7 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Image from "next/image";
 import axiosInstance from "@/utils/axios";
 import toast from "react-hot-toast";
 import { useGlobalAppStore } from "@/store/globalAppStore";
@@ -20,9 +21,31 @@ interface Quest {
   updated_at: string;
 }
 
-const QuestsPage = () => {
+// Separate component for the back button that uses search params
+const BackButton = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
+  
+  return (
+    <div className="absolute top-4 left-4 z-10">
+      <button
+        onClick={() => {
+           const cid = searchParams.get('collection_id')
+           if (cid) {
+             router.push(`/loyalties/${cid}`)
+           } else {
+             router.push('/loyalties')
+           }
+        }}
+        className="text-white hover:text-gray-300 font-semibold transition-colors duration-300 flex items-center gap-2"
+      >
+        ← Back
+      </button>
+    </div>
+  );
+};
+
+const QuestsPage = () => {
   const [mounted, setMounted] = useState(false);
   const [quests, setQuests] = useState<Quest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -124,21 +147,15 @@ const QuestsPage = () => {
   return (
     <div className="min-h-screen bg-black">
       {/* Back Button - Top Left */}
-      <div className="absolute top-4 left-4 z-10">
-        <button
-          onClick={() => {
-             const cid = searchParams.get('collection_id')
-             if (cid) {
-               router.push(`/loyalties/${cid}`)
-             } else {
-               router.push('/loyalties')
-             }
-          }}
-          className="text-white hover:text-gray-300 font-semibold transition-colors duration-300 flex items-center gap-2"
-        >
-          ← Back
-        </button>
-      </div>
+      <Suspense fallback={
+        <div className="absolute top-4 left-4 z-10">
+          <button className="text-white hover:text-gray-300 font-semibold transition-colors duration-300 flex items-center gap-2">
+            ← Back
+          </button>
+        </div>
+      }>
+        <BackButton />
+      </Suspense>
 
       {/* NFT Reward Section - Above Header */}
       <div className="pt-32 pb-6">
@@ -149,9 +166,11 @@ const QuestsPage = () => {
               {/* Large NFT Image */}
               <div className="flex-shrink-0">
                 <div className="w-48 h-48 rounded-2xl shadow-2xl border-2 border-purple-300/30 overflow-hidden">
-                  <img 
+                  <Image 
                     src="https://client-uploads.nyc3.digitaloceanspaces.com/images/3b1daaad-c7dc-4884-a78b-739a3ce3dfaa/2025-08-28T12-25-58-895Z-38bc0eae.png" 
                     alt="NS Daily NFT" 
+                    width={192}
+                    height={192}
                     className="w-full h-full object-cover"
                   />
                 </div>
@@ -374,9 +393,11 @@ const QuestsPage = () => {
             <div className="text-center">
               {/* NFT Image */}
               <div className="w-24 h-24 mx-auto mb-4 rounded-2xl overflow-hidden border border-white/20">
-                <img 
+                <Image 
                   src={mintedNftData.image_url} 
                   alt={mintedNftData.name}
+                  width={96}
+                  height={96}
                   className="w-full h-full object-cover"
                 />
               </div>

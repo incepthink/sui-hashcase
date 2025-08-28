@@ -193,16 +193,17 @@ const BentoBox1 = () => {
       }
     );
 
-    if (chartRef.current) {
-      observer.observe(chartRef.current);
+    const currentRef = chartRef.current;
+    if (currentRef) {
+      observer.observe(currentRef);
     }
 
     return () => {
-      if (chartRef.current) {
-        observer.unobserve(chartRef.current);
+      if (currentRef) {
+        observer.unobserve(currentRef);
       }
     };
-  }, [chartRef]);
+  }, []);
 
   return (
     <div className="bg-[#000000] flex justify-center items-center min-h-screen p-5 rounded-lg sm:py-24 ">
