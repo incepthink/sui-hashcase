@@ -80,15 +80,10 @@ const LoyaltyCodesTable = ({
       // Extract used codes from transactions
       const usedCodesList = response.data.data.map((transaction: LoyaltyTransaction) => transaction.code);
       setUsedCodes(usedCodesList);
-    } catch (error: any) {
-      // Handle 404 errors silently (user has no transactions yet)
-      if (error.response?.status === 404) {
-        console.log("No loyalty transactions found for user - this is normal for new users");
-        setUsedCodes([]);
-      } else {
-        console.error("Error fetching used loyalty codes:", error);
-        setUsedCodes([]);
-      }
+    } catch (error) {
+      console.error("Error fetching used loyalty codes:", error);
+      // If no transactions found, set empty array
+      setUsedCodes([]);
     }
   };
 
@@ -176,12 +171,18 @@ const LoyaltyCodesTable = ({
   };
 
   const performDailyCheckIn = async () => {
+    if (!user?.id) {
+      console.log("No user ID available for streak check-in");
+      return;
+    }
+    
     try {
       const checkInResponse = await axiosInstance.post(
         "/user/achievements/extend-streak",
         null,
         {
           params: {
+            user_id: user.id,
             owner_id: owner_id,
           },
         }
@@ -194,13 +195,8 @@ const LoyaltyCodesTable = ({
 
       setCurrentStreak(user_achievements.current_streak);
       setOffChainPointsState(user_achievements.total_loyalty_points);
-    } catch (error: any) {
-      // Handle errors silently for daily check-in
-      if (error.response?.status === 404) {
-        console.log("Daily check-in not available - this is normal for new users");
-      } else {
-        console.log("Daily check-in error:", error);
-      }
+    } catch (error) {
+      console.log(error);
     }
   };
 
@@ -214,15 +210,8 @@ const LoyaltyCodesTable = ({
       );
       const total = (response.data?.total_points ?? response.data?.points) || 0;
       setOffChainPointsState(total);
-    } catch (error: any) {
-      // Handle 404 errors silently (user has no points yet)
-      if (error.response?.status === 404) {
-        console.log("No points found for user - this is normal for new users");
-        setOffChainPointsState(0);
-      } else {
-        console.error("Error fetching off-chain points:", error);
-        setOffChainPointsState(0);
-      }
+    } catch (error) {
+      console.error("Error fetching off-chain points:", error);
     }
   };
 

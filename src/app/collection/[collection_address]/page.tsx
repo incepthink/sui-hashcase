@@ -95,16 +95,20 @@ export default function NFTPage() {
       setMintedNFTs([]);
       return;
     }
+    console.log('🚀 Fetching NFTs for collection:', collectionAddress);
     setIsLoadingMinted(true);
     try {
       const response = await axiosInstance.get(
         "/platform/sui/nfts/by-collection",
         { params: { collection_id: collectionAddress } }
       );
+      console.log('📡 Backend response:', response.data);
       if (response.data.success && response.data.data && response.data.data.nfts) {
         const rawNfts: any[] = response.data.data.nfts || [];
-        // Ensure we only show NFTs for this collection
-        const filtered = rawNfts.filter((nft: any) => String(nft.collection_id).toLowerCase() === String(collectionAddress).toLowerCase());
+        console.log('🔍 First NFT from backend:', rawNfts[0]);
+        console.log('📊 Total NFTs received:', rawNfts.length);
+        // Show all NFTs from this collection address (skip filtering since we're already fetching by collection)
+        const filtered = rawNfts;
         const nfts: BlockchainNFT[] = filtered.map((nft: any) => ({
           id: nft.id,
           name: nft.name || 'Unnamed NFT',
@@ -145,7 +149,8 @@ export default function NFTPage() {
         setMintedNFTs([]);
       }
     } catch (error: any) {
-      console.error('Error fetching collection NFTs:', error);
+      console.error('❌ Error fetching collection NFTs:', error);
+      console.error('❌ Error details:', error.response?.data || error.message);
       
       // Handle specific error cases
       if (error.response?.status === 502) {
