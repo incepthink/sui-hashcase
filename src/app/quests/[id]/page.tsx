@@ -7,6 +7,7 @@ import { useGlobalAppStore } from "@/store/globalAppStore";
 import { useCurrentAccount } from "@mysten/dapp-kit";
 import { useZkLogin } from "@mysten/enoki/react";
 import ConnectButton from "@/components/ConnectButton";
+import { ArrowRight } from "lucide-react";
 
 interface Quest {
   id: number;
@@ -179,22 +180,30 @@ const QuestDetailPage = () => {
 
   return (
     <div className="min-h-screen bg-black">
-      {/* Back Button - Top Left */}
-      <div className="absolute top-4 left-4 z-10">
-        <button
-          onClick={() => {
-            const searchParams = new URLSearchParams(window.location.search);
-            const cid = searchParams.get('collection_id');
-            if (cid) {
-              router.push(`/loyalties/${cid}`);
-            } else {
-              router.push('/loyalties');
-            }
-          }}
-          className="text-white hover:text-gray-300 font-semibold transition-colors duration-300 flex items-center gap-2"
-        >
-          ← Back
-        </button>
+      {/* Top Navigation */}
+      <div className="relative">
+        {/* Back Button - Top Left */}
+        {/* <div className="absolute top-4 left-4 z-10">
+          <button
+            onClick={() => {
+              const searchParams = new URLSearchParams(window.location.search);
+              const cid = searchParams.get('collection_id');
+              if (cid) {
+                router.push(`/loyalties/${cid}`);
+              } else {
+                router.push('/loyalties');
+              }
+            }}
+            className="text-white hover:text-gray-300 font-semibold transition-colors duration-300 flex items-center gap-2"
+          >
+            ← Back
+          </button>
+        </div> */}
+        
+        {/* Wallet Connect - Top Right */}
+        <div className="absolute top-4 right-4 z-10">
+          <ConnectButton />
+        </div>
       </div>
 
       {/* Debug Button - Top Right */}
@@ -284,9 +293,9 @@ const QuestDetailPage = () => {
                 <div className="flex items-center justify-between">
                   {/* Left side - Quest info */}
                   <div className="flex items-center space-x-4">
-                    <h3 className="text-base font-bold text-white">
+                    {/* <h3 className="text-base font-bold text-white">
                       #{quest.quest_code}
-                    </h3>
+                    </h3> */}
                     <div className="flex flex-col">
                       <h3 className="text-base font-bold text-white">
                         {quest.title}
@@ -304,22 +313,16 @@ const QuestDetailPage = () => {
                         ✓ Completed
                       </span>
                     ) : activeQuestCode && quest.quest_code === activeQuestCode ? (
-                      !currentAccount?.address && !zkAddress ? (
-                        <div className="scale-75 origin-center">
-                          <ConnectButton />
-                        </div>
-                      ) : (
-                        <button
-                          onClick={() => handleClaimQuest(quest.id)}
-                          disabled={claimingQuestId === quest.id}
-                          className="text-sm text-white bg-purple-600/80 hover:bg-purple-500/90 px-4 py-1 rounded border border-purple-500 cursor-pointer transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          {claimingQuestId === quest.id ? 'Claiming...' : 'Claim'}
-                        </button>
-                      )
+                      <button
+                        onClick={() => handleClaimQuest(quest.id)}
+                        disabled={claimingQuestId === quest.id}
+                                                  className="text-sm text-white bg-purple-600/80 hover:bg-purple-500/90 px-4 py-1 rounded border border-purple-500 cursor-pointer transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {claimingQuestId === quest.id ? 'Claiming...' : 'Claim'}
+                      </button>
                     ) : (
                       <span className="text-sm text-gray-500 bg-gray-800/40 px-4 py-1 rounded border border-gray-700">
-                        Complete other quests first
+                        Complete other quests first 
                       </span>
                     )}
                   </div>
@@ -349,27 +352,40 @@ const QuestDetailPage = () => {
                     toast.error("Complete all quests to claim the NFT");
                     return;
                   }
-                  if (!currentAccount?.address) {
-                    toast.error("Please connect your wallet to claim the NFT");
+                  if (!currentAccount?.address && !zkAddress) {
+                    toast.error("Please connect your wallet to claim the NFT", {
+                      duration: 5000,
+                      style: {
+                        background: '#1f2937',
+                        color: '#fff',
+                        border: '1px solid #374151',
+                      },
+                    });
                     return;
                   }
 
                   setClaiming(true);
                   try {
+                    const walletAddress = currentAccount?.address || zkAddress;
                     const nftData = {
                       collection_id: "0x79e4f927919068602bae38387132f8c0dd52dc3207098355ece9e9ba61eb2290",
                       name: "NS Daily",
                       description: "Complete the tasks for the day to claim this reward.",
                       image_url: "https://client-uploads.nyc3.digitaloceanspaces.com/images/3b1daaad-c7dc-4884-a78b-739a3ce3dfaa/2025-08-28T12-25-58-895Z-38bc0eae.png",
                       attributes: ["quest_reward", "daily_completion", "loyalty"],
-                      recipient: currentAccount.address,
+                      recipient: walletAddress!,
                     };
                     
                     const response = await axiosInstance.post("/platform/sui/mint-nft", nftData);
                     
                     if (response.data.success) {
                       // Store NFT data and show modal
-                      setMintedNftData(nftData);
+                      setMintedNftData({
+                        name: nftData.name,
+                        description: nftData.description,
+                        image_url: nftData.image_url,
+                        recipient: nftData.recipient
+                      });
                       setNftMinted(true);
                       
                       // Save to localStorage for global state across pages
@@ -448,6 +464,22 @@ const QuestDetailPage = () => {
               className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
             >
               ✕
+            </button>
+
+            {/* Profile Navigation Arrow */}
+            <button
+              onClick={() => {
+                const userAddress = currentAccount?.address || zkAddress;
+                if (userAddress) {
+                  router.push(`/profile/${userAddress}`);
+                  setShowNftModal(false);
+                }
+              }}
+              className="absolute top-4 right-16 text-gray-400 hover:text-blue-400 transition-colors flex flex-row items-center gap-1"
+              title="View in Profile"
+            >
+              <span className="text-xs">View in Profile</span>
+              <ArrowRight size={16} />
             </button>
 
             {/* Content */}

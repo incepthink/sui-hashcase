@@ -12,6 +12,8 @@ import { useGlobalAppStore } from "@/store/globalAppStore";
 import ConnectButton from "./ConnectButton";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
+import Modal from "./Modal";
+import ZkLogin from "./ZkLogin";
 
 const workSans = Work_Sans({ subsets: ["latin"] });
 
@@ -22,6 +24,7 @@ export const Navbar = () => {
 
   const [isOpen, setOpen] = useState<boolean>(false);
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
+  const [showZkModal, setShowZkModal] = useState(false);
 
   const user_address = currentAccount?.address || address;
 
@@ -42,10 +45,19 @@ export const Navbar = () => {
       <div className="max-w-7xl mx-auto px-4 md:px-8">
         <div className="flex items-center h-16">
           {/* Logo */}
-          <div className="flex items-center w-1/3">
+          <div className="flex flex-col items-center w-1/3">
             <Link href={"/"} className="flex items-center">
               <HashcaseText />
             </Link>
+
+            <div className="md:hidden flex  justify-center ">
+            <button
+              onClick={() => setShowZkModal(true)}
+              className="bg-white/10 backdrop-blur-md border border-white/20 hover:bg-white/20 transition-all duration-300 ml-2 px-4 py-1 rounded-full text-white font-medium text-xs"
+            >
+              Connect with Google
+            </button>
+          </div>
           </div>
 
           {/* Desktop Navigation - Centered */}
@@ -78,9 +90,24 @@ export const Navbar = () => {
             </div>
           </div>
 
-          {/* Connect / Controls - right aligned */}
+          {/* Mobile Center ZK Login Button */}
+          <div className="md:hidden flex justify-center w-1/3">
+            <button
+              onClick={() => {
+                console.log("Mobile ZK login button clicked");
+                setShowZkModal(true);
+              }}
+              className="bg-white/10 backdrop-blur-md border border-white/20 hover:bg-white/20 transition-all duration-300 px-4 py-2 rounded-full text-white font-medium text-sm"
+            >
+              Connect with Google
+            </button>
+          </div>
+
+          {/* Desktop Connect / Controls - right aligned */}
           <div className="ml-auto flex items-center gap-3">
-            <ConnectButton />
+            <div className="hidden md:block">
+              <ConnectButton />
+            </div>
             
             {/* Mobile Menu Button */}
             <div className="md:hidden ml-2">
@@ -114,13 +141,6 @@ export const Navbar = () => {
             >
               Collections
             </Link>
-            <Link 
-              className="w-full px-4 py-3 hover:text-white/10 transition-colors text-white font-medium" 
-              href={"/loyalties"}
-              onClick={() => setOpen(false)}
-            >
-              Loyalties
-            </Link>
             <button
               onClick={() => {
                 if (user_address) {
@@ -134,14 +154,18 @@ export const Navbar = () => {
             >
               Profile
             </button>
-            <div className="border-t border-white/10 mt-4 pt-4">
-              <div className="flex justify-center">
-                <ConnectButton />
-              </div>
-            </div>
           </div>
         </div>
       )}
+
+      {/* ZK Login Modal */}
+      <Modal 
+        onClose={() => setShowZkModal(false)} 
+        context="ZK Login"
+        openModal={showZkModal}
+      >
+        <ZkLogin setOpenModal={setShowZkModal} />
+      </Modal>
     </div>
   );
 };

@@ -6,10 +6,12 @@ import suiBg from "../assets/images/sui-bg.png";
 import Link from "next/link";
 import { Sparkles, Star, Users, Zap, ArrowRight } from "lucide-react";
 
+
 const workSans = Work_Sans({ subsets: ["latin"] });
 
 export const Hero = () => {
   return (
+    <>
     <div className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Background image */}
       <div className="absolute inset-0 -z-20">
@@ -97,6 +99,8 @@ export const Hero = () => {
             </Link>
           </div>
 
+
+
           {/* Stats Section */}
 
         </div>
@@ -109,5 +113,6 @@ export const Hero = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };

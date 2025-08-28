@@ -58,6 +58,10 @@ const ZkLogin = ({ setOpenModal }: ZkLoginProps) => {
     const protocol = window.location.protocol;
     const host = window.location.host;
 
+    // Store current page URL for redirect after authentication
+    const currentPath = window.location.pathname + window.location.search;
+    localStorage.setItem('zklogin_redirect_url', currentPath);
+
     const redirectUrl = `${protocol}//${host}/login`;
 
     enokiFlow

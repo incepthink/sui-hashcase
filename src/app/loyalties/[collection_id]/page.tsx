@@ -146,22 +146,25 @@ const CollectionLoyaltiesPage = () => {
     }
   };
 
-  // Check if wallet is connected and show toast notification
-  useEffect(() => {
-    if (!isWalletConnected) {
-      toast.error("Please connect your wallet to view your loyalty score", {
-        duration: 5000,
-        position: "top-center",
-        style: {
-          background: '#1f2937',
-          color: '#fff',
-          border: '1px solid #374151',
-        },
-      });
-    }
-  }, [isWalletConnected]);
 
-  if (!mounted || isLoading) {
+
+  // Show wallet not connected message if wallet is not connected
+  if (!mounted || !isWalletConnected) {
+    return (
+      <div className="w-full min-h-[70vh] flex flex-col items-center justify-center bg-gradient-to-br from-[#000212] via-[#03082a] to-[#0a0e3a] px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+        {/* Glowing background elements */}
+        <div className="absolute top-0 left-0 w-1/3 h-full bg-gradient-to-r from-blue-900/20 to-transparent -skew-x-12 -translate-x-1/3"></div>
+        <div className="absolute bottom-0 right-0 w-1/3 h-full bg-gradient-to-l from-purple-900/20 to-transparent skew-x-12 translate-x-1/3"></div>
+        
+        <div className="relative z-10 text-center">
+          <p className="text-sm text-white/80">Wallet not connected</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show loading spinner only when wallet is connected but data is loading
+  if (isLoading) {
     return (
       <div className="w-full min-h-[70vh] flex flex-col items-center justify-center bg-gradient-to-br from-[#000212] via-[#03082a] to-[#0a0e3a] px-4 sm:px-6 lg:px-8 relative overflow-hidden">
         {/* Glowing background elements */}

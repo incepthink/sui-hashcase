@@ -8,6 +8,7 @@ import { useGlobalAppStore } from "@/store/globalAppStore";
 import { useCurrentAccount } from "@mysten/dapp-kit";
 import { useZkLogin } from "@mysten/enoki/react";
 import ConnectButton from "@/components/ConnectButton";
+import { ArrowRight } from "lucide-react";
 
 interface Quest {
   id: number;
@@ -46,6 +47,7 @@ const BackButton = () => {
 };
 
 const QuestsPage = () => {
+  const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [quests, setQuests] = useState<Quest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -146,16 +148,24 @@ const QuestsPage = () => {
 
   return (
     <div className="min-h-screen bg-black">
-      {/* Back Button - Top Left */}
-      <Suspense fallback={
-        <div className="absolute top-4 left-4 z-10">
-          <button className="text-white hover:text-gray-300 font-semibold transition-colors duration-300 flex items-center gap-2">
-            ← Back
-          </button>
+      {/* Top Navigation */}
+      <div className="relative">
+        {/* Back Button - Top Left */}
+        {/* <Suspense fallback={
+          <div className="absolute top-4 left-4 z-10">
+            <button className="text-white hover:text-gray-300 font-semibold transition-colors duration-300 flex items-center gap-2">
+              ← Back
+            </button>
+          </div>
+        }>
+          <BackButton />
+        </Suspense> */}
+        
+        {/* Wallet Connect - Top Right */}
+        <div className="absolute top-4 right-4 z-10">
+          <ConnectButton />
         </div>
-      }>
-        <BackButton />
-      </Suspense>
+      </div>
 
       {/* NFT Reward Section - Above Header */}
       <div className="pt-32 pb-6">
@@ -217,9 +227,9 @@ const QuestsPage = () => {
                 <div className="flex items-center justify-between">
                   {/* Left side - Quest info */}
                   <div className="flex items-center space-x-4">
-                   <h3 className="text-base font-bold text-white">
+                   {/* <h3 className="text-base font-bold text-white">
                       #{quest.quest_code}
-                      </h3>
+                      </h3> */}
                    <div className="flex flex-col">
                  
                       <h3 className="text-base font-bold text-white">
@@ -259,12 +269,6 @@ const QuestsPage = () => {
           {/* Claim NFT Button */}
           {quests.length > 0 && (
             <div className="text-center mt-8">
-              {!currentAccount?.address && !zkAddress && completionPercentage === 100 ? (
-                <div className="flex flex-col items-center gap-4">
-                  <p className="text-white text-lg">Connect your wallet to claim NFT</p>
-                  <ConnectButton />
-                </div>
-              ) : (
                 <button
                 onClick={async () => {
                   if (nftMinted) {
@@ -354,7 +358,6 @@ const QuestsPage = () => {
                     : `Complete ${totalQuests - completedQuests} more quests to Claim NFT`
                 }
               </button>
-              )}
             </div>
           )}
         </div>
@@ -387,6 +390,22 @@ const QuestsPage = () => {
               className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
             >
               ✕
+            </button>
+
+            {/* Profile Navigation Arrow */}
+            <button
+              onClick={() => {
+                const userAddress = currentAccount?.address || zkAddress;
+                if (userAddress) {
+                  router.push(`/profile/${userAddress}`);
+                  setShowNftModal(false);
+                }
+              }}
+              className="absolute top-4 right-16 text-gray-400 hover:text-blue-400 transition-colors flex flex-row items-center gap-1"
+              title="View in Profile"
+            >
+              <span className="text-xs">View in Profile</span>
+              <ArrowRight size={16} />
             </button>
 
             {/* Content */}

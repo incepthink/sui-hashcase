@@ -4,18 +4,14 @@ import Features from "@/components/Features";
 import Footer from "@/components/Footer";
 import ExploreSection from "@/components/ExploreSection";
 import "@mysten/dapp-kit/dist/index.css";
-import { useContext, useState } from "react";
-import Modal from "@/components/Modal";
-import ZkLogin from "@/components/ZkLogin";
+import { useState } from "react";
 import { ConnectModal, useCurrentAccount } from "@mysten/dapp-kit";
 import Collectable from "@/components/Collectable";
 import Logo from "../assets/icons/sui-sui-logo 1.png";
 import SuietLogo from "../assets/icons/suietlogo.png";
 import Image from "next/image";
-import { AppContext } from "@/context/AppContext";
 
 export default function Home() {
-  const { openModal, setOpenModal } = useContext(AppContext);
   const [showModal, setShowModal] = useState(false);
   const currentAccount = useCurrentAccount();
   const [open, setOpen] = useState(false);
