@@ -338,11 +338,13 @@ const QuestsPage = () => {
                     setClaiming(false);
                   }
                 }}
-                disabled={claiming}
+                disabled={claiming || (!currentAccount?.address && !zkAddress)}
                 className={`
                   px-8 py-2 rounded-lg font-semibold text-lg transition-all duration-300 transform
                   ${nftMinted
                     ? 'bg-white text-black cursor-default'
+                    : (!currentAccount?.address && !zkAddress)
+                    ? 'bg-gray-600 text-gray-300 cursor-not-allowed opacity-60'
                     : completionPercentage === 100 && !claiming
                     ? 'bg-white text-black hover:bg-white/80 transition duration-300  shadow-lg hover:shadow-xl  cursor-pointer' 
                     : 'bg-gray-700 text-gray-400 cursor-not-allowed opacity-50'
@@ -353,6 +355,8 @@ const QuestsPage = () => {
                   ? ' NFT Minted'
                   : claiming 
                   ? ' Minting NFT...' 
+                  : (!currentAccount?.address && !zkAddress)
+                    ? 'Connect Wallet to Claim NFT'
                   : completionPercentage === 100 
                     ? 'Claim NFT' 
                     : `Complete ${totalQuests - completedQuests} more quests to Claim NFT`

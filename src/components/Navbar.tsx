@@ -12,8 +12,7 @@ import { useGlobalAppStore } from "@/store/globalAppStore";
 import ConnectButton from "./ConnectButton";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import Modal from "./Modal";
-import ZkLogin from "./ZkLogin";
+// Modal and ZkLogin now handled globally
 
 const workSans = Work_Sans({ subsets: ["latin"] });
 
@@ -24,7 +23,6 @@ export const Navbar = () => {
 
   const [isOpen, setOpen] = useState<boolean>(false);
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
-  const [showZkModal, setShowZkModal] = useState(false);
 
   const user_address = currentAccount?.address || address;
 
@@ -49,15 +47,9 @@ export const Navbar = () => {
             <Link href={"/"} className="flex items-center">
               <HashcaseText />
             </Link>
+           
 
-            <div className="md:hidden flex  justify-center ">
-            <button
-              onClick={() => setShowZkModal(true)}
-              className="bg-white/10 backdrop-blur-md border border-white/20 hover:bg-white/20 transition-all duration-300 ml-2 px-4 py-1 rounded-full text-white font-medium text-xs"
-            >
-              Connect with Google
-            </button>
-          </div>
+            {/* Old mobile connect button removed - now using centered ConnectButton */}
           </div>
 
           {/* Desktop Navigation - Centered */}
@@ -90,27 +82,17 @@ export const Navbar = () => {
             </div>
           </div>
 
-          {/* Mobile Center ZK Login Button */}
-          <div className="md:hidden flex justify-center w-1/3">
-            <button
-              onClick={() => {
-                console.log("Mobile ZK login button clicked");
-                setShowZkModal(true);
-              }}
-              className="bg-white/10 backdrop-blur-md border border-white/20 hover:bg-white/20 transition-all duration-300 px-4 py-2 rounded-full text-white font-medium text-sm"
-            >
-              Connect with Google
-            </button>
-          </div>
-
+          {/* Center Connect/Disconnect Button - Mobile */}
+          
           {/* Desktop Connect / Controls - right aligned */}
           <div className="ml-auto flex items-center gap-3">
+            {/* Desktop only - hidden on mobile */}
             <div className="hidden md:block">
               <ConnectButton />
             </div>
             
             {/* Mobile Menu Button */}
-            <div className="md:hidden ml-2">
+            <div className="md:hidden">
               <Hamburger
                 toggled={isOpen}
                 toggle={setOpen}
@@ -158,14 +140,12 @@ export const Navbar = () => {
         </div>
       )}
 
+<div className="md:hidden flex justify-center w-1/3 mt-4 ml-20">
+            <ConnectButton />
+          </div>
+
       {/* ZK Login Modal */}
-      <Modal 
-        onClose={() => setShowZkModal(false)} 
-        context="ZK Login"
-        openModal={showZkModal}
-      >
-        <ZkLogin setOpenModal={setShowZkModal} />
-      </Modal>
+      {/* ZK Login Modal is now handled globally via WalletConnectionModal */}
     </div>
   );
 };

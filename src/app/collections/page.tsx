@@ -186,6 +186,14 @@ const CollectionsPage: React.FC = () => {
             const collectionDescription = collection.description || 'No description available';
             const collectionId = collection.id || collection.collection_id;
             
+            // Use specific image for NS Daily collection
+            const isNSDaily = collectionName.toLowerCase().includes('ns daily') || 
+                             collectionName.toLowerCase().includes('network school') ||
+                             contractAddress === newCollection;
+            const collectionImage = isNSDaily 
+              ? "https://client-uploads.nyc3.digitaloceanspaces.com/images/3b1daaad-c7dc-4884-a78b-739a3ce3dfaa/2025-08-28T12-25-58-895Z-38bc0eae.png"
+              : backgroundImageHeroSection;
+            
             return (
               <Link
                 key={collectionId}
@@ -196,7 +204,7 @@ const CollectionsPage: React.FC = () => {
                   {/* Image Section */}
                   <div className="relative w-full aspect-square overflow-hidden">
                     <Image
-                      src={backgroundImageHeroSection}
+                      src={collectionImage}
                       alt={collectionName}
                       fill
                       className="object-cover transition-transform duration-300 group-hover:scale-110"

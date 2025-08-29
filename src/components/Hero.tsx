@@ -4,12 +4,38 @@ import { Work_Sans } from "next/font/google";
 import ArrowB from "../assets/images/arrowB.svg";
 import suiBg from "../assets/images/sui-bg.png";
 import Link from "next/link";
-import { Sparkles, Star, Users, Zap, ArrowRight } from "lucide-react";
+import { Sparkles, Star, Users, Zap, ArrowRight, Wallet } from "lucide-react";
+import { useCurrentAccount } from "@mysten/dapp-kit";
+import { useZkLogin } from "@mysten/enoki/react";
+import { useGlobalAppStore } from "@/store/globalAppStore";
+import { useState, useEffect } from "react";
 
 
 const workSans = Work_Sans({ subsets: ["latin"] });
 
 export const Hero = () => {
+  const currentAccount = useCurrentAccount();
+  const { address: zkAddress } = useZkLogin();
+  const { isUserVerified } = useGlobalAppStore();
+  const [walletAddress, setWalletAddress] = useState<string | null>(null);
+
+  const user_address = currentAccount?.address || zkAddress;
+  const isWalletConnected = !!(user_address && isUserVerified);
+
+  useEffect(() => {
+    if (isUserVerified && currentAccount?.address) {
+      setWalletAddress(
+        currentAccount.address.slice(0, 10) +
+          "..." +
+          currentAccount.address.slice(-8)
+      );
+    } else if (isUserVerified && zkAddress) {
+      setWalletAddress(zkAddress.slice(0, 10) + "..." + zkAddress.slice(-8));
+    } else {
+      setWalletAddress(null);
+    }
+  }, [zkAddress, currentAccount, isUserVerified]);
+
   return (
     <>
     <div className="relative min-h-screen flex items-center justify-center overflow-hidden">
@@ -78,26 +104,59 @@ export const Hero = () => {
             </div>
           </div>
 
-          {/* Enhanced CTA Section */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
-            <Link 
-              href="/mint" 
-              className="group inline-flex items-center gap-3 px-8 py-4 rounded-2xl font-bold text-black bg-gradient-to-r from-[#4DA2FF] to-[#7ab8ff] hover:from-[#3a8fef] hover:to-[#6aa7f0] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#4DA2FF]/30 transition-all duration-300 shadow-[0_20px_40px_-10px_rgba(77,162,255,0.4)] hover:shadow-[0_25px_50px_-15px_rgba(77,162,255,0.5)]"
-            >
-              <Zap className="w-5 h-5" />
-              <span>Claim Free NFT Now</span>
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-            </Link>
-            
-            <Link 
-              href="/collections" 
-              className="group inline-flex items-center gap-3 px-8 py-4 rounded-2xl font-semibold text-white bg-white/10 backdrop-blur-md border border-white/20 hover:bg-white/20 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/30 transition-all duration-300"
-            >
-              <Users className="w-5 h-5" />
-              <span>Explore Collections</span>
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-            </Link>
-          </div>
+          {/* Enhanced CTA Section - Connected State */}
+          {isWalletConnected && walletAddress ? (
+            <div className="mb-16">
+              {/* Connected State */}
+              <div className="flex flex-col items-center justify-center gap-6">
+                <div className="flex items-center gap-3 px-6 py-3 rounded-2xl bg-green-500/20 border border-green-500/30 text-green-400">
+                  <Wallet className="w-5 h-5" />
+                  <span className="font-semibold">Connected: {walletAddress}</span>
+                </div>
+                
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                  <Link 
+                    href="/quests" 
+                    className="group inline-flex items-center gap-3 px-8 py-4 rounded-2xl font-bold text-black bg-gradient-to-r from-[#4DA2FF] to-[#7ab8ff] hover:from-[#3a8fef] hover:to-[#6aa7f0] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#4DA2FF]/30 transition-all duration-300 shadow-[0_20px_40px_-10px_rgba(77,162,255,0.4)] hover:shadow-[0_25px_50px_-15px_rgba(77,162,255,0.5)]"
+                  >
+                    <Zap className="w-5 h-5" />
+                    <span>Start Quests</span>
+                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                  </Link>
+                  
+                  <Link 
+                    href="/collections" 
+                    className="group inline-flex items-center gap-3 px-8 py-4 rounded-2xl font-semibold text-white bg-white/10 backdrop-blur-md border border-white/20 hover:bg-white/20 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/30 transition-all duration-300"
+                  >
+                    <Users className="w-5 h-5" />
+                    <span>Explore Collections</span>
+                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                  </Link>
+                </div>
+              </div>
+            </div>
+          ) : (
+            /* Default State - Not Connected */
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
+              <Link 
+                href="/mint" 
+                className="group inline-flex items-center gap-3 px-8 py-4 rounded-2xl font-bold text-black bg-gradient-to-r from-[#4DA2FF] to-[#7ab8ff] hover:from-[#3a8fef] hover:to-[#6aa7f0] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#4DA2FF]/30 transition-all duration-300 shadow-[0_20px_40px_-10px_rgba(77,162,255,0.4)] hover:shadow-[0_25px_50px_-15px_rgba(77,162,255,0.5)]"
+              >
+                <Zap className="w-5 h-5" />
+                <span>Claim Free NFT Now</span>
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </Link>
+              
+              <Link 
+                href="/collections" 
+                className="group inline-flex items-center gap-3 px-8 py-4 rounded-2xl font-semibold text-white bg-white/10 backdrop-blur-md border border-white/20 hover:bg-white/20 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/30 transition-all duration-300"
+              >
+                <Users className="w-5 h-5" />
+                <span>Explore Collections</span>
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </Link>
+            </div>
+          )}
 
 
 

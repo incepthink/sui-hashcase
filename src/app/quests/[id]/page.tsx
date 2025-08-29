@@ -63,6 +63,63 @@ const QuestDetailPage = () => {
 
   useEffect(() => setMounted(true), []);
 
+  // Real-time wallet state tracking by checking navbar button state
+  const [isWalletConnected, setIsWalletConnected] = useState(false);
+  
+  useEffect(() => {
+    if (!mounted) return;
+    
+    const checkWalletState = () => {
+      // Check for wallet state by looking at the entire page text content
+      const bodyText = document.body.textContent || '';
+      
+      // Look for "Connect" vs "Disconnect" in the top-right area
+      const topRightButtons = Array.from(document.querySelectorAll('button')).filter(button => {
+        const rect = button.getBoundingClientRect();
+        return rect.right > window.innerWidth * 0.7; // Right 30% of screen
+      });
+      
+      const hasConnectButton = topRightButtons.some(btn => 
+        btn.textContent?.includes('Connect') && !btn.textContent?.includes('Disconnect')
+      );
+      const hasDisconnectButton = topRightButtons.some(btn => 
+        btn.textContent?.includes('Disconnect')
+      );
+      
+      // Also check for wallet address patterns (0x followed by hex)
+      const hasWalletAddress = /0x[a-fA-F0-9]{6,}/.test(bodyText);
+      
+      const walletConnectedByDOM = (hasDisconnectButton || hasWalletAddress) && !hasConnectButton;
+      
+      console.log('🔍 DOM wallet state check:', {
+        hasConnectButton,
+        hasDisconnectButton,
+        hasWalletAddress,
+        walletConnectedByDOM,
+        currentIsWalletConnected: isWalletConnected,
+        topRightButtonsText: topRightButtons.map(btn => btn.textContent).join(', ')
+      });
+      
+      if (walletConnectedByDOM !== isWalletConnected) {
+        console.log('🚨 DOM detected wallet change:', walletConnectedByDOM);
+        setIsWalletConnected(walletConnectedByDOM);
+      }
+    };
+
+    // Initial check
+    checkWalletState();
+    
+    // Poll every 500ms to check DOM state
+    const interval = setInterval(checkWalletState, 500);
+    
+    return () => clearInterval(interval);
+  }, [mounted, isWalletConnected]);
+
+  // Additional effect to force re-render when wallet state changes
+  useEffect(() => {
+    console.log('🔄 isWalletConnected changed to:', isWalletConnected);
+  }, [isWalletConnected]);
+
 
 
   const completedQuests = quests.filter(quest => quest.is_completed).length;
@@ -95,9 +152,10 @@ const QuestDetailPage = () => {
         owner_id: 2
       });
       
-      const response = await axiosInstance.post("/platform/quests/complete", {
+      const response = await axiosInstance.post("/platform/quest/complete", {
         quest_id: questId,
         wallet_address: walletAddress,
+        user_id: user?.id || 1,
         owner_id: 35  // Match the owner_id used for fetching quests (production)
       });
 
@@ -263,6 +321,28 @@ const QuestDetailPage = () => {
 
           {/* Title */}
           <div className="text-center mb-6">
+            {/* Wallet connection message and ZK Login button */}
+            {mounted && !isWalletConnected && (
+              <div className="mb-6">
+                <p className="text-xl text-white mb-4">
+                  * Wallet not connected
+                </p>
+                {/* Mobile ZK Login Button */}
+                <div className="md:hidden flex justify-center">
+                  <button
+                    onClick={() => {
+                      // Store current page URL for redirect after login
+                      localStorage.setItem('zklogin_redirect_url', window.location.pathname + window.location.search);
+                      // Trigger ZK login
+                      window.location.href = `${process.env.NEXT_PUBLIC_ENOKI_API_URL}/auth?client_id=${process.env.NEXT_PUBLIC_ENOKI_CLIENT_ID}&redirect_uri=${encodeURIComponent(window.location.origin + '/login')}&response_type=code&scope=openid`;
+                    }}
+                    className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-blue-500/20 hover:-translate-y-0.5"
+                  >
+                    Connect with Google
+                  </button>
+                </div>
+              </div>
+            )}
             <h1 className="text-2xl font-bold text-white mb-2">
               Available Quests
             </h1>
@@ -314,11 +394,31 @@ const QuestDetailPage = () => {
                       </span>
                     ) : activeQuestCode && quest.quest_code === activeQuestCode ? (
                       <button
-                        onClick={() => handleClaimQuest(quest.id)}
-                        disabled={claimingQuestId === quest.id}
-                                                  className="text-sm text-white bg-purple-600/80 hover:bg-purple-500/90 px-4 py-1 rounded border border-purple-500 cursor-pointer transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                        onClick={() => {
+                          console.log('🎯 Quest button clicked:', { 
+                            questId: quest.id, 
+                            isWalletConnected, 
+                            currentAccount: currentAccount?.address,
+                            zkAddress 
+                          });
+                          handleClaimQuest(quest.id);
+                        }}
+                        disabled={claimingQuestId === quest.id || !isWalletConnected}
+                        className={`text-sm px-4 py-1 rounded border transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
+                          !isWalletConnected
+                            ? 'text-gray-300 bg-gray-600/60 border-gray-500 cursor-not-allowed'
+                            : 'text-white bg-purple-600/80 hover:bg-purple-500/90 border-purple-500 cursor-pointer'
+                        }`}
                       >
-                        {claimingQuestId === quest.id ? 'Claiming...' : 'Claim'}
+                        {(() => {
+                          const buttonText = claimingQuestId === quest.id 
+                            ? 'Claiming...' 
+                            : !isWalletConnected 
+                              ? 'Connect Wallet' 
+                              : 'Claim';
+                          console.log('🔘 Button text for quest', quest.quest_code, ':', buttonText, '| isWalletConnected:', isWalletConnected);
+                          return buttonText;
+                        })()}
                       </button>
                     ) : (
                       <span className="text-sm text-gray-500 bg-gray-800/40 px-4 py-1 rounded border border-gray-700">
@@ -412,11 +512,13 @@ const QuestDetailPage = () => {
                     setClaiming(false);
                   }
                 }}
-                disabled={claiming}
+                disabled={claiming || !isWalletConnected}
                 className={`
                     px-8 py-2 rounded-lg font-semibold text-lg transition-all duration-300 transform
                     ${nftMinted
                       ? 'bg-white text-black cursor-default'
+                      : !isWalletConnected
+                      ? 'bg-gray-600 text-gray-300 cursor-not-allowed opacity-60'
                       : completionPercentage === 100 && !claiming
                       ? 'bg-white text-black shadow-lg hover:shadow-xl cursor-pointer' 
                       : 'bg-gray-700 text-gray-400 cursor-not-allowed opacity-50'
@@ -427,6 +529,8 @@ const QuestDetailPage = () => {
                     ? ' NFT Minted'
                     : claiming 
                     ? ' Minting NFT...' 
+                    : !isWalletConnected
+                      ? 'Connect Wallet to Claim NFT'
                     : completionPercentage === 100 
                       ? 'Claim NFT' 
                       : `Complete ${totalQuests - completedQuests} more quests to Claim NFT`
