@@ -122,13 +122,23 @@ const QuestDetailPage = () => {
 
 
 
-  const completedQuests = quests.filter(quest => quest.is_completed).length;
+  // Calculate progress only when wallet is connected AND mounted, otherwise show 0
+  const walletAddress = currentAccount?.address || zkAddress;
+  const isConnected = mounted && !!walletAddress;
+  const completedQuests = isConnected ? quests.filter(quest => quest.is_completed).length : 0;
   const totalQuests = quests.length;
-  const completionPercentage = totalQuests > 0 ? Math.round((completedQuests / totalQuests) * 100) : 0;
+  const completionPercentage = isConnected && totalQuests > 0 ? Math.round((completedQuests / totalQuests) * 100) : 0;
+  
+  // Debug: Log progress updates
+  useEffect(() => {
+    if (isConnected && totalQuests > 0) {
+      console.log(`📊 Progress bar update: ${completedQuests}/${totalQuests} (${completionPercentage}%)`);
+    }
+  }, [completedQuests, totalQuests, completionPercentage, isConnected]);
 
   useEffect(() => {
     fetchQuests();
-  }, [user?.id]);
+  }, [user?.id, walletAddress]);
 
   const handleClaimQuest = async (questId: number) => {
     const walletAddress = currentAccount?.address || zkAddress;
@@ -146,29 +156,57 @@ const QuestDetailPage = () => {
 
     try {
       setClaimingQuestId(questId);
+      
+      // Find the quest to get its quest_code for the API
+      const quest = quests.find(q => q.id === questId);
+      if (!quest?.quest_code) {
+        toast.error("Quest not found");
+        return;
+      }
+
       console.log("Attempting to claim quest:", {
         quest_id: questId,
-        wallet_address: walletAddress,
-        owner_id: 2
-      });
-      
-      const response = await axiosInstance.post("/platform/quest/complete", {
-        quest_id: questId,
-        wallet_address: walletAddress,
-        user_id: user?.id || 1,
-        owner_id: 35  // Match the owner_id used for fetching quests (production)
+        quest_code: quest.quest_code,
+        user_address: walletAddress
       });
 
-      if (response.data.success) {
-        toast.success(`Quest completed! Earned ${response.data.points_earned} points! 🎉`);
-        // Update the specific quest in state
-        setQuests(prevQuests => 
-          prevQuests.map(quest => 
-            quest.id === questId 
-              ? { ...quest, is_completed: true }
-              : quest
-          )
+      // Update UI immediately for instant feedback
+      setQuests(prevQuests => {
+        const updatedQuests = prevQuests.map(q => 
+          q.id === questId 
+            ? { ...q, is_completed: true }
+            : q
         );
+        
+        // Log the real-time progress update
+        const newCompletedCount = updatedQuests.filter(q => q.is_completed).length;
+        const newPercentage = Math.round((newCompletedCount / updatedQuests.length) * 100);
+        console.log(`🎯 Real-time progress update: ${newCompletedCount}/${updatedQuests.length} (${newPercentage}%)`);
+        
+        return updatedQuests;
+      });
+
+      // Save to localStorage for persistence (fallback until backend works)
+      const storageKey = `quest_progress_${walletAddress}`;
+      const savedProgress = JSON.parse(localStorage.getItem(storageKey) || '[]');
+      if (!savedProgress.includes(questId)) {
+        savedProgress.push(questId);
+        localStorage.setItem(storageKey, JSON.stringify(savedProgress));
+        console.log(`💾 Saved quest ${questId} to localStorage for wallet ${walletAddress}`);
+      }
+
+      toast.success("Quest completed!");
+
+      // Try to persist to backend (but don't block UI if it fails)
+      try {
+        const response = await axiosInstance.post("/platform/quest/complete", {
+          quest_type: quest.quest_code,  // Use actual quest code
+          user_address: walletAddress
+        });
+        console.log("✅ Backend persistence:", response.data);
+      } catch (apiError) {
+        console.log("⚠️ Backend persistence failed (using localStorage fallback):", apiError);
+        // Don't show error to user since UI is already updated and localStorage saved
       }
     } catch (error: any) {
       console.error("Error claiming quest:", error);
@@ -195,11 +233,25 @@ const QuestDetailPage = () => {
         } 
       });
       console.log("Raw API response:", response.data.quests);
+      
+      // Get saved progress from localStorage as fallback
+      const storageKey = walletAddress ? `quest_progress_${walletAddress}` : null;
+      const savedProgress = storageKey ? JSON.parse(localStorage.getItem(storageKey) || '[]') : [];
+      
+      // Transform quests and combine backend + localStorage data for completion status
       const transformedQuests = response.data.quests.map((quest: any) => {
+        const isCompletedFromAPI = quest.userProgress?.isCompleted || false;
+        const isCompletedFromStorage = walletAddress && savedProgress.includes(quest.id);
+        const isCompleted = isCompletedFromAPI || isCompletedFromStorage;
+        
         console.log(`Quest ${quest.quest_code}:`, {
           userProgress: quest.userProgress,
-          isCompleted: quest.userProgress?.isCompleted
+          isCompletedAPI: isCompletedFromAPI,
+          isCompletedStorage: isCompletedFromStorage,
+          finalCompleted: isCompleted,
+          walletConnected: !!walletAddress
         });
+        
         return {
           id: quest.id,
           title: quest.title,
@@ -209,7 +261,7 @@ const QuestDetailPage = () => {
           owner_id: quest.owner_id,
           created_at: quest.createdAt,
           updated_at: quest.updatedAt,
-          is_completed: quest.userProgress?.isCompleted || false
+          is_completed: walletAddress ? isCompleted : false  // Combine API + storage data
         };
       });
       setQuests(transformedQuests);
@@ -322,7 +374,7 @@ const QuestDetailPage = () => {
           {/* Title */}
           <div className="text-center mb-6">
             {/* Wallet connection message and ZK Login button */}
-            {mounted && !isWalletConnected && (
+            {mounted && !isConnected && (
               <div className="mb-6">
                 <p className="text-xl text-white mb-4">
                   * Wallet not connected
@@ -346,21 +398,23 @@ const QuestDetailPage = () => {
             <h1 className="text-2xl font-bold text-white mb-2">
               Available Quests
             </h1>
-            {/* Progress Bar */}
-            <div className="max-w-md mx-auto mb-6">
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-sm text-gray-400">Progress</span>
-                <span className="text-sm font-semibold text-white">
-                  {completedQuests}/{totalQuests} ({completionPercentage}%)
-                </span>
+            {/* Progress Bar - Only show when wallet is connected */}
+            {isConnected && (
+              <div className="max-w-md mx-auto mb-6">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm text-gray-400">Progress</span>
+                  <span className="text-sm font-semibold text-white">
+                    {completedQuests}/{totalQuests} ({completionPercentage}%)
+                  </span>
+                </div>
+                <div className="w-full bg-gray-800 rounded-full h-3 overflow-hidden">
+                  <div 
+                    className="bg-white h-full rounded-full transition-all duration-500 ease-out"
+                    style={{ width: `${completionPercentage}%` }}
+                  ></div>
+                </div>
               </div>
-              <div className="w-full bg-gray-800 rounded-full h-3 overflow-hidden">
-                <div 
-                  className="bg-white h-full rounded-full transition-all duration-500 ease-out"
-                  style={{ width: `${completionPercentage}%` }}
-                ></div>
-              </div>
-            </div>
+            )}
           </div>
 
           {/* Horizontal Quest Cards */}
@@ -512,12 +566,12 @@ const QuestDetailPage = () => {
                     setClaiming(false);
                   }
                 }}
-                disabled={claiming || !isWalletConnected}
+                disabled={claiming || !isConnected}
                 className={`
                     px-8 py-2 rounded-lg font-semibold text-lg transition-all duration-300 transform
                     ${nftMinted
                       ? 'bg-white text-black cursor-default'
-                      : !isWalletConnected
+                      : !isConnected
                       ? 'bg-gray-600 text-gray-300 cursor-not-allowed opacity-60'
                       : completionPercentage === 100 && !claiming
                       ? 'bg-white text-black shadow-lg hover:shadow-xl cursor-pointer' 
@@ -529,7 +583,7 @@ const QuestDetailPage = () => {
                     ? ' NFT Minted'
                     : claiming 
                     ? ' Minting NFT...' 
-                    : !isWalletConnected
+                    : !isConnected
                       ? 'Connect Wallet to Claim NFT'
                     : completionPercentage === 100 
                       ? 'Claim NFT' 

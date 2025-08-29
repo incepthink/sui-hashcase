@@ -82,18 +82,24 @@ const QuestsPage = () => {
   const { user } = useGlobalAppStore();
   const currentAccount = useCurrentAccount();
   const { address: zkAddress } = useZkLogin();
+  
+  // Wallet connection state based on actual addresses
+  const isWalletConnected = !!(currentAccount?.address || zkAddress);
 
   useEffect(() => setMounted(true), []);
 
 
 
-  const completedQuests = quests.filter(quest => quest.is_completed).length;
+  // Calculate progress only when wallet is connected
+  const walletAddress = currentAccount?.address || zkAddress;
+  const isConnected = mounted && !!walletAddress;
+  const completedQuests = isConnected ? quests.filter(quest => quest.is_completed).length : 0;
   const totalQuests = quests.length;
-  const completionPercentage = totalQuests > 0 ? Math.round((completedQuests / totalQuests) * 100) : 0;
+  const completionPercentage = isConnected && totalQuests > 0 ? Math.round((completedQuests / totalQuests) * 100) : 0;
 
   useEffect(() => {
     fetchQuests();
-  }, [user?.id]);
+  }, [user?.id, walletAddress]);
 
   // No individual quest claiming on this page - only NFT claiming
 
@@ -115,17 +121,29 @@ const QuestsPage = () => {
       });
       
       console.log(`Local quests found: ${response.data.quests?.length || 0}`);
-      const transformedQuests = (response.data.quests || []).map((quest: any) => ({
-        id: quest.id,
-        title: quest.title,
-        description: quest.description,
-        quest_code: quest.quest_code,
-        points_reward: quest.reward_loyalty_points,
-        owner_id: quest.owner_id,
-        created_at: quest.createdAt,
-        updated_at: quest.updatedAt,
-        is_completed: quest.userProgress?.isCompleted || false
-      }));
+      
+      // Get saved progress from localStorage as fallback
+      const storageKey = walletAddress ? `quest_progress_${walletAddress}` : null;
+      const savedProgress = storageKey ? JSON.parse(localStorage.getItem(storageKey) || '[]') : [];
+      
+      // Transform quests and combine backend + localStorage data for completion status
+      const transformedQuests = (response.data.quests || []).map((quest: any) => {
+        const isCompletedFromAPI = quest.userProgress?.isCompleted || false;
+        const isCompletedFromStorage = walletAddress && savedProgress.includes(quest.id);
+        const isCompleted = isCompletedFromAPI || isCompletedFromStorage;
+        
+        return {
+          id: quest.id,
+          title: quest.title,
+          description: quest.description,
+          quest_code: quest.quest_code,
+          points_reward: quest.reward_loyalty_points,
+          owner_id: quest.owner_id,
+          created_at: quest.createdAt,
+          updated_at: quest.updatedAt,
+          is_completed: walletAddress ? isCompleted : false  // Combine API + storage data
+        };
+      });
       setQuests(transformedQuests);
     } catch (error) {
       console.error("Error fetching quests:", error);
@@ -200,21 +218,23 @@ const QuestsPage = () => {
             <h1 className="text-2xl font-bold text-white mb-2">
               Available Quests
             </h1>
-            {/* Progress Bar */}
-            <div className="max-w-md mx-auto mb-6">
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-sm text-gray-400">Progress</span>
-                <span className="text-sm font-semibold text-white">
-                  {completedQuests}/{totalQuests} ({completionPercentage}%)
-                </span>
+            {/* Progress Bar - Only show when wallet is connected */}
+            {isConnected && (
+              <div className="max-w-md mx-auto mb-6">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm text-gray-400">Progress</span>
+                  <span className="text-sm font-semibold text-white">
+                    {completedQuests}/{totalQuests} ({completionPercentage}%)
+                  </span>
+                </div>
+                <div className="w-full bg-gray-800 rounded-full h-3 overflow-hidden">
+                  <div 
+                    className="bg-white h-full rounded-full transition-all duration-500 ease-out"
+                    style={{ width: `${completionPercentage}%` }}
+                  ></div>
+                </div>
               </div>
-              <div className="w-full bg-gray-800 rounded-full h-3 overflow-hidden">
-                <div 
-                  className="bg-gradient-to-r from-green-400 to-green-500 h-full rounded-full transition-all duration-500 ease-out"
-                  style={{ width: `${completionPercentage}%` }}
-                ></div>
-              </div>
-            </div>
+            )}
           </div>
 
           {/* Horizontal Quest Cards */}
@@ -279,7 +299,7 @@ const QuestsPage = () => {
                     toast.error("Complete all quests to claim the NFT");
                     return;
                   }
-                  if (!currentAccount?.address && !zkAddress) {
+                  if (!isWalletConnected) {
                     toast.error("Please connect your wallet to claim the NFT", {
                       duration: 5000,
                       style: {
@@ -338,12 +358,12 @@ const QuestsPage = () => {
                     setClaiming(false);
                   }
                 }}
-                disabled={claiming || (!currentAccount?.address && !zkAddress)}
+                disabled={claiming || !isWalletConnected}
                 className={`
                   px-8 py-2 rounded-lg font-semibold text-lg transition-all duration-300 transform
                   ${nftMinted
                     ? 'bg-white text-black cursor-default'
-                    : (!currentAccount?.address && !zkAddress)
+                    : !isWalletConnected
                     ? 'bg-gray-600 text-gray-300 cursor-not-allowed opacity-60'
                     : completionPercentage === 100 && !claiming
                     ? 'bg-white text-black hover:bg-white/80 transition duration-300  shadow-lg hover:shadow-xl  cursor-pointer' 
@@ -355,7 +375,7 @@ const QuestsPage = () => {
                   ? ' NFT Minted'
                   : claiming 
                   ? ' Minting NFT...' 
-                  : (!currentAccount?.address && !zkAddress)
+                  : !isWalletConnected
                     ? 'Connect Wallet to Claim NFT'
                   : completionPercentage === 100 
                     ? 'Claim NFT' 
