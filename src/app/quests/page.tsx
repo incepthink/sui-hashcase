@@ -31,11 +31,21 @@ const BackButton = () => {
     <div className="absolute top-4 left-4 z-10">
       <button
         onClick={() => {
-           const cid = searchParams.get('collection_id')
+           const cid = searchParams.get('collection_id');
            if (cid) {
-             router.push(`/loyalties/${cid}`)
-           } else {
-             router.push('/loyalties')
+             router.push(`/loyalties/${cid}`);
+             return;
+           }
+           // Try default collection 214 if available
+           try {
+             router.push('/loyalties/214');
+           } catch {
+             // Fallbacks
+             if (typeof window !== 'undefined' && window.history.length > 1) {
+               window.history.back();
+             } else {
+               router.push('/loyalties');
+             }
            }
         }}
         className="text-white hover:text-gray-300 font-semibold transition-colors duration-300 flex items-center gap-2"
@@ -194,7 +204,7 @@ const QuestsPage = () => {
       {/* Top Navigation */}
       <div className="relative">
         {/* Back Button - Top Left */}
-        {/* <Suspense fallback={
+        <Suspense fallback={
           <div className="absolute top-4 left-4 z-10">
             <button className="text-white hover:text-gray-300 font-semibold transition-colors duration-300 flex items-center gap-2">
               ← Back
@@ -202,7 +212,7 @@ const QuestsPage = () => {
           </div>
         }>
           <BackButton />
-        </Suspense> */}
+        </Suspense>
         
         {/* Wallet Connect - Top Right */}
         <div className="absolute top-4 right-4 z-[9999]">

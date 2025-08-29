@@ -322,22 +322,30 @@ const QuestDetailPage = () => {
       {/* Top Navigation */}
       <div className="relative">
         {/* Back Button - Top Left */}
-        {/* <div className="absolute top-4 left-4 z-10">
+        <div className="absolute top-4 left-4 z-10">
           <button
             onClick={() => {
-              const searchParams = new URLSearchParams(window.location.search);
-              const cid = searchParams.get('collection_id');
-              if (cid) {
-                router.push(`/loyalties/${cid}`);
-              } else {
-                router.push('/loyalties');
+              try {
+                const searchParams = new URLSearchParams(window.location.search);
+                const cid = searchParams.get('collection_id');
+                if (cid) {
+                  router.push(`/loyalties/${cid}`);
+                  return;
+                }
+                router.push('/loyalties/214');
+              } catch {
+                if (typeof window !== 'undefined' && window.history.length > 1) {
+                  window.history.back();
+                } else {
+                  router.push('/loyalties');
+                }
               }
             }}
             className="text-white hover:text-gray-300 font-semibold transition-colors duration-300 flex items-center gap-2"
           >
             ← Back
           </button>
-        </div> */}
+        </div>
         
         {/* Wallet Connect - Top Right */}
         <div className="absolute top-4 right-4 z-[9999]">
