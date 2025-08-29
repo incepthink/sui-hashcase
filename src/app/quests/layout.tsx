@@ -21,15 +21,13 @@ export default function QuestsLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={clsx(dmSans.className, "antialiased")}>
-        <TanstackProvider>
-          <Toaster />
-          {children}
-          <WalletConnectionModal />
-          <ToastContainer />
-        </TanstackProvider>
-      </body>
-    </html>
+    <div className={clsx(dmSans.className, "antialiased")}>
+      <TanstackProvider>
+        <Toaster />
+        {children}
+        <WalletConnectionModal />
+        <ToastContainer />
+      </TanstackProvider>
+    </div>
   );
 }

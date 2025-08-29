@@ -122,15 +122,9 @@ const QuestsPage = () => {
       
       console.log(`Local quests found: ${response.data.quests?.length || 0}`);
       
-      // Get saved progress from localStorage as fallback
-      const storageKey = walletAddress ? `quest_progress_${walletAddress}` : null;
-      const savedProgress = storageKey ? JSON.parse(localStorage.getItem(storageKey) || '[]') : [];
-      
-      // Transform quests and combine backend + localStorage data for completion status
+      // Transform quests using ONLY backend data for completion status
       const transformedQuests = (response.data.quests || []).map((quest: any) => {
-        const isCompletedFromAPI = quest.userProgress?.isCompleted || false;
-        const isCompletedFromStorage = walletAddress && savedProgress.includes(quest.id);
-        const isCompleted = isCompletedFromAPI || isCompletedFromStorage;
+        const isCompleted = quest.userProgress?.isCompleted || false;
         
         return {
           id: quest.id,
@@ -141,7 +135,7 @@ const QuestsPage = () => {
           owner_id: quest.owner_id,
           created_at: quest.createdAt,
           updated_at: quest.updatedAt,
-          is_completed: walletAddress ? isCompleted : false  // Combine API + storage data
+          is_completed: walletAddress ? isCompleted : false
         };
       });
       setQuests(transformedQuests);
@@ -180,7 +174,7 @@ const QuestsPage = () => {
         </Suspense> */}
         
         {/* Wallet Connect - Top Right */}
-        <div className="absolute top-4 right-4 z-10">
+        <div className="absolute top-4 right-4 z-[9999]">
           <ConnectButton />
         </div>
       </div>
@@ -376,7 +370,7 @@ const QuestsPage = () => {
                   : claiming 
                   ? ' Minting NFT...' 
                   : !isWalletConnected
-                    ? 'Connect Wallet to Claim NFT'
+                    ? 'Login to Claim NFT'
                   : completionPercentage === 100 
                     ? 'Claim NFT' 
                     : `Complete ${totalQuests - completedQuests} more quests to Claim NFT`
