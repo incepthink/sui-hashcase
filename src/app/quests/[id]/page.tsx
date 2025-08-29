@@ -21,7 +21,11 @@ interface Quest {
   updated_at: string;
 }
 
-const QuestDetailPage = () => {
+interface QuestDetailPageProps {
+  allowClaim?: boolean;
+}
+
+const QuestDetailPage = ({ allowClaim = true }: QuestDetailPageProps) => {
   const params = useParams();
   const router = useRouter();
   const activeQuestCode = String(params?.id || "");
@@ -66,7 +70,8 @@ const QuestDetailPage = () => {
   // Cross-tab progress sync: listen for ping and refetch
   useEffect(() => {
     const onStorage = (e: StorageEvent) => {
-      if (e.key === 'quest_progress_ping') {
+      if (e.key === 'quest_progress_ping' && e.newValue) {
+        console.log('🔄 Cross-tab sync triggered:', e.newValue);
         fetchQuests();
       }
     };
@@ -135,6 +140,14 @@ const QuestDetailPage = () => {
     // Refetch quests whenever wallet changes
     fetchQuests();
   }, [user?.id, walletAddress]);
+
+  // Refetch when switching between quest pages
+  useEffect(() => {
+    if (mounted && activeQuestCode) {
+      setLoading(true);
+      fetchQuests();
+    }
+  }, [activeQuestCode, mounted]);
 
   const handleClaimQuest = async (questId: number) => {
     const walletAddress = currentAccount?.address || zkAddress;
@@ -219,8 +232,10 @@ const QuestDetailPage = () => {
         // Notify other tabs to refetch
         try {
           localStorage.setItem('quest_progress_ping', JSON.stringify({ ts: Date.now(), wallet: walletAddress }));
-          // Clean up the key to avoid buildup
-          localStorage.removeItem('quest_progress_ping');
+          // Clean up the key after a delay to ensure other tabs catch it
+          setTimeout(() => {
+            localStorage.removeItem('quest_progress_ping');
+          }, 100);
         } catch {}
       } catch (apiError) {
         console.log("⚠️ Backend persistence failed (using localStorage fallback):", apiError);
@@ -243,7 +258,13 @@ const QuestDetailPage = () => {
       setLoading(true);
       // Use wallet address for quest completion tracking
       const walletAddress = currentAccount?.address || zkAddress;
-      console.log("Fetching quests for wallet:", walletAddress);
+      console.log("🔍 fetchQuests called with wallet:", walletAddress, "mounted:", mounted, "isWalletConnected:", isWalletConnected);
+      
+      if (!walletAddress) {
+        console.log("⚠️ No wallet address, skipping fetch");
+        setQuests([]);
+        return [];
+      }
       
       const response = await axiosInstance.get("/platform/quest/by-owner", { 
         params: { 
@@ -251,7 +272,7 @@ const QuestDetailPage = () => {
           wallet_address: walletAddress
         } 
       });
-      console.log("Raw API response:", response.data.quests);
+      console.log("📡 Raw API response:", response.data.quests);
       
       // Transform quests using ONLY backend data for completion status
       // Merge API completion with fast sessionStorage cache (per-wallet)
@@ -259,6 +280,7 @@ const QuestDetailPage = () => {
       try {
         const sessionKey = walletAddress ? `quest_progress_session_${walletAddress}` : null;
         sessionCompleted = sessionKey ? JSON.parse(sessionStorage.getItem(sessionKey) || '[]') : [];
+        console.log("📦 Session completed quests:", sessionCompleted);
       } catch {}
 
       const transformedQuests = response.data.quests.map((quest: any) => {
@@ -266,8 +288,11 @@ const QuestDetailPage = () => {
         const isCompletedFromSession = sessionCompleted.includes(quest.id);
         const isCompleted = isCompletedFromAPI || isCompletedFromSession;
 
-        console.log(`Quest ${quest.quest_code}:`, {
+        console.log(`🎯 Quest ${quest.quest_code}:`, {
+          id: quest.id,
           userProgress: quest.userProgress,
+          isCompletedFromAPI,
+          isCompletedFromSession,
           finalCompleted: isCompleted,
           walletConnected: !!walletAddress
         });
@@ -284,10 +309,14 @@ const QuestDetailPage = () => {
           is_completed: walletAddress ? isCompleted : false
         };
       });
+      
+      const completedCount = transformedQuests.filter((q: Quest) => q.is_completed).length;
+      console.log(`📊 Final quest state: ${completedCount}/${transformedQuests.length} completed`);
+      
       setQuests(transformedQuests);
       return transformedQuests;
     } catch (error) {
-      console.error("Error fetching quests:", error);
+      console.error("❌ Error fetching quests:", error);
       toast.error("Failed to load quests");
     } finally {
       setLoading(false);
@@ -295,7 +324,7 @@ const QuestDetailPage = () => {
     }
   };
 
-  if (!mounted || initialLoad) {
+  if (!mounted || initialLoad || loading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center">
@@ -483,7 +512,7 @@ const QuestDetailPage = () => {
                       <span className="text-xs text-green-400 bg-green-900/20 px-2 py-1 rounded border border-green-700">
                         ✓ Completed
                       </span>
-                    ) : activeQuestCode && quest.quest_code === activeQuestCode ? (
+                    ) : allowClaim && activeQuestCode && quest.quest_code === activeQuestCode ? (
                       <button
                         onClick={() => {
                           if (!isWalletConnected) {
@@ -513,9 +542,13 @@ const QuestDetailPage = () => {
                           return buttonText;
                         })()}
                       </button>
-                    ) : (
+                    ) : allowClaim ? (
                       <span className="text-sm text-gray-500 bg-gray-800/40 px-4 py-1 rounded border border-gray-700">
                         Complete other quests first 
+                      </span>
+                    ) : (
+                      <span className="text-sm text-gray-400 bg-gray-800/20 px-4 py-1 rounded border border-gray-600">
+                        Not Completed
                       </span>
                     )}
                   </div>
@@ -717,4 +750,5 @@ const QuestDetailPage = () => {
   );
 };
 
+export { QuestDetailPage };
 export default QuestDetailPage;
