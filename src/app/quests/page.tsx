@@ -51,6 +51,7 @@ const QuestsPage = () => {
   const [mounted, setMounted] = useState(false);
   const [quests, setQuests] = useState<Quest[]>([]);
   const [loading, setLoading] = useState(true);
+  const [initialLoad, setInitialLoad] = useState(true);
   const [claiming, setClaiming] = useState(false);
   const [nftMinted, setNftMinted] = useState(false);
 
@@ -87,15 +88,25 @@ const QuestsPage = () => {
   const isWalletConnected = !!(currentAccount?.address || zkAddress);
 
   useEffect(() => setMounted(true), []);
+  // Cross-tab progress sync: listen for ping and refetch
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === 'quest_progress_ping') {
+        fetchQuests();
+      }
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, []);
 
 
 
   // Calculate progress only when wallet is connected
   const walletAddress = currentAccount?.address || zkAddress;
   const isConnected = mounted && !!walletAddress;
-  const completedQuests = isConnected ? quests.filter(quest => quest.is_completed).length : 0;
-  const totalQuests = quests.length;
-  const completionPercentage = isConnected && totalQuests > 0 ? Math.round((completedQuests / totalQuests) * 100) : 0;
+  const completedQuests = isConnected && !loading ? quests.filter(quest => quest.is_completed).length : 0;
+  const totalQuests = !loading ? quests.length : 0;
+  const completionPercentage = isConnected && !loading && totalQuests > 0 ? Math.round((completedQuests / totalQuests) * 100) : 0;
 
   useEffect(() => {
     fetchQuests();
@@ -115,8 +126,7 @@ const QuestsPage = () => {
       const response = await axiosInstance.get("/platform/quest/by-owner", { 
         params: { 
           owner_id: 35, // Production admin-created quests (was 2 for local)
-          user_id: user?.id || 1,
-          wallet_address: walletAddress // Add wallet address for completion tracking
+          wallet_address: walletAddress // Use wallet address for completion tracking
         } 
       });
       
@@ -134,6 +144,17 @@ const QuestsPage = () => {
         const isCompletedFromAPI = quest.userProgress?.isCompleted || false;
         const isCompletedFromSession = sessionCompleted.includes(quest.id);
         const isCompleted = isCompletedFromAPI || isCompletedFromSession;
+
+        // Detailed debug for verification
+        try {
+          console.log(`Quest ${quest.quest_code}:`, {
+            id: quest.id,
+            userProgress: quest.userProgress,
+            isCompletedFromAPI,
+            isCompletedFromSession,
+            finalCompleted: isCompleted,
+          });
+        } catch {}
 
         return {
           id: quest.id,
@@ -153,10 +174,11 @@ const QuestsPage = () => {
       toast.error("Failed to load quests");
     } finally {
       setLoading(false);
+      setInitialLoad(false);
     }
   };
 
-  if (!mounted || loading) {
+  if (!mounted || initialLoad) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center">

@@ -29,6 +29,7 @@ const QuestDetailPage = () => {
   const [mounted, setMounted] = useState(false);
   const [quests, setQuests] = useState<Quest[]>([]);
   const [loading, setLoading] = useState(true);
+  const [initialLoad, setInitialLoad] = useState(true);
   const [claiming, setClaiming] = useState(false);
   const [claimingQuestId, setClaimingQuestId] = useState<number | null>(null);
   const [nftMinted, setNftMinted] = useState(false);
@@ -62,6 +63,16 @@ const QuestDetailPage = () => {
   const { address: zkAddress } = useZkLogin();
 
   useEffect(() => setMounted(true), []);
+  // Cross-tab progress sync: listen for ping and refetch
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === 'quest_progress_ping') {
+        fetchQuests();
+      }
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, []);
 
   // Simple wallet state detection based on actual addresses
   const walletAddress = currentAccount?.address || zkAddress;
@@ -109,9 +120,9 @@ const QuestDetailPage = () => {
 
 
   // Calculate progress only when wallet is connected AND mounted, otherwise show 0
-  const completedQuests = (mounted && isWalletConnected) ? quests.filter(quest => quest.is_completed).length : 0;
-  const totalQuests = quests.length;
-  const completionPercentage = (mounted && isWalletConnected) && totalQuests > 0 ? Math.round((completedQuests / totalQuests) * 100) : 0;
+  const completedQuests = (mounted && isWalletConnected && !loading) ? quests.filter(quest => quest.is_completed).length : 0;
+  const totalQuests = !loading ? quests.length : 0;
+  const completionPercentage = (mounted && isWalletConnected && !loading) && totalQuests > 0 ? Math.round((completedQuests / totalQuests) * 100) : 0;
   
   // Debug: Log progress updates
   useEffect(() => {
@@ -183,13 +194,34 @@ const QuestDetailPage = () => {
 
       toast.success("Quest completed!");
 
-      // Try to persist to backend (but don't block UI if it fails)
+      // Persist to backend (store completion against wallet)
       try {
-        const response = await axiosInstance.post("/platform/quest/complete", {
-          quest_type: quest.quest_code,  // Use actual quest code
-          user_address: walletAddress
+        const response = await axiosInstance.post("/platform/quests/complete", {
+          quest_id: questId,
+          owner_id: quest.owner_id,
+          wallet_address: walletAddress
         });
-        console.log("✅ Backend persistence:", response.data);
+        console.log("✅ Backend persistence (HTTP 200):", response.data);
+
+        // Verify by refetching and checking server-reported completion
+        const latest = await fetchQuests();
+        const verified = Array.isArray(latest)
+          ? latest.find(q => q.id === questId)?.is_completed === true
+          : false;
+        if (verified) {
+          console.log("✅ Verified from API: quest completion persisted in DB for wallet", walletAddress);
+          toast.success("Quest saved to your account");
+        } else {
+          console.warn("⚠️ Not verified from API: quest completion not reflected yet");
+          toast("Recorded locally. Syncing with server...", { icon: '⏳' });
+        }
+
+        // Notify other tabs to refetch
+        try {
+          localStorage.setItem('quest_progress_ping', JSON.stringify({ ts: Date.now(), wallet: walletAddress }));
+          // Clean up the key to avoid buildup
+          localStorage.removeItem('quest_progress_ping');
+        } catch {}
       } catch (apiError) {
         console.log("⚠️ Backend persistence failed (using localStorage fallback):", apiError);
         // Don't show error to user since UI is already updated and localStorage saved
@@ -216,7 +248,6 @@ const QuestDetailPage = () => {
       const response = await axiosInstance.get("/platform/quest/by-owner", { 
         params: { 
           owner_id: 35, // Production admin quests (was 2 for local)
-          user_id: user?.id || 1,
           wallet_address: walletAddress
         } 
       });
@@ -254,20 +285,22 @@ const QuestDetailPage = () => {
         };
       });
       setQuests(transformedQuests);
+      return transformedQuests;
     } catch (error) {
       console.error("Error fetching quests:", error);
       toast.error("Failed to load quests");
     } finally {
       setLoading(false);
+      setInitialLoad(false);
     }
   };
 
-  if (!mounted) {
+  if (!mounted || initialLoad) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-white border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
-          <h2 className="text-2xl font-bold text-white">Loading...</h2>
+          <h2 className="text-2xl font-bold text-white">Loading Quests...</h2>
         </div>
       </div>
     );
@@ -423,7 +456,7 @@ const QuestDetailPage = () => {
                 <div className="flex items-center justify-between">
                   {/* Left side - Quest info */}
                   <div className="flex items-center space-x-4">
-                    {/* <h3 className="text-base font-bold text-white">
+                      {/* <h3 className="text-base font-bold text-white">
                       #{quest.quest_code}
                     </h3> */}
                     <div className="flex flex-col">
@@ -459,7 +492,7 @@ const QuestDetailPage = () => {
                         className={`text-sm px-4 py-1 rounded border transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
                           !isWalletConnected
                             ? 'text-gray-300 bg-gray-600/60 border-gray-500'
-                            : 'text-white bg-purple-600/80 hover:bg-purple-500/90 border-purple-500 cursor-pointer'
+                            : 'text-black bg-white hover:bg-white/90 border-purple-500 cursor-pointer'
                         }`}
                       >
                         {(() => {
