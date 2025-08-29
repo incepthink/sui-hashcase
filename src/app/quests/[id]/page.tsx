@@ -21,14 +21,11 @@ interface Quest {
   updated_at: string;
 }
 
-interface QuestDetailPageProps {
-  allowClaim?: boolean;
-}
-
-const QuestDetailPage = ({ allowClaim = true }: QuestDetailPageProps) => {
+const QuestDetailPage = () => {
   const params = useParams();
   const router = useRouter();
   const activeQuestCode = String(params?.id || "");
+  const allowClaim = true; // Always allow claiming on /quests/[id] pages
 
   const [mounted, setMounted] = useState(false);
   const [quests, setQuests] = useState<Quest[]>([]);
@@ -91,6 +88,12 @@ const QuestDetailPage = ({ allowClaim = true }: QuestDetailPageProps) => {
     const prev = prevIsConnectedRef.current;
     prevIsConnectedRef.current = isWalletConnected;
 
+    // Show spinner when wallet state changes
+    if (prev !== isWalletConnected) {
+      setLoading(true);
+      setInitialLoad(true);
+    }
+
     // Only act on a real transition from true -> false
     if (prev === true && isWalletConnected === false) {
       if (quests.length > 0) {
@@ -138,7 +141,10 @@ const QuestDetailPage = ({ allowClaim = true }: QuestDetailPageProps) => {
 
   useEffect(() => {
     // Refetch quests whenever wallet changes
-    fetchQuests();
+    if (mounted) {
+      setLoading(true);
+      fetchQuests();
+    }
   }, [user?.id, walletAddress]);
 
   // Refetch when switching between quest pages
@@ -260,18 +266,14 @@ const QuestDetailPage = ({ allowClaim = true }: QuestDetailPageProps) => {
       const walletAddress = currentAccount?.address || zkAddress;
       console.log("🔍 fetchQuests called with wallet:", walletAddress, "mounted:", mounted, "isWalletConnected:", isWalletConnected);
       
-      if (!walletAddress) {
-        console.log("⚠️ No wallet address, skipping fetch");
-        setQuests([]);
-        return [];
+      const params: { owner_id: number; wallet_address?: string } = {
+        owner_id: 35, // Production admin quests (was 2 for local)
+      };
+      if (walletAddress) {
+        params.wallet_address = walletAddress;
       }
       
-      const response = await axiosInstance.get("/platform/quest/by-owner", { 
-        params: { 
-          owner_id: 35, // Production admin quests (was 2 for local)
-          wallet_address: walletAddress
-        } 
-      });
+      const response = await axiosInstance.get("/platform/quest/by-owner", { params });
       console.log("📡 Raw API response:", response.data.quests);
       
       // Transform quests using ONLY backend data for completion status
@@ -313,29 +315,25 @@ const QuestDetailPage = ({ allowClaim = true }: QuestDetailPageProps) => {
       const completedCount = transformedQuests.filter((q: Quest) => q.is_completed).length;
       console.log(`📊 Final quest state: ${completedCount}/${transformedQuests.length} completed`);
       
-      setQuests(transformedQuests);
-      return transformedQuests;
+      // Only set quests if we have valid data
+      if (transformedQuests.length > 0) {
+        setQuests(transformedQuests);
+        return transformedQuests;
+      } else {
+        console.log("⚠️ No quests returned from API, keeping spinner active");
+        return [];
+      }
     } catch (error) {
       console.error("❌ Error fetching quests:", error);
       toast.error("Failed to load quests");
+      return [];
     } finally {
       setLoading(false);
       setInitialLoad(false);
     }
   };
 
-  if (!mounted || initialLoad || loading) {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-white border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
-          <h2 className="text-2xl font-bold text-white">Loading Quests...</h2>
-        </div>
-      </div>
-    );
-  }
-
-  if (loading) {
+  if (!mounted || initialLoad || loading || quests.length === 0) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center">
@@ -465,7 +463,7 @@ const QuestDetailPage = ({ allowClaim = true }: QuestDetailPageProps) => {
               Available Quests
             </h1>
             {/* Progress Bar - Only show when wallet is connected */}
-            {mounted && isWalletConnected && (
+            {mounted && isWalletConnected && !loading && (
               <div className="max-w-md mx-auto mb-6">
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-sm text-gray-400">Progress</span>
@@ -536,7 +534,7 @@ const QuestDetailPage = ({ allowClaim = true }: QuestDetailPageProps) => {
                           const buttonText = claimingQuestId === quest.id 
                             ? 'Claiming...' 
                             : !isWalletConnected 
-                              ? 'Login' 
+                              ? 'Connect Wallet' 
                               : 'Claim';
                           console.log('🔘 Button text for quest', quest.quest_code, ':', buttonText, '| isWalletConnected:', isWalletConnected);
                           return buttonText;
@@ -545,6 +543,10 @@ const QuestDetailPage = ({ allowClaim = true }: QuestDetailPageProps) => {
                     ) : allowClaim ? (
                       <span className="text-sm text-gray-500 bg-gray-800/40 px-4 py-1 rounded border border-gray-700">
                         Complete other quests first 
+                      </span>
+                    ) : !isWalletConnected ? (
+                      <span className="text-sm text-gray-400 bg-gray-800/20 px-4 py-1 rounded border border-gray-600">
+                        Connect Wallet to Claim
                       </span>
                     ) : (
                       <span className="text-sm text-gray-400 bg-gray-800/20 px-4 py-1 rounded border border-gray-600">
@@ -656,7 +658,7 @@ const QuestDetailPage = ({ allowClaim = true }: QuestDetailPageProps) => {
                     : claiming 
                     ? ' Minting NFT...' 
                     : !isWalletConnected
-                      ? 'Login to Claim NFT'
+                      ? 'Connect Wallet to Claim NFT'
                     : completionPercentage === 100 
                       ? 'Claim NFT' 
                       : `Complete ${totalQuests - completedQuests} more quests to Claim NFT`
@@ -750,5 +752,4 @@ const QuestDetailPage = ({ allowClaim = true }: QuestDetailPageProps) => {
   );
 };
 
-export { QuestDetailPage };
 export default QuestDetailPage;

@@ -323,7 +323,7 @@ const NftPage = () => {
             {/* Action Buttons */}
             <div className="flex flex-col gap-4 pt-4">
               {/* Claim NFT Button */}
-              <button
+              {/* <button
                 onClick={() => handleClaimNft(nftData.collection_id)}
                 disabled={isLoading || !currentAccount?.address}
                 className="flex items-center justify-center gap-3 w-full px-6 py-4 bg-gradient-to-r from-[#4DA2FF] to-[#7ab8ff] hover:from-[#3a8fef] hover:to-[#6aa7f0] disabled:from-gray-600 disabled:to-gray-700 disabled:cursor-not-allowed rounded-xl font-semibold text-black transition-all duration-200 shadow-lg hover:shadow-xl"
@@ -339,7 +339,7 @@ const NftPage = () => {
                     Claim NFT
                   </>
                 )}
-              </button>
+              </button> */}
 
               {/* Update Metadata Button */}
               <button
