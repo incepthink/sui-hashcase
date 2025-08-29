@@ -122,10 +122,19 @@ const QuestsPage = () => {
       
       console.log(`Local quests found: ${response.data.quests?.length || 0}`);
       
-      // Transform quests using ONLY backend data for completion status
+      // Merge API completion with fast sessionStorage cache (per-wallet),
+      // so progress reflects immediately after claiming on /quests/[id]
+      let sessionCompleted: number[] = [];
+      try {
+        const sessionKey = walletAddress ? `quest_progress_session_${walletAddress}` : null;
+        sessionCompleted = sessionKey ? JSON.parse(sessionStorage.getItem(sessionKey) || '[]') : [];
+      } catch {}
+
       const transformedQuests = (response.data.quests || []).map((quest: any) => {
-        const isCompleted = quest.userProgress?.isCompleted || false;
-        
+        const isCompletedFromAPI = quest.userProgress?.isCompleted || false;
+        const isCompletedFromSession = sessionCompleted.includes(quest.id);
+        const isCompleted = isCompletedFromAPI || isCompletedFromSession;
+
         return {
           id: quest.id,
           title: quest.title,
