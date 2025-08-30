@@ -238,10 +238,8 @@ const QuestDetailPage = () => {
         // Notify other tabs to refetch
         try {
           localStorage.setItem('quest_progress_ping', JSON.stringify({ ts: Date.now(), wallet: walletAddress }));
-          // Clean up the key after a delay to ensure other tabs catch it
-          setTimeout(() => {
-            localStorage.removeItem('quest_progress_ping');
-          }, 100);
+          // Clean up the key immediately
+          localStorage.removeItem('quest_progress_ping');
         } catch {}
       } catch (apiError) {
         console.log("⚠️ Backend persistence failed (using localStorage fallback):", apiError);

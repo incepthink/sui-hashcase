@@ -125,15 +125,7 @@ export default function SuiWalletConnect() {
       // This ensures at least one signature is required
       console.log("Requesting authentication token...");
       
-      // Add timeout for API calls
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error("Request timeout")), 10000)
-      );
-      
-      const response = await Promise.race([
-        axiosInstance.get("auth/wallet/request-token"),
-        timeoutPromise
-      ]) as any;
+      const response = await axiosInstance.get("auth/wallet/request-token") as any;
       
       const message = response.data.message;
       const authToken = response.data.token;
@@ -144,14 +136,11 @@ export default function SuiWalletConnect() {
       });
       console.log("Message signed successfully");
 
-      const res = await Promise.race([
-        axiosInstance.post("auth/sui-wallet/login", {
-          signature: signedMessageResponse.signature,
-          address: walletAddress,
-          token: authToken,
-        }),
-        timeoutPromise
-      ]) as any;
+      const res = await axiosInstance.post("auth/sui-wallet/login", {
+        signature: signedMessageResponse.signature,
+        address: walletAddress,
+        token: authToken,
+      }) as any;
 
       const token = res.data.token;
       const user_instance = res.data.user_instance;
@@ -216,8 +205,6 @@ export default function SuiWalletConnect() {
         notifyResolve(notifyId, "User rejected the signature request", "error");
       } else if (errorMessage.includes("Failed to fetch") || errorMessage.includes("TRPCClientError")) {
         notifyResolve(notifyId, "Network error - please check your connection and try again", "error");
-      } else if (errorMessage.includes("Request timeout")) {
-        notifyResolve(notifyId, "Request timed out - please try again", "error");
       } else if (errorMessage.includes("Unexpected error") || errorMessage.includes("Oe")) {
         notifyResolve(notifyId, "Wallet extension error - please try refreshing the page", "error");
       } else {

@@ -42,13 +42,19 @@ const QuestsPageContent = () => {
     recipient: string;
   } | null>(null);
 
-  useEffect(() => setMounted(true), []);
+  // Ensure component is mounted before accessing browser APIs
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
-  const walletAddress = currentAccount?.address || zkAddress;
+  // Only compute wallet state after mounting to prevent hydration mismatch
+  const walletAddress = mounted ? (currentAccount?.address || zkAddress) : null;
   const isWalletConnected = mounted && !!walletAddress;
 
   // Check localStorage for global NFT minted status when quests are loaded
   useEffect(() => {
+    if (!mounted) return; // Don't access localStorage before mounting
+    
     if (quests.length > 0) {
       const completedQuests = quests.filter(quest => quest.is_completed).length;
       const totalQuests = quests.length;
@@ -63,7 +69,7 @@ const QuestsPageContent = () => {
         localStorage.removeItem('nft_minted_ns_daily');
       }
     }
-  }, [quests]);
+  }, [quests, mounted]);
 
   const prevIsConnectedRef = useRef<boolean | null>(null);
   useEffect(() => {
@@ -94,29 +100,12 @@ const QuestsPageContent = () => {
     }
   }, [mounted, isWalletConnected, quests.length]);
 
+  // Only compute these values after mounting to prevent hydration mismatch
   const completedQuests = (mounted && isWalletConnected && !loading) ? quests.filter(q => q.is_completed).length : 0;
   const totalQuests = !loading ? quests.length : 0;
   const completionPercentage = (mounted && isWalletConnected && !loading && totalQuests > 0)
     ? Math.round((completedQuests / totalQuests) * 100)
     : 0;
-
-  useEffect(() => {
-    if (mounted) {
-      setLoading(true);
-      fetchQuests();
-    }
-  }, [user?.id, walletAddress]);
-
-  useEffect(() => {
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === 'quest_progress_ping' && e.newValue) {
-        console.log('🔄 Cross-tab sync triggered:', e.newValue);
-        fetchQuests();
-      }
-    };
-    window.addEventListener('storage', onStorage);
-    return () => window.removeEventListener('storage', onStorage);
-  }, []);
 
   const fetchQuests = async () => {
     try {
@@ -189,7 +178,43 @@ const QuestsPageContent = () => {
     }
   };
 
-  if (!mounted || initialLoad || loading || quests.length === 0) {
+  useEffect(() => {
+    if (mounted) {
+      setLoading(true);
+      fetchQuests();
+    }
+  }, [user?.id, walletAddress, mounted]);
+
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === 'quest_progress_ping' && e.newValue) {
+        console.log('🔄 Cross-tab sync triggered:', e.newValue);
+        fetchQuests();
+      }
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, []);
+
+  useEffect(() => {
+    if (mounted && isWalletConnected) {
+      fetchQuests();
+    }
+  }, [mounted, isWalletConnected]);
+
+  // Don't render anything until mounted to prevent hydration mismatch
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-white border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
+          <h2 className="text-2xl font-bold text-white">Loading...</h2>
+        </div>
+      </div>
+    );
+  }
+
+  if (initialLoad || loading || quests.length === 0) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center">

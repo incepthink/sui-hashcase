@@ -120,8 +120,8 @@ export default function NFTPage() {
         
         // Filter out location-specific NFTs when location is not enabled
         const filteredNfts = nfts.filter(nft => {
-          const name = nft.name?.toLowerCase() || '';
-          const description = nft.description?.toLowerCase() || '';
+          // const name = nft.name?.toLowerCase() || '';
+          // const description = nft.description?.toLowerCase() || '';
           
           // If location is not enabled, hide ALL location-specific NFTs
           // if (!isLocationEnabled) {
@@ -351,14 +351,14 @@ export default function NFTPage() {
       // Skip location-specific NFTs - they should only come from geofenced metadata
       const isLocationNFT = nft.name?.toLowerCase().includes('delhi') || 
                            nft.name?.toLowerCase().includes('mumbai') || 
-                           nft.name?.toLowerCase().includes('bangalore') ||
-                           nft.name?.toLowerCase().includes('secret location') ||
-                           nft.name?.toLowerCase().includes('location nft') ||
-                           nft.description?.toLowerCase().includes('location-locked') ||
-                           nft.description?.toLowerCase().includes('location specific') ||
-                           nft.description?.toLowerCase().includes('area') ||
-                           nft.description?.toLowerCase().includes('residents only') ||
-                           nft.description?.toLowerCase().includes('only available in');
+                           nft.name?.toLowerCase().includes('bangalore');
+                          //  nft.name?.toLowerCase().includes('secret location');
+                          //  nft.name?.toLowerCase().includes('location nft') ||
+                          //  nft.description?.toLowerCase().includes('location-locked') ||
+                          //  nft.description?.toLowerCase().includes('location specific') ||
+                          //  nft.description?.toLowerCase().includes('area') ||
+                          //  nft.description?.toLowerCase().includes('residents only') ||
+                          //  nft.description?.toLowerCase().includes('only available in');
       
       if (!isLocationNFT) {
         mixed.push({

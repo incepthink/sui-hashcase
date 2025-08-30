@@ -16,7 +16,7 @@ export const TanstackProvider = ({
     <QueryClientProvider client={queryClient}>
       <AppWrapper>
         <EnokiFlowProvider apiKey="enoki_public_5b9bcd32f538d4937f30fe8dc7eaf69f">
-          <SuiClientProvider networks={networkConfig} defaultNetwork="mainnet">
+          <SuiClientProvider networks={networkConfig} defaultNetwork="testnet">
             <WalletProvider autoConnect={true}>
               {children}
             </WalletProvider>

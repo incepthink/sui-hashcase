@@ -11,6 +11,7 @@ import Image from "next/image";
 import axiosInstance from "@/utils/axios";
 import { ActionKind } from "@/context/context-types";
 import { AppContext } from "@/context/AppContext";
+import { useGlobalAppStore } from "@/store/globalAppStore";
 
 interface ZkLoginProps {
   setOpenModal: (open: boolean) => void;
@@ -18,6 +19,7 @@ interface ZkLoginProps {
 
 const ZkLogin = ({ setOpenModal }: ZkLoginProps) => {
   const { state, dispatch } = useContext(AppContext);
+  const { setUser } = useGlobalAppStore();
 
   const [loading, setLoading] = useState(true);
   const [redirecting, setRedirecting] = useState(false);
@@ -37,10 +39,25 @@ const ZkLogin = ({ setOpenModal }: ZkLoginProps) => {
     const token = res.data.token;
     const user_instance = res.data.user_instance;
 
+    // Update AppContext
     dispatch({
       type: ActionKind.SET_USER,
       payload: [user_instance, token],
     });
+
+    // Also update global app store for ConnectButton compatibility
+    const userDataToStoreInGlobalStore = {
+      id: user_instance.id,
+      walletAddress: user_instance.sui_wallet_address || address,
+      email: user_instance.email,
+      badges: user_instance.badges,
+      user_name: user_instance.username || "guest_user",
+      description: user_instance.description || "this is a guest_user description",
+      profile_image: user_instance.profile_image,
+      banner_image: user_instance.banner_image,
+    };
+
+    setUser(userDataToStoreInGlobalStore, token);
   };
 
   useEffect(() => {

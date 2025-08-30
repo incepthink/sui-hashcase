@@ -2,23 +2,37 @@
 
 import { useGlobalAppStore } from "@/store/globalAppStore";
 import { useCurrentAccount } from "@mysten/dapp-kit";
-import { useZkLogin } from "@mysten/enoki/react";
+import { useZkLogin, useEnokiFlow } from "@mysten/enoki/react";
 import { Wallet } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { useDisconnectWallet } from "@mysten/dapp-kit";
 
 const ConnectButton = () => {
-  const { openModal, setOpenModal, unsetUser, setUserWalletAddress, isUserVerified } = useGlobalAppStore();
+  const { openModal, setOpenModal, unsetUser, setUserWalletAddress, isUserVerified, user } = useGlobalAppStore();
   const currentAccount = useCurrentAccount();
   const { address } = useZkLogin();
   const { mutate: disconnect } = useDisconnectWallet();
+  const enokiFlow = useEnokiFlow();
 
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
 
   const user_address = currentAccount?.address || address;
 
+  // Debug logging
   useEffect(() => {
-    // Only show wallet address if user is fully authenticated
+    console.log("🔍 ConnectButton Debug:", {
+      openModal,
+      isUserVerified,
+      user,
+      currentAccountAddress: currentAccount?.address,
+      zkAddress: address,
+      user_address,
+      walletAddress
+    });
+  }, [openModal, isUserVerified, user, currentAccount?.address, address, user_address, walletAddress]);
+
+  useEffect(() => {
+    // Show wallet address if user is verified OR if we have a zk login address
     if (isUserVerified && currentAccount?.address) {
       setWalletAddress(
         currentAccount.address.slice(0, 10) +
@@ -26,6 +40,9 @@ const ConnectButton = () => {
           currentAccount.address.slice(-8)
       );
     } else if (isUserVerified && address) {
+      setWalletAddress(address.slice(0, 10) + "..." + address.slice(-8));
+    } else if (address) {
+      // Show zk login address even if not fully verified yet
       setWalletAddress(address.slice(0, 10) + "..." + address.slice(-8));
     } else {
       // Clear wallet address when not authenticated
@@ -42,6 +59,7 @@ const ConnectButton = () => {
   }, [currentAccount, address]);
 
   const handleModal = () => {
+    console.log("🔘 Connect button clicked, current openModal state:", openModal);
     if (openModal) {
       setOpenModal(false);
     } else {
@@ -63,15 +81,23 @@ const ConnectButton = () => {
     setUserWalletAddress("");
     console.log("Cleared user data from global store");
     
-    // Then disconnect the wallet
-    disconnect();
-    console.log("Called disconnect function");
+    // Disconnect based on what type of wallet is connected
+    if (address) {
+      // Zk login logout
+      enokiFlow.logout();
+      console.log("Called zk login logout");
+    } else {
+      // Regular wallet disconnect
+      disconnect();
+      console.log("Called regular wallet disconnect");
+    }
   };
 
 
 
   // If wallet is connected and user is verified, show address and disconnect button
-  if (walletAddress && isUserVerified) {
+  if (walletAddress && (isUserVerified || address)) {
+    console.log("✅ ConnectButton: Showing connected state with address:", walletAddress);
     return (
       <div className="ml-10 flex items-center gap-x-3 px-5 py-2.5  border-b-2  text-white border-gray-300 w-max font-semibold rounded-2xl">
         <div className="flex items-center gap-x-3">
@@ -89,6 +115,7 @@ const ConnectButton = () => {
   }
 
   // If no wallet connected or not authenticated, show connect button
+  console.log("🔘 ConnectButton: Showing connect button");
   return (
     <button
       onClick={handleModal}
