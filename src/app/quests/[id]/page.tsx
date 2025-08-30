@@ -442,19 +442,7 @@ const QuestDetailPage = () => {
                   * Wallet not connected
                 </p>
                 {/* Mobile ZK Login Button */}
-                <div className="md:hidden flex justify-center">
-                  <button
-                    onClick={() => {
-                      // Store current page URL for redirect after login
-                      localStorage.setItem('zklogin_redirect_url', window.location.pathname + window.location.search);
-                      // Trigger ZK login
-                      window.location.href = `${process.env.NEXT_PUBLIC_ENOKI_API_URL}/auth?client_id=${process.env.NEXT_PUBLIC_ENOKI_CLIENT_ID}&redirect_uri=${encodeURIComponent(window.location.origin + '/login')}&response_type=code&scope=openid`;
-                    }}
-                    className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-blue-500/20 hover:-translate-y-0.5"
-                  >
-                    Connect with Google
-                  </button>
-                </div>
+                
               </div>
             )}
             <h1 className="text-2xl font-bold text-white mb-2">

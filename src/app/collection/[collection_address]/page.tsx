@@ -77,6 +77,7 @@ export default function NFTPage() {
   const [isLoadingMinted, setIsLoadingMinted] = useState(false);
   const [mixedNFTs, setMixedNFTs] = useState<MixedNFT[]>([]);
   const [location, setLocation] = useState<Coordinates>({ latitude: -1, longitude: -1 });
+  const [userCoordinates, setUserCoordinates] = useState<string>("");
 
   //needed for the NFT modal to function
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -182,11 +183,13 @@ export default function NFTPage() {
   // Check if location permission is already granted
   const checkLocationPermission = async () => {
     if (!navigator.permissions) {
+      console.log("❌ Permissions API not supported");
       return false;
     }
     
     try {
       const permission = await navigator.permissions.query({ name: 'geolocation' });
+      console.log("📍 Location permission state:", permission.state);
       return permission.state === 'granted';
     } catch (error) {
       console.log('Permission API not supported, will check on location request');
@@ -197,11 +200,14 @@ export default function NFTPage() {
   // Initialize location state on component mount
   useEffect(() => {
     const initLocationState = async () => {
+      console.log("🔄 Initializing location state...");
       const hasPermission = await checkLocationPermission();
+      console.log("📍 Has location permission:", hasPermission);
       setIsLocationEnabled(hasPermission);
       
       // If we have permission, automatically fetch location data
       if (hasPermission && collectionData) {
+        console.log("📍 Permission granted, fetching location data...");
         getLocationData();
       }
     };
@@ -242,6 +248,10 @@ export default function NFTPage() {
       // Always request geolocation first; success means we can enable the toggle
       const { latitude, longitude } = await getCurrentPosition();
       console.log("📍 Browser location:", latitude, longitude);
+      
+      // Store coordinates for display
+      setUserCoordinates(`${latitude.toFixed(6)}, ${longitude.toFixed(6)}`);
+      setLocation({ latitude, longitude });
       
       // Location coordinates obtained successfully (toast removed)
 
@@ -294,10 +304,12 @@ export default function NFTPage() {
   };
 
   const getLocation = async () => {
+    console.log("🔘 Location button clicked");
     setIsLoading(true);
     try {
       // Attempt to fetch geofenced data; enable only on success
       const ok = await getLocationData();
+      console.log("📍 Location data fetch result:", ok);
       setIsLocationEnabled(!!ok);
     } catch (err: unknown) {
       const anyErr = err as any;
@@ -323,6 +335,11 @@ export default function NFTPage() {
 
   // Function to mix NFTs from different sources
   const mixNFTs = () => {
+    console.log("🔄 Starting mixNFTs function...");
+    console.log("📍 Location enabled:", isLocationEnabled);
+    console.log("📍 Geofenced metadata count:", geofencedMetadata.length);
+    console.log("📍 Minted NFTs count:", mintedNFTs.length);
+    
     const mixed: MixedNFT[] = [];
 
     // Separate random and non-random minted NFTs
@@ -346,19 +363,22 @@ export default function NFTPage() {
       // Random Drop #4 is completely excluded
     });
 
+    console.log("🎲 Random NFTs found:", randomMintedNFTs.length);
+    console.log("📦 Non-random NFTs found:", nonRandomMintedNFTs.length);
+
     // Add non-random minted NFTs (EXCLUDE location-specific NFTs from regular metadata)
     nonRandomMintedNFTs.forEach(nft => {
       // Skip location-specific NFTs - they should only come from geofenced metadata
       const isLocationNFT = nft.name?.toLowerCase().includes('delhi') || 
                            nft.name?.toLowerCase().includes('mumbai') || 
-                           nft.name?.toLowerCase().includes('bangalore');
-                          //  nft.name?.toLowerCase().includes('secret location');
-                          //  nft.name?.toLowerCase().includes('location nft') ||
-                          //  nft.description?.toLowerCase().includes('location-locked') ||
-                          //  nft.description?.toLowerCase().includes('location specific') ||
-                          //  nft.description?.toLowerCase().includes('area') ||
-                          //  nft.description?.toLowerCase().includes('residents only') ||
-                          //  nft.description?.toLowerCase().includes('only available in');
+                           nft.name?.toLowerCase().includes('bangalore') ||
+                           nft.name?.toLowerCase().includes('secret location') ||
+                           nft.name?.toLowerCase().includes('location nft') ||
+                           nft.description?.toLowerCase().includes('location-locked') ||
+                           nft.description?.toLowerCase().includes('location specific') ||
+                           nft.description?.toLowerCase().includes('area') ||
+                           nft.description?.toLowerCase().includes('residents only') ||
+                           nft.description?.toLowerCase().includes('only available in');
       
       if (!isLocationNFT) {
         mixed.push({
@@ -372,7 +392,7 @@ export default function NFTPage() {
           originalData: nft
         });
       } else {
-        console.log('🚫 Filtered out location NFT from regular metadata:', nft.name);
+        console.log('🚫 Filtered out location NFT from regular metadata:', nft.name, '| Location enabled:', isLocationEnabled);
       }
     });
 
@@ -439,12 +459,17 @@ export default function NFTPage() {
       }
     }
 
+    console.log("🎯 Final mixed NFTs count:", mixed.length);
+    console.log("🎯 Mixed NFTs types:", mixed.map(nft => ({ name: nft.name, type: nft.type })));
+    
     // Don't shuffle - keep original order
     setMixedNFTs(mixed);
   };
 
   // Update mixed NFTs whenever the source data changes
   useEffect(() => {
+    console.log("🔄 mixNFTs useEffect triggered");
+    console.log("📍 Current location state:", { isLocationEnabled, geofencedMetadata: geofencedMetadata.length });
     mixNFTs();
   }, [mintedNFTs, geofencedMetadata, randomizedTokenMetadata, isLocationEnabled]);
 
@@ -604,6 +629,11 @@ export default function NFTPage() {
               <h1 className="text-3xl md:text-4xl font-semibold text-white drop-shadow-lg">
                 Collection Assets
               </h1>
+              {userCoordinates && (
+                <p className="text-sm text-gray-400 mt-2">
+                  📍 Your location: {userCoordinates}
+                </p>
+              )}
             </div>
             <div className="flex items-center gap-3 justify-center md:justify-end">
               <button
