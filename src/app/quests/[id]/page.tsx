@@ -8,6 +8,8 @@ import { useCurrentAccount } from "@mysten/dapp-kit";
 import { useZkLogin } from "@mysten/enoki/react";
 import ConnectButton from "@/components/ConnectButton";
 import { ArrowRight } from "lucide-react";
+import backgroundImageHeroSection from "@/assets/images/high_rise.jpg";
+import Image, { StaticImageData } from "next/image";
 
 interface Quest {
   id: number;
@@ -35,20 +37,25 @@ const QuestDetailPage = () => {
   const [claimingQuestId, setClaimingQuestId] = useState<number | null>(null);
   const [nftMinted, setNftMinted] = useState(false);
 
+  const isSuper = activeQuestCode === "Q5541" || "Q9866" || "Q1257";
+
   // Check localStorage for global NFT minted status when quests are loaded
   useEffect(() => {
     if (quests.length > 0) {
-      const completedQuests = quests.filter(quest => quest.is_completed).length;
+      const completedQuests = quests.filter(
+        (quest) => quest.is_completed
+      ).length;
       const totalQuests = quests.length;
-      const currentCompletionPercentage = totalQuests > 0 ? Math.round((completedQuests / totalQuests) * 100) : 0;
-      
-      const savedNftStatus = localStorage.getItem('nft_minted_ns_daily');
-      if (savedNftStatus === 'true' && currentCompletionPercentage === 100) {
+      const currentCompletionPercentage =
+        totalQuests > 0 ? Math.round((completedQuests / totalQuests) * 100) : 0;
+
+      const savedNftStatus = localStorage.getItem("nft_minted_ns_daily");
+      if (savedNftStatus === "true" && currentCompletionPercentage === 100) {
         setNftMinted(true);
       } else if (currentCompletionPercentage < 100) {
         // Reset minted status if quests aren't completed
         setNftMinted(false);
-        localStorage.removeItem('nft_minted_ns_daily');
+        localStorage.removeItem("nft_minted_ns_daily");
       }
     }
   }, [quests]);
@@ -56,30 +63,49 @@ const QuestDetailPage = () => {
   const [mintedNftData, setMintedNftData] = useState<{
     name: string;
     description: string;
-    image_url: string;
+    image_url: string | StaticImageData;
     recipient: string;
   } | null>(null);
   const { user } = useGlobalAppStore();
   const currentAccount = useCurrentAccount();
   const { address: zkAddress } = useZkLogin();
 
+  const nftData = isSuper
+    ? {
+        collection_id: "215",
+        name: "Hashcase Super Cool Collection",
+        description: "Collection for cool NFTS by Hashcase",
+        image_url: backgroundImageHeroSection,
+        attributes: ["Rarity: Common", "Type: Digital Art", "Network: Mainnet"],
+        recipient: currentAccount?.address || zkAddress,
+      }
+    : {
+        collection_id: "214",
+        name: "NS Daily",
+        description: "Complete the tasks for the day to claim this reward.",
+        image_url:
+          "https://client-uploads.nyc3.digitaloceanspaces.com/images/3b1daaad-c7dc-4884-a78b-739a3ce3dfaa/2025-08-28T12-25-58-895Z-38bc0eae.png",
+        attributes: ["quest_reward", "daily_completion", "loyalty"],
+        recipient: currentAccount?.address || zkAddress,
+      };
+
   useEffect(() => setMounted(true), []);
   // Cross-tab progress sync: listen for ping and refetch
   useEffect(() => {
     const onStorage = (e: StorageEvent) => {
-      if (e.key === 'quest_progress_ping' && e.newValue) {
-        console.log('🔄 Cross-tab sync triggered:', e.newValue);
+      if (e.key === "quest_progress_ping" && e.newValue) {
+        console.log("🔄 Cross-tab sync triggered:", e.newValue);
         fetchQuests();
       }
     };
-    window.addEventListener('storage', onStorage);
-    return () => window.removeEventListener('storage', onStorage);
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
   }, []);
 
   // Simple wallet state detection based on actual addresses
   const walletAddress = currentAccount?.address || zkAddress;
   const isWalletConnected = mounted && !!walletAddress;
-  
+
   // Immediately reset UI state only when transitioning from connected -> disconnected
   const prevIsConnectedRef = useRef<boolean | null>(null);
   useEffect(() => {
@@ -97,45 +123,60 @@ const QuestDetailPage = () => {
     // Only act on a real transition from true -> false
     if (prev === true && isWalletConnected === false) {
       if (quests.length > 0) {
-        setQuests(prevQuests => prevQuests.map(q => ({ ...q, is_completed: false })));
+        setQuests((prevQuests) =>
+          prevQuests.map((q) => ({ ...q, is_completed: false }))
+        );
       }
       setNftMinted(false);
       try {
-        localStorage.removeItem('nft_minted_ns_daily');
+        localStorage.removeItem("nft_minted_ns_daily");
         // Remove only quest progress session entries
         const keysToRemove: string[] = [];
         for (let i = 0; i < sessionStorage.length; i++) {
           const k = sessionStorage.key(i);
-          if (k && k.startsWith('quest_progress_session_')) keysToRemove.push(k);
+          if (k && k.startsWith("quest_progress_session_"))
+            keysToRemove.push(k);
         }
-        keysToRemove.forEach(k => sessionStorage.removeItem(k));
+        keysToRemove.forEach((k) => sessionStorage.removeItem(k));
       } catch {}
     }
   }, [mounted, isWalletConnected, quests.length]);
-  
+
   // Debug logging for wallet state changes
   useEffect(() => {
-    console.log('🔄 Quest page wallet state:', {
+    console.log("🔄 Quest page wallet state:", {
       mounted,
       currentAccount: currentAccount?.address,
       zkAddress,
       walletAddress,
       isWalletConnected,
-      rawWalletCheck: !!(currentAccount?.address || zkAddress)
+      rawWalletCheck: !!(currentAccount?.address || zkAddress),
     });
-  }, [mounted, currentAccount?.address, zkAddress, walletAddress, isWalletConnected]);
-
-
+  }, [
+    mounted,
+    currentAccount?.address,
+    zkAddress,
+    walletAddress,
+    isWalletConnected,
+  ]);
 
   // Calculate progress only when wallet is connected AND mounted, otherwise show 0
-  const completedQuests = (mounted && isWalletConnected && !loading) ? quests.filter(quest => quest.is_completed).length : 0;
+  const completedQuests =
+    mounted && isWalletConnected && !loading
+      ? quests.filter((quest) => quest.is_completed).length
+      : 0;
   const totalQuests = !loading ? quests.length : 0;
-  const completionPercentage = (mounted && isWalletConnected && !loading) && totalQuests > 0 ? Math.round((completedQuests / totalQuests) * 100) : 0;
-  
+  const completionPercentage =
+    mounted && isWalletConnected && !loading && totalQuests > 0
+      ? Math.round((completedQuests / totalQuests) * 100)
+      : 0;
+
   // Debug: Log progress updates
   useEffect(() => {
     if (isWalletConnected && totalQuests > 0) {
-      console.log(`📊 Progress bar update: ${completedQuests}/${totalQuests} (${completionPercentage}%)`);
+      console.log(
+        `📊 Progress bar update: ${completedQuests}/${totalQuests} (${completionPercentage}%)`
+      );
     }
   }, [completedQuests, totalQuests, completionPercentage, isWalletConnected]);
 
@@ -161,9 +202,9 @@ const QuestDetailPage = () => {
       toast.error("Please connect your wallet to claim quests", {
         duration: 5000,
         style: {
-          background: '#1f2937',
-          color: '#fff',
-          border: '1px solid #374151',
+          background: "#1f2937",
+          color: "#fff",
+          border: "1px solid #374151",
         },
       });
       return;
@@ -171,9 +212,9 @@ const QuestDetailPage = () => {
 
     try {
       setClaimingQuestId(questId);
-      
+
       // Find the quest to get its quest_code for the API
-      const quest = quests.find(q => q.id === questId);
+      const quest = quests.find((q) => q.id === questId);
       if (!quest?.quest_code) {
         toast.error("Quest not found");
         return;
@@ -182,29 +223,35 @@ const QuestDetailPage = () => {
       console.log("Attempting to claim quest:", {
         quest_id: questId,
         quest_code: quest.quest_code,
-        user_address: walletAddress
+        user_address: walletAddress,
       });
 
       // Update UI immediately for instant feedback
-      setQuests(prevQuests => {
-        const updatedQuests = prevQuests.map(q => 
-          q.id === questId 
-            ? { ...q, is_completed: true }
-            : q
+      setQuests((prevQuests) => {
+        const updatedQuests = prevQuests.map((q) =>
+          q.id === questId ? { ...q, is_completed: true } : q
         );
-        
+
         // Log the real-time progress update
-        const newCompletedCount = updatedQuests.filter(q => q.is_completed).length;
-        const newPercentage = Math.round((newCompletedCount / updatedQuests.length) * 100);
-        console.log(`🎯 Real-time progress update: ${newCompletedCount}/${updatedQuests.length} (${newPercentage}%)`);
-        
+        const newCompletedCount = updatedQuests.filter(
+          (q) => q.is_completed
+        ).length;
+        const newPercentage = Math.round(
+          (newCompletedCount / updatedQuests.length) * 100
+        );
+        console.log(
+          `🎯 Real-time progress update: ${newCompletedCount}/${updatedQuests.length} (${newPercentage}%)`
+        );
+
         return updatedQuests;
       });
 
       // Persist to sessionStorage for fast progress reflection per wallet
       try {
         const sessionKey = `quest_progress_session_${walletAddress}`;
-        const sessionProgress: number[] = JSON.parse(sessionStorage.getItem(sessionKey) || '[]');
+        const sessionProgress: number[] = JSON.parse(
+          sessionStorage.getItem(sessionKey) || "[]"
+        );
         if (!sessionProgress.includes(questId)) {
           sessionProgress.push(questId);
           sessionStorage.setItem(sessionKey, JSON.stringify(sessionProgress));
@@ -218,31 +265,42 @@ const QuestDetailPage = () => {
         const response = await axiosInstance.post("/platform/quests/complete", {
           quest_id: questId,
           owner_id: quest.owner_id,
-          wallet_address: walletAddress
+          wallet_address: walletAddress,
         });
         console.log("✅ Backend persistence (HTTP 200):", response.data);
 
         // Verify by refetching and checking server-reported completion
         const latest = await fetchQuests();
         const verified = Array.isArray(latest)
-          ? latest.find(q => q.id === questId)?.is_completed === true
+          ? latest.find((q) => q.id === questId)?.is_completed === true
           : false;
         if (verified) {
-          console.log("✅ Verified from API: quest completion persisted in DB for wallet", walletAddress);
+          console.log(
+            "✅ Verified from API: quest completion persisted in DB for wallet",
+            walletAddress
+          );
           toast.success("Quest saved to your account");
         } else {
-          console.warn("⚠️ Not verified from API: quest completion not reflected yet");
-          toast("Recorded locally. Syncing with server...", { icon: '⏳' });
+          console.warn(
+            "⚠️ Not verified from API: quest completion not reflected yet"
+          );
+          toast("Recorded locally. Syncing with server...", { icon: "⏳" });
         }
 
         // Notify other tabs to refetch
         try {
-          localStorage.setItem('quest_progress_ping', JSON.stringify({ ts: Date.now(), wallet: walletAddress }));
+          localStorage.setItem(
+            "quest_progress_ping",
+            JSON.stringify({ ts: Date.now(), wallet: walletAddress })
+          );
           // Clean up the key immediately
-          localStorage.removeItem('quest_progress_ping');
+          localStorage.removeItem("quest_progress_ping");
         } catch {}
       } catch (apiError) {
-        console.log("⚠️ Backend persistence failed (using localStorage fallback):", apiError);
+        console.log(
+          "⚠️ Backend persistence failed (using localStorage fallback):",
+          apiError
+        );
         // Don't show error to user since UI is already updated and localStorage saved
       }
       // Always refetch after attempting persistence to sync server/client and progress bar
@@ -250,7 +308,8 @@ const QuestDetailPage = () => {
     } catch (error: any) {
       console.error("Error claiming quest:", error);
       console.error("Error response:", error.response?.data);
-      const errorMessage = error.response?.data?.message || "Failed to claim quest";
+      const errorMessage =
+        error.response?.data?.message || "Failed to claim quest";
       toast.error(errorMessage);
     } finally {
       setClaimingQuestId(null);
@@ -260,26 +319,47 @@ const QuestDetailPage = () => {
   const fetchQuests = async () => {
     try {
       setLoading(true);
+
+      const {
+        data: { quest },
+      } = await axiosInstance.get("/platform/quests/data/" + activeQuestCode);
+      if (!quest) {
+        throw new Error("Quest code Invalid");
+      }
+
       // Use wallet address for quest completion tracking
       const walletAddress = currentAccount?.address || zkAddress;
-      console.log("🔍 fetchQuests called with wallet:", walletAddress, "mounted:", mounted, "isWalletConnected:", isWalletConnected);
-      
+      console.log(
+        "🔍 fetchQuests called with wallet:",
+        walletAddress,
+        "mounted:",
+        mounted,
+        "isWalletConnected:",
+        isWalletConnected
+      );
+
       const params: { owner_id: number; wallet_address?: string } = {
-        owner_id: 35, // Production admin quests (was 2 for local)
+        owner_id: quest.owner_id, // Production admin quests (was 2 for local)
       };
       if (walletAddress) {
         params.wallet_address = walletAddress;
       }
-      
-      const response = await axiosInstance.get("/platform/quest/by-owner", { params });
+
+      const response = await axiosInstance.get("/platform/quest/by-owner", {
+        params,
+      });
       console.log("📡 Raw API response:", response.data.quests);
-      
+
       // Transform quests using ONLY backend data for completion status
       // Merge API completion with fast sessionStorage cache (per-wallet)
       let sessionCompleted: number[] = [];
       try {
-        const sessionKey = walletAddress ? `quest_progress_session_${walletAddress}` : null;
-        sessionCompleted = sessionKey ? JSON.parse(sessionStorage.getItem(sessionKey) || '[]') : [];
+        const sessionKey = walletAddress
+          ? `quest_progress_session_${walletAddress}`
+          : null;
+        sessionCompleted = sessionKey
+          ? JSON.parse(sessionStorage.getItem(sessionKey) || "[]")
+          : [];
         console.log("📦 Session completed quests:", sessionCompleted);
       } catch {}
 
@@ -294,7 +374,7 @@ const QuestDetailPage = () => {
           isCompletedFromAPI,
           isCompletedFromSession,
           finalCompleted: isCompleted,
-          walletConnected: !!walletAddress
+          walletConnected: !!walletAddress,
         });
 
         return {
@@ -306,13 +386,17 @@ const QuestDetailPage = () => {
           owner_id: quest.owner_id,
           created_at: quest.createdAt,
           updated_at: quest.updatedAt,
-          is_completed: walletAddress ? isCompleted : false
+          is_completed: walletAddress ? isCompleted : false,
         };
       });
-      
-      const completedCount = transformedQuests.filter((q: Quest) => q.is_completed).length;
-      console.log(`📊 Final quest state: ${completedCount}/${transformedQuests.length} completed`);
-      
+
+      const completedCount = transformedQuests.filter(
+        (q: Quest) => q.is_completed
+      ).length;
+      console.log(
+        `📊 Final quest state: ${completedCount}/${transformedQuests.length} completed`
+      );
+
       // Only set quests if we have valid data
       if (transformedQuests.length > 0) {
         setQuests(transformedQuests);
@@ -351,18 +435,23 @@ const QuestDetailPage = () => {
           <button
             onClick={() => {
               try {
-                const searchParams = new URLSearchParams(window.location.search);
-                const cid = searchParams.get('collection_id');
+                const searchParams = new URLSearchParams(
+                  window.location.search
+                );
+                const cid = searchParams.get("collection_id");
                 if (cid) {
                   router.push(`/loyalties/${cid}`);
                   return;
                 }
-                router.push('/loyalties/214');
+                router.push("/loyalties/214");
               } catch {
-                if (typeof window !== 'undefined' && window.history.length > 1) {
+                if (
+                  typeof window !== "undefined" &&
+                  window.history.length > 1
+                ) {
                   window.history.back();
                 } else {
-                  router.push('/loyalties');
+                  router.push("/loyalties");
                 }
               }
             }}
@@ -371,7 +460,7 @@ const QuestDetailPage = () => {
             ← Back
           </button>
         </div>
-        
+
         {/* Wallet Connect - Top Right */}
         <div className="absolute top-4 right-4 z-[9999]">
           <ConnectButton />
@@ -416,18 +505,20 @@ const QuestDetailPage = () => {
               {/* Large NFT Image */}
               <div className="flex-shrink-0">
                 <div className="w-48 h-48 rounded-2xl shadow-2xl border-2 border-purple-300/30 overflow-hidden">
-                  <img 
-                    src="https://client-uploads.nyc3.digitaloceanspaces.com/images/3b1daaad-c7dc-4884-a78b-739a3ce3dfaa/2025-08-28T12-25-58-895Z-38bc0eae.png" 
-                    alt="NS Daily NFT" 
+                  <Image
+                    src={nftData.image_url}
+                    alt="NS Daily NFT"
                     className="w-full h-full object-cover"
                   />
                 </div>
               </div>
               {/* NFT Info */}
               <div className="flex-1 max-w-md">
-                <h2 className="text-3xl font-bold text-white mb-3">NS Daily</h2>
+                <h2 className="text-3xl font-bold text-white mb-3">
+                  {nftData.name}
+                </h2>
                 <p className="text-gray-300 text-lg leading-relaxed">
-                  Complete the tasks for the day to claim this reward.
+                  {nftData.description}
                 </p>
               </div>
             </div>
@@ -442,7 +533,6 @@ const QuestDetailPage = () => {
                   * Wallet not connected
                 </p>
                 {/* Mobile ZK Login Button */}
-                
               </div>
             )}
             <h1 className="text-2xl font-bold text-white mb-2">
@@ -458,7 +548,7 @@ const QuestDetailPage = () => {
                   </span>
                 </div>
                 <div className="w-full bg-gray-800 rounded-full h-3 overflow-hidden">
-                  <div 
+                  <div
                     className="bg-white h-full rounded-full transition-all duration-500 ease-out"
                     style={{ width: `${completionPercentage}%` }}
                   ></div>
@@ -477,7 +567,7 @@ const QuestDetailPage = () => {
                 <div className="flex items-center justify-between">
                   {/* Left side - Quest info */}
                   <div className="flex items-center space-x-4">
-                      {/* <h3 className="text-base font-bold text-white">
+                    {/* <h3 className="text-base font-bold text-white">
                       #{quest.quest_code}
                     </h3> */}
                     <div className="flex flex-col">
@@ -496,15 +586,21 @@ const QuestDetailPage = () => {
                       <span className="text-xs text-green-400 bg-green-900/20 px-2 py-1 rounded border border-green-700">
                         ✓ Completed
                       </span>
-                    ) : allowClaim && activeQuestCode && quest.quest_code === activeQuestCode ? (
+                    ) : allowClaim &&
+                      activeQuestCode &&
+                      quest.quest_code === activeQuestCode ? (
                       <button
                         onClick={() => {
                           if (!isWalletConnected) {
                             // Open the global wallet modal for login/connect
-                            const { setOpenModal } = require('@/store/globalAppStore');
+                            const {
+                              setOpenModal,
+                            } = require("@/store/globalAppStore");
                             // Avoid dynamic import issues by accessing store getter
-                            const store = require('@/store/globalAppStore');
-                            store.useGlobalAppStore.getState().setOpenModal(true);
+                            const store = require("@/store/globalAppStore");
+                            store.useGlobalAppStore
+                              .getState()
+                              .setOpenModal(true);
                             return;
                           }
                           handleClaimQuest(quest.id);
@@ -512,23 +608,31 @@ const QuestDetailPage = () => {
                         disabled={claimingQuestId === quest.id}
                         className={`text-sm px-4 py-1 rounded border transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
                           !isWalletConnected
-                            ? 'text-gray-300 bg-gray-600/60 border-gray-500'
-                            : 'text-black bg-white hover:bg-white/90 border-purple-500 cursor-pointer'
+                            ? "text-gray-300 bg-gray-600/60 border-gray-500"
+                            : "text-black bg-white hover:bg-white/90 border-purple-500 cursor-pointer"
                         }`}
                       >
                         {(() => {
-                          const buttonText = claimingQuestId === quest.id 
-                            ? 'Claiming...' 
-                            : !isWalletConnected 
-                              ? 'Connect Wallet' 
-                              : 'Claim';
-                          console.log('🔘 Button text for quest', quest.quest_code, ':', buttonText, '| isWalletConnected:', isWalletConnected);
+                          const buttonText =
+                            claimingQuestId === quest.id
+                              ? "Claiming..."
+                              : !isWalletConnected
+                              ? "Connect Wallet"
+                              : "Claim";
+                          console.log(
+                            "🔘 Button text for quest",
+                            quest.quest_code,
+                            ":",
+                            buttonText,
+                            "| isWalletConnected:",
+                            isWalletConnected
+                          );
                           return buttonText;
                         })()}
                       </button>
                     ) : allowClaim ? (
                       <span className="text-sm text-gray-500 bg-gray-800/40 px-4 py-1 rounded border border-gray-700">
-                        Complete other quests first 
+                        Complete other quests first
                       </span>
                     ) : !isWalletConnected ? (
                       <span className="text-sm text-gray-400 bg-gray-800/20 px-4 py-1 rounded border border-gray-600">
@@ -548,7 +652,9 @@ const QuestDetailPage = () => {
           {quests.length === 0 && (
             <div className="text-center py-12">
               <div className="text-6xl mb-4">🎯</div>
-              <h3 className="text-2xl font-bold text-white mb-2">No Quests Available</h3>
+              <h3 className="text-2xl font-bold text-white mb-2">
+                No Quests Available
+              </h3>
               <p className="text-gray-400">Check back later for new quests!</p>
             </div>
           )}
@@ -570,9 +676,9 @@ const QuestDetailPage = () => {
                     toast.error("Please connect your wallet to claim the NFT", {
                       duration: 5000,
                       style: {
-                        background: '#1f2937',
-                        color: '#fff',
-                        border: '1px solid #374151',
+                        background: "#1f2937",
+                        color: "#fff",
+                        border: "1px solid #374151",
                       },
                     });
                     return;
@@ -580,44 +686,60 @@ const QuestDetailPage = () => {
 
                   setClaiming(true);
                   try {
-                    const walletAddress = currentAccount?.address || zkAddress;
-                    const nftData = {
-                      collection_id: "0x79e4f927919068602bae38387132f8c0dd52dc3207098355ece9e9ba61eb2290",
-                      name: "NS Daily",
-                      description: "Complete the tasks for the day to claim this reward.",
-                      image_url: "https://client-uploads.nyc3.digitaloceanspaces.com/images/3b1daaad-c7dc-4884-a78b-739a3ce3dfaa/2025-08-28T12-25-58-895Z-38bc0eae.png",
-                      attributes: ["quest_reward", "daily_completion", "loyalty"],
-                      recipient: walletAddress!,
-                    };
-                    
-                    const response = await axiosInstance.post("/platform/sui/mint-nft", nftData);
-                    
+                    // const walletAddress = currentAccount?.address || zkAddress;
+                    // const nftData = {
+                    //   collection_id:
+                    //     "0x79e4f927919068602bae38387132f8c0dd52dc3207098355ece9e9ba61eb2290",
+                    //   name: "NS Daily",
+                    //   description:
+                    //     "Complete the tasks for the day to claim this reward.",
+                    //   image_url:
+                    //     "https://client-uploads.nyc3.digitaloceanspaces.com/images/3b1daaad-c7dc-4884-a78b-739a3ce3dfaa/2025-08-28T12-25-58-895Z-38bc0eae.png",
+                    //   attributes: [
+                    //     "quest_reward",
+                    //     "daily_completion",
+                    //     "loyalty",
+                    //   ],
+                    //   recipient: walletAddress!,
+                    // };
+
+                    const response = await axiosInstance.post(
+                      "/platform/sui/mint-nft",
+                      nftData
+                    );
+
                     if (response.data.success) {
                       // Store NFT data and show modal
                       setMintedNftData({
                         name: nftData.name,
                         description: nftData.description,
                         image_url: nftData.image_url,
-                        recipient: nftData.recipient
+                        recipient: nftData.recipient!,
                       });
                       setNftMinted(true);
-                      
+
                       // Save to localStorage for global state across pages
-                      localStorage.setItem('nft_minted_ns_daily', 'true');
-                      
+                      localStorage.setItem("nft_minted_ns_daily", "true");
+
                       setShowNftModal(true);
-                      
+
                       // Still show the toast for immediate feedback
                       toast.success("🎉 NS Daily NFT minted successfully!");
                     } else {
-                      toast.error(response.data.message || "Failed to claim NFT");
+                      toast.error(
+                        response.data.message || "Failed to claim NFT"
+                      );
                     }
                   } catch (error: any) {
                     console.error("Error claiming NFT:", error);
-                    const errorMessage = error.response?.data?.message || "Failed to claim NFT";
-                    if (errorMessage.includes("already minted") || errorMessage.includes("already claimed")) {
+                    const errorMessage =
+                      error.response?.data?.message || "Failed to claim NFT";
+                    if (
+                      errorMessage.includes("already minted") ||
+                      errorMessage.includes("already claimed")
+                    ) {
                       setNftMinted(true);
-                      localStorage.setItem('nft_minted_ns_daily', 'true');
+                      localStorage.setItem("nft_minted_ns_daily", "true");
                       toast.error("NFT already minted for today's quests!");
                     } else {
                       toast.error(errorMessage);
@@ -629,26 +751,28 @@ const QuestDetailPage = () => {
                 disabled={claiming || !isWalletConnected}
                 className={`
                     px-8 py-2 rounded-lg font-semibold text-lg transition-all duration-300 transform
-                    ${nftMinted
-                      ? 'bg-white text-black cursor-default'
-                      : !isWalletConnected
-                      ? 'bg-gray-600 text-gray-300 cursor-not-allowed opacity-60'
-                      : completionPercentage === 100 && !claiming
-                      ? 'bg-white text-black shadow-lg hover:shadow-xl cursor-pointer' 
-                      : 'bg-gray-700 text-gray-400 cursor-not-allowed opacity-50'
+                    ${
+                      nftMinted
+                        ? "bg-white text-black cursor-default"
+                        : !isWalletConnected
+                        ? "bg-gray-600 text-gray-300 cursor-not-allowed opacity-60"
+                        : completionPercentage === 100 && !claiming
+                        ? "bg-white text-black shadow-lg hover:shadow-xl cursor-pointer"
+                        : "bg-gray-700 text-gray-400 cursor-not-allowed opacity-50"
                     }
                   `}
-                >
-                  {nftMinted
-                    ? ' NFT Minted'
-                    : claiming 
-                    ? ' Minting NFT...' 
-                    : !isWalletConnected
-                      ? 'Connect Wallet to Claim NFT'
-                    : completionPercentage === 100 
-                      ? 'Claim NFT' 
-                      : `Complete ${totalQuests - completedQuests} more quests to Claim NFT`
-                  }
+              >
+                {nftMinted
+                  ? " NFT Minted"
+                  : claiming
+                  ? " Minting NFT..."
+                  : !isWalletConnected
+                  ? "Connect Wallet to Claim NFT"
+                  : completionPercentage === 100
+                  ? "Claim NFT"
+                  : `Complete ${
+                      totalQuests - completedQuests
+                    } more quests to Claim NFT`}
               </button>
             </div>
           )}
@@ -668,7 +792,7 @@ const QuestDetailPage = () => {
                   left: `${20 + Math.random() * 60}%`,
                   top: `${20 + Math.random() * 60}%`,
                   animationDelay: `${Math.random() * 3}s`,
-                  animationDuration: `${2 + Math.random() * 2}s`
+                  animationDuration: `${2 + Math.random() * 2}s`,
                 }}
               />
             ))}
@@ -704,22 +828,27 @@ const QuestDetailPage = () => {
             <div className="text-center">
               {/* NFT Image */}
               <div className="w-24 h-24 mx-auto mb-4 rounded-2xl overflow-hidden border border-white/20">
-                <img 
-                  src={mintedNftData.image_url} 
+                <Image
+                  src={mintedNftData.image_url}
                   alt={mintedNftData.name}
                   className="w-full h-full object-cover"
                 />
               </div>
 
               {/* Title */}
-              <h2 className="text-xl font-bold text-white mb-2">{mintedNftData.name}</h2>
-              <p className="text-green-400 text-sm mb-4">Successfully minted! ✨</p>
+              <h2 className="text-xl font-bold text-white mb-2">
+                {mintedNftData.name}
+              </h2>
+              <p className="text-green-400 text-sm mb-4">
+                Successfully minted! ✨
+              </p>
 
               {/* Wallet */}
               <div className="bg-white/5 rounded-lg p-3 mb-6">
                 <p className="text-gray-400 text-xs mb-1">Sent to:</p>
                 <p className="text-white font-mono text-xs break-all">
-                  {mintedNftData.recipient.slice(0, 8)}...{mintedNftData.recipient.slice(-8)}
+                  {mintedNftData.recipient.slice(0, 8)}...
+                  {mintedNftData.recipient.slice(-8)}
                 </p>
               </div>
 

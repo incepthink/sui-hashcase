@@ -9,11 +9,11 @@ export default function AuthPage() {
   useEffect(() => {
     if (handled) {
       // Check if there's a stored redirect URL from ZK login
-      const storedRedirectUrl = localStorage.getItem('zklogin_redirect_url');
-      
+      const storedRedirectUrl = localStorage.getItem("zklogin_redirect_url");
+
       if (storedRedirectUrl) {
         // Clear the stored URL and redirect to the original page
-        localStorage.removeItem('zklogin_redirect_url');
+        localStorage.removeItem("zklogin_redirect_url");
         window.location.href = storedRedirectUrl;
       } else {
         // Default redirect to home page

@@ -29,6 +29,8 @@ export const useGlobalAppStore = create<AppState>((set) => ({
 
   // Action to set the user and JWT in cookies and state
   setUser: (user, jwt) => {
+    console.log("AUTH DEBUG", jwt);
+    
     Cookies.set("user", JSON.stringify(user), {
       expires: new Date(new Date().getTime() + 60 * 60 * 1000), // 60 minutes
     });

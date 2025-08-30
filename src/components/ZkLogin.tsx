@@ -35,6 +35,7 @@ const ZkLogin = ({ setOpenModal }: ZkLoginProps) => {
     const res = await axiosInstance.post("auth/zk-login/login", {
       address: address,
     });
+    console.log("AUTH RES", res);
 
     const token = res.data.token;
     const user_instance = res.data.user_instance;
@@ -52,7 +53,8 @@ const ZkLogin = ({ setOpenModal }: ZkLoginProps) => {
       email: user_instance.email,
       badges: user_instance.badges,
       user_name: user_instance.username || "guest_user",
-      description: user_instance.description || "this is a guest_user description",
+      description:
+        user_instance.description || "this is a guest_user description",
       profile_image: user_instance.profile_image,
       banner_image: user_instance.banner_image,
     };
@@ -61,12 +63,12 @@ const ZkLogin = ({ setOpenModal }: ZkLoginProps) => {
   };
 
   useEffect(() => {
-    if (address) {
-      if (!state.user) {
-        console.log("call the user create server api for zklogin");
-        handleUserCreation();
-      }
-    }
+    // if (address) {
+    //   if (!state.user) {
+    //     console.log("call the user create server api for zklogin");
+    //     handleUserCreation();
+    //   }
+    // }
     setLoading(false);
   }, [address]);
 
@@ -77,7 +79,7 @@ const ZkLogin = ({ setOpenModal }: ZkLoginProps) => {
 
     // Store current page URL for redirect after authentication
     const currentPath = window.location.pathname + window.location.search;
-    localStorage.setItem('zklogin_redirect_url', currentPath);
+    localStorage.setItem("zklogin_redirect_url", currentPath);
 
     const redirectUrl = `${protocol}//${host}/login`;
 
@@ -93,15 +95,11 @@ const ZkLogin = ({ setOpenModal }: ZkLoginProps) => {
       })
       .then((url) => {
         window.location.href = url;
-      
       })
       .catch((error) => {
         console.error(error);
         setRedirecting(false);
       });
-
-
-      
   };
 
   if (loading) {
@@ -109,7 +107,6 @@ const ZkLogin = ({ setOpenModal }: ZkLoginProps) => {
   }
 
   if (address) {
-    
     return (
       <button
         onClick={() => {

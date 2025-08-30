@@ -1,22 +1,78 @@
-'use client';
+"use client";
 
 import { useGlobalAppStore } from "@/store/globalAppStore";
 import { useCurrentAccount } from "@mysten/dapp-kit";
 import { useZkLogin, useEnokiFlow } from "@mysten/enoki/react";
 import { Wallet } from "lucide-react";
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { useDisconnectWallet } from "@mysten/dapp-kit";
+import axiosInstance from "@/utils/axios";
+import { AppContext } from "@/context/AppContext";
+import { ActionKind } from "@/context/context-types";
 
 const ConnectButton = () => {
-  const { openModal, setOpenModal, unsetUser, setUserWalletAddress, isUserVerified, user } = useGlobalAppStore();
+  const {
+    openModal,
+    setOpenModal,
+    unsetUser,
+    setUserWalletAddress,
+    isUserVerified,
+    user,
+    setUser,
+  } = useGlobalAppStore();
   const currentAccount = useCurrentAccount();
   const { address } = useZkLogin();
   const { mutate: disconnect } = useDisconnectWallet();
   const enokiFlow = useEnokiFlow();
 
+  const { state, dispatch } = useContext(AppContext);
+
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
 
   const user_address = currentAccount?.address || address;
+
+  const handleUserCreation = async () => {
+    if (isUserVerified) return;
+
+    const res = await axiosInstance.post("auth/zk-login/login", {
+      address: address,
+    });
+    console.log("AUTH RES", res);
+
+    const token = res.data.token;
+    const user_instance = res.data.user_instance;
+
+    // Update AppContext
+    dispatch({
+      type: ActionKind.SET_USER,
+      payload: [user_instance, token],
+    });
+
+    // Also update global app store for ConnectButton compatibility
+    const userDataToStoreInGlobalStore = {
+      id: user_instance.id,
+      walletAddress: user_instance.sui_wallet_address || address,
+      email: user_instance.email,
+      badges: user_instance.badges,
+      user_name: user_instance.username || "guest_user",
+      description:
+        user_instance.description || "this is a guest_user description",
+      profile_image: user_instance.profile_image,
+      banner_image: user_instance.banner_image,
+    };
+
+    setUser(userDataToStoreInGlobalStore, token);
+  };
+
+  useEffect(() => {
+    if (address) {
+      if (!state.user) {
+        console.log("call the user create server api for zklogin");
+        handleUserCreation();
+      }
+    }
+    // setLoading(false);
+  }, [address]);
 
   // Debug logging
   useEffect(() => {
@@ -27,9 +83,17 @@ const ConnectButton = () => {
       currentAccountAddress: currentAccount?.address,
       zkAddress: address,
       user_address,
-      walletAddress
+      walletAddress,
     });
-  }, [openModal, isUserVerified, user, currentAccount?.address, address, user_address, walletAddress]);
+  }, [
+    openModal,
+    isUserVerified,
+    user,
+    currentAccount?.address,
+    address,
+    user_address,
+    walletAddress,
+  ]);
 
   useEffect(() => {
     // Show wallet address if user is verified OR if we have a zk login address
@@ -59,7 +123,10 @@ const ConnectButton = () => {
   }, [currentAccount, address]);
 
   const handleModal = () => {
-    console.log("🔘 Connect button clicked, current openModal state:", openModal);
+    console.log(
+      "🔘 Connect button clicked, current openModal state:",
+      openModal
+    );
     if (openModal) {
       setOpenModal(false);
     } else {
@@ -72,15 +139,15 @@ const ConnectButton = () => {
     console.log("Current wallet address:", walletAddress);
     console.log("Current account:", currentAccount);
     console.log("ZkLogin address:", address);
-    
+
     // Clear wallet address state immediately for instant UI feedback
     setWalletAddress(null);
-    
+
     // Clear user data from global store immediately
     unsetUser();
     setUserWalletAddress("");
     console.log("Cleared user data from global store");
-    
+
     // Disconnect based on what type of wallet is connected
     if (address) {
       // Zk login logout
@@ -93,11 +160,12 @@ const ConnectButton = () => {
     }
   };
 
-
-
   // If wallet is connected and user is verified, show address and disconnect button
   if (walletAddress && (isUserVerified || address)) {
-    console.log("✅ ConnectButton: Showing connected state with address:", walletAddress);
+    console.log(
+      "✅ ConnectButton: Showing connected state with address:",
+      walletAddress
+    );
     return (
       <div className="ml-10 flex items-center gap-x-3 px-5 py-2.5  border-b-2  text-white border-gray-300 w-max font-semibold rounded-2xl">
         <div className="flex items-center gap-x-3">

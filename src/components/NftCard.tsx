@@ -1,5 +1,6 @@
 "use client";
 
+import Image, { StaticImageData } from "next/image";
 import Link from "next/link";
 import React, { ReactNode } from "react";
 
@@ -10,7 +11,7 @@ type Badge = {
 
 type NftCardProps = {
   href?: string;
-  imageUrl: string;
+  imageUrl: string | StaticImageData;
   title: string;
   description?: string;
   badge?: Badge;
@@ -40,27 +41,40 @@ export default function NftCard({
     >
       {/* Badge */}
       {badge?.text ? (
-        <div className={`absolute top-2 right-2 text-white text-xs px-2 py-1 rounded-full z-10 ${badge.className || "bg-white/20"}`}>
+        <div
+          className={`absolute top-2 right-2 text-white text-xs px-2 py-1 rounded-full z-10 ${
+            badge.className || "bg-white/20"
+          }`}
+        >
           {badge.text}
         </div>
       ) : null}
 
       {/* Image */}
       <div className="relative aspect-square">
-        <img
+        <Image
           src={imageUrl || "https://via.placeholder.com/300"}
           alt={title}
           className={"w-full h-full object-cover " + (imageClassName || "")}
         />
         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent p-4">
-          <h3 className="text-xl font-bold text-white drop-shadow-lg">{title}</h3>
+          <h3 className="text-xl font-bold text-white drop-shadow-lg">
+            {title}
+          </h3>
         </div>
       </div>
 
       {/* Content */}
-      <div className={"p-4 flex flex-col justify-between grow min-h-[150px] " + (contentClassName || "") }>
+      <div
+        className={
+          "p-4 flex flex-col justify-between grow min-h-[150px] " +
+          (contentClassName || "")
+        }
+      >
         {description ? (
-          <p className="text-sm text-white/70 line-clamp-2 mb-4 leading-relaxed">{description}</p>
+          <p className="text-sm text-white/70 line-clamp-2 mb-4 leading-relaxed">
+            {description}
+          </p>
         ) : (
           <div className="mb-4" />
         )}
@@ -79,5 +93,3 @@ export default function NftCard({
 
   return Card;
 }
-
-
