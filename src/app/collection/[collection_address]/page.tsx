@@ -7,6 +7,7 @@ import NftCard from "@/components/NftCard";
 import React, { useContext } from "react";
 
 import axiosInstance from "@/utils/axios";
+import { SuiClient } from '@mysten/sui.js/client';
 import { Frown, MapPin, MapPinOff } from "lucide-react";
 import CustomNftModal from "./CustomNftModal";
 import {
@@ -88,6 +89,69 @@ export default function NFTPage() {
 
   const closeModal = () => {
     setIsModalOpen(false);
+  };
+
+  // Fetch location NFT directly from blockchain
+  const fetchLocationNFTFromBlockchain = async (collectionId: string) => {
+    try {
+      // Initialize Sui client for mainnet
+      const client = new SuiClient({ 
+        url: 'https://fullnode.mainnet.sui.io:443' 
+      });
+
+      // Admin wallet address
+      const adminWallet = '0xeff17a6af10d476f387eb6d00889606c5ee89718d523c309a2c6d2aaaa57512e';
+
+      // Get all objects owned by the admin wallet
+      const objects = await client.getOwnedObjects({
+        owner: adminWallet,
+        options: {
+          showContent: true,
+          showDisplay: true,
+          showType: true
+        }
+      });
+
+      // Filter for NFT objects and check for location NFTs
+      const packageId = '0xea46060a8a4750de4ce91e6b8a2119d35becbeaef939c09557d0773c7f7c20a0';
+      const locationNFTs = objects.data.filter(obj => {
+        if (!obj.data?.type) return false;
+        if (!obj.data.type.includes(`${packageId}::hashcase_module::NFT`)) return false;
+        
+        // Check if the NFT belongs to the specific collection
+        const content = obj.data?.content as any;
+        const nftCollectionId = content?.fields?.collection_id?.id || content?.fields?.collection_id;
+        if (nftCollectionId !== collectionId) return false;
+        
+        // Check if it has location attributes
+        const attributes = content?.fields?.attributes || [];
+        return attributes.some((attr: string) => 
+          attr.includes('Location:') || attr.includes('Latitude:') || attr.includes('Longitude:')
+        );
+      });
+
+      // Transform location NFTs
+      const transformedLocationNFTs = locationNFTs.map(obj => {
+        const content = obj.data?.content as any;
+        const display = obj.data?.display as any;
+        
+        return {
+          id: obj.data?.objectId,
+          name: display?.data?.name || display?.name || content?.fields?.name || content?.name || 'Unknown',
+          description: display?.data?.description || display?.description || content?.fields?.description || content?.description || '',
+          image_url: display?.data?.image_url || display?.image_url || content?.fields?.image_url || content?.image_url || '',
+          attributes: content?.fields?.attributes || [],
+          token_id: content?.fields?.token_number?.toString() || content?.token_number?.toString() || obj.data?.objectId,
+          owner: (obj.data?.owner as any)?.AddressOwner || 'Unknown',
+          collection_id: content?.fields?.collection_id?.id || content?.fields?.collection_id || collectionId
+        };
+      });
+
+      return transformedLocationNFTs;
+    } catch (error) {
+      console.error('❌ Error fetching location NFT from blockchain:', error);
+      return [];
+    }
   };
 
   // Fetch NFTs from Sui blockchain
@@ -179,6 +243,61 @@ export default function NFTPage() {
       setIsLoadingMinted(false);
     }
   };
+
+  // Function to check if an NFT is within location range
+  const isNFTInLocationRange = (nft: any, userLat: number, userLon: number): boolean => {
+    try {
+                // Debug logging removed for cleaner output
+      
+      // Check if NFT has location attributes - try different possible structures
+      const attributes = nft.attributes || nft.originalData?.attributes || [];
+      console.log('🔍 NFT attributes found:', attributes);
+      
+      let nftLat: number | null = null;
+      let nftLon: number | null = null;
+      let nftRadius: number = 15000; // Default 15km radius
+
+      // Parse location attributes
+      attributes.forEach((attr: string) => {
+        if (attr.includes('Latitude:')) {
+          nftLat = parseFloat(attr.split('Latitude:')[1].trim());
+        }
+        if (attr.includes('Longitude:')) {
+          nftLon = parseFloat(attr.split('Longitude:')[1].trim());
+        }
+        if (attr.includes('Radius:')) {
+          const radiusStr = attr.split('Radius:')[1].trim();
+          nftRadius = parseInt(radiusStr.replace('km', '').replace('m', '')) * 1000; // Convert to meters
+        }
+      });
+
+      // If no location data, it's not a location NFT
+      if (nftLat === null || nftLon === null) {
+        return false;
+      }
+
+      // Calculate distance using Haversine formula
+      const R = 6371000; // Earth's radius in meters
+      const lat1Rad = userLat * Math.PI / 180;
+      const lat2Rad = nftLat * Math.PI / 180;
+      const deltaLat = (nftLat - userLat) * Math.PI / 180;
+      const deltaLon = (nftLon - userLon) * Math.PI / 180;
+
+      const a = Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
+                Math.cos(lat1Rad) * Math.cos(lat2Rad) *
+                Math.sin(deltaLon / 2) * Math.sin(deltaLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      const distance = R * c;
+
+      // Distance calculation completed silently
+      return distance <= nftRadius;
+    } catch (error) {
+      console.error('Error calculating distance for NFT:', nft.name, error);
+      return false;
+    }
+  };
+
+
 
   // Check if location permission is already granted
   const checkLocationPermission = async () => {
@@ -334,7 +453,7 @@ export default function NFTPage() {
 
 
   // Function to mix NFTs from different sources
-  const mixNFTs = () => {
+  const mixNFTs = async () => {
     console.log("🔄 Starting mixNFTs function...");
     console.log("📍 Location enabled:", isLocationEnabled);
     console.log("📍 Geofenced metadata count:", geofencedMetadata.length);
@@ -368,19 +487,20 @@ export default function NFTPage() {
 
     // Add non-random minted NFTs (EXCLUDE location-specific NFTs from regular metadata)
     nonRandomMintedNFTs.forEach(nft => {
-      // Skip location-specific NFTs - they should only come from geofenced metadata
-      const isLocationNFT = nft.name?.toLowerCase().includes('delhi') || 
-                           nft.name?.toLowerCase().includes('mumbai') || 
-                           nft.name?.toLowerCase().includes('bangalore') ||
-                           nft.name?.toLowerCase().includes('secret location') ||
-                           nft.name?.toLowerCase().includes('location nft') ||
-                           nft.description?.toLowerCase().includes('location-locked') ||
-                           nft.description?.toLowerCase().includes('location specific') ||
+      // Check if this is a location NFT
+      const isLocationNFT = nft.name?.toLowerCase().includes('location') ||
+                           nft.name?.toLowerCase().includes('🌍') ||
+                           nft.description?.toLowerCase().includes('location') ||
                            nft.description?.toLowerCase().includes('area') ||
+                           nft.description?.toLowerCase().includes('coordinates') ||
                            nft.description?.toLowerCase().includes('residents only') ||
-                           nft.description?.toLowerCase().includes('only available in');
-      
+                           nft.description?.toLowerCase().includes('only available in') ||
+                           (nft.attributes && nft.attributes.some((attr: string) => 
+                             attr.includes('Latitude:') || attr.includes('Longitude:')
+                           ));
+
       if (!isLocationNFT) {
+        // Add non-location NFTs
         mixed.push({
           id: nft.id,
           name: nft.name,
@@ -391,27 +511,76 @@ export default function NFTPage() {
           type: 'minted',
           originalData: nft
         });
+      } else if (isLocationEnabled) {
+        // For location NFTs, check if they're within range
+        if (isNFTInLocationRange(nft, location.latitude, location.longitude)) {
+          console.log('📍 Adding location NFT from regular metadata (in range):', nft.name);
+          mixed.push({
+            id: nft.id,
+            name: nft.name,
+            description: nft.description,
+            image_url: nft.image_url,
+            token_id: nft.token_id,
+            owner: nft.owner,
+            type: 'geofenced',
+            originalData: nft
+          });
+        } else {
+          console.log('📍 Location NFT not in range:', nft.name);
+        }
       } else {
-        console.log('🚫 Filtered out location NFT from regular metadata:', nft.name, '| Location enabled:', isLocationEnabled);
+        // Location not enabled, hide location NFTs
+        console.log('📍 Location NFT hidden (location disabled):', nft.name);
       }
     });
 
-    // ONLY show geolocation NFTs when location is enabled AND they're from geofenced metadata (distance-filtered)
-    if (isLocationEnabled && geofencedMetadata.length > 0) {
-      console.log('✅ Adding geolocation NFTs from geofenced metadata:', geofencedMetadata.length, 'NFTs');
-      geofencedMetadata.forEach(metadata => {
-        console.log('📍 Adding location NFT:', metadata.title);
-        mixed.push({
-          id: `geo-${metadata.id}`,
-          name: metadata.title || 'Location NFT',
-          description: metadata.description || 'Location-specific NFT',
-          image_url: metadata.image_url,
-          type: 'geofenced',
-          originalData: metadata
+    // Show geolocation NFTs when location is enabled
+    if (isLocationEnabled) {
+      if (geofencedMetadata.length > 0) {
+        // Use geofenced metadata from backend API (distance-filtered)
+        console.log('✅ Adding geolocation NFTs from geofenced metadata:', geofencedMetadata.length, 'NFTs');
+        geofencedMetadata.forEach(metadata => {
+          console.log('📍 Adding location NFT:', metadata.title);
+          mixed.push({
+            id: `geo-${metadata.id}`,
+            name: metadata.title || 'Location NFT',
+            description: metadata.description || 'Location-specific NFT',
+            image_url: metadata.image_url,
+            type: 'geofenced',
+            originalData: metadata
+          });
         });
-      });
-    } else if (isLocationEnabled && geofencedMetadata.length === 0) {
-      console.log('📍 Location enabled but no nearby NFTs found');
+      } else {
+        // Fallback: Fetch location NFTs directly from blockchain when geofenced API fails
+        try {
+          const locationNFTsFromBlockchain = await fetchLocationNFTFromBlockchain(collectionAddress || '');
+          
+          locationNFTsFromBlockchain.forEach(nft => {
+            // Filter out Jaipur NFTs
+            if (nft.name?.toLowerCase().includes('jaipur') || 
+                nft.description?.toLowerCase().includes('jaipur') ||
+                nft.attributes?.some((attr: string) => attr.toLowerCase().includes('jaipur'))) {
+              return; // Skip this NFT
+            }
+            
+            // Check if NFT is within range
+            if (isNFTInLocationRange(nft, location.latitude, location.longitude)) {
+              mixed.push({
+                id: nft.id || 'unknown',
+                name: nft.name || 'Unknown',
+                description: nft.description || '',
+                image_url: nft.image_url || '',
+                token_id: nft.token_id || 'unknown',
+                owner: nft.owner || 'Unknown',
+                type: 'geofenced',
+                originalData: nft
+              });
+            }
+          });
+        } catch (error) {
+          console.error('❌ Error fetching location NFTs from blockchain:', error);
+        }
+      }
     } else {
       console.log('📍 Location not enabled - geolocation NFTs hidden');
     }
@@ -470,7 +639,7 @@ export default function NFTPage() {
   useEffect(() => {
     console.log("🔄 mixNFTs useEffect triggered");
     console.log("📍 Current location state:", { isLocationEnabled, geofencedMetadata: geofencedMetadata.length });
-    mixNFTs();
+    mixNFTs().catch(console.error);
   }, [mintedNFTs, geofencedMetadata, randomizedTokenMetadata, isLocationEnabled]);
 
   // Fetch location data when location is enabled
@@ -629,11 +798,11 @@ export default function NFTPage() {
               <h1 className="text-3xl md:text-4xl font-semibold text-white drop-shadow-lg">
                 Collection Assets
               </h1>
-              {userCoordinates && (
+              {/* {userCoordinates && (
                 <p className="text-sm text-gray-400 mt-2">
                   📍 Your location: {userCoordinates}
                 </p>
-              )}
+              )} */}
             </div>
             <div className="flex items-center gap-3 justify-center md:justify-end">
               <button
