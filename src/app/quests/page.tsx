@@ -484,7 +484,7 @@ const QuestsPageContent = () => {
                       setMintedNftData({
                         name: nftData.name,
                         description: nftData.description,
-                        image_url: nftData.image_url,
+                        image_url: backgroundImageHeroSection,
                         recipient: nftData.recipient,
                       });
                       setNftMinted(true);
