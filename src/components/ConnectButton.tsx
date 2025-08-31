@@ -71,7 +71,6 @@ const ConnectButton = () => {
         handleUserCreation();
       }
     }
-    // setLoading(false);
   }, [address]);
 
   // Debug logging
@@ -167,16 +166,20 @@ const ConnectButton = () => {
       walletAddress
     );
     return (
-      <div className="ml-10 flex items-center gap-x-3 px-5 py-2.5  border-b-2  text-white border-gray-300 w-max font-semibold rounded-2xl">
-        <div className="flex items-center gap-x-3">
-          <Wallet className="w-4 h-4" />
-          <span>{walletAddress}</span>
+      <div className="ml-4 sm:ml-6 md:ml-10 flex items-center gap-x-2 sm:gap-x-3 px-3 sm:px-4 md:px-5 py-1.5 sm:py-2 md:py-2.5 border-b-2 text-white border-gray-300 w-max font-medium sm:font-semibold rounded-2xl text-xs sm:text-sm md:text-base">
+        <div className="flex items-center gap-x-2 sm:gap-x-3">
+          <Wallet className="w-3 h-3 sm:w-4 sm:h-4" />
+          <span className="hidden sm:inline">{walletAddress}</span>
+          <span className="sm:hidden">
+            {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
+          </span>
         </div>
         <button
           onClick={handleDisconnect}
-          className="text-red-400 hover:text-red-300 font-medium text-sm"
+          className="text-red-400 hover:text-red-300 font-medium text-xs sm:text-sm"
         >
-          Disconnect
+          <span className="hidden sm:inline">Disconnect</span>
+          <span className="sm:hidden">✕</span>
         </button>
       </div>
     );
@@ -187,10 +190,11 @@ const ConnectButton = () => {
   return (
     <button
       onClick={handleModal}
-      className="flex justify-center items-center gap-x-5 px-6 py-2.5 border-b-2  text-white font-semibold rounded-2xl w-max ml-10"
+      className="flex justify-center items-center gap-x-2 sm:gap-x-3 md:gap-x-5 px-3 sm:px-4 md:px-6 py-1.5 sm:py-2 md:py-2.5 border-b-2 text-white font-medium sm:font-semibold rounded-2xl w-max ml-4 sm:ml-6 md:ml-10 text-xs sm:text-sm md:text-base"
     >
-      Connect
-      <Wallet />
+      <span className="hidden sm:inline">Connect</span>
+      <span className="sm:hidden">Connect</span>
+      <Wallet className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5" />
     </button>
   );
 };

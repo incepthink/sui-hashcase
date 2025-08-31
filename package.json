@@ -12,6 +12,10 @@
   "author": "Hashcase Team",
   "license": "MIT",
   "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@mui/icons-material": "^7.3.1",
+    "@mui/material": "^7.3.1",
     "@mysten/dapp-kit": "^0.14.53",
     "@mysten/enoki": "^0.3.10",
     "@mysten/sui": "^1.37.1",

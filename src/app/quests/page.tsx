@@ -45,12 +45,10 @@ const QuestsPageContent = () => {
     recipient: string;
   } | null>(null);
 
-  // Ensure component is mounted before accessing browser APIs
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Only compute wallet state after mounting to prevent hydration mismatch
   const walletAddress = mounted ? currentAccount?.address || zkAddress : null;
   const isWalletConnected = mounted && !!walletAddress;
 
@@ -60,11 +58,9 @@ const QuestsPageContent = () => {
     isLoading: isCollectionLoading,
     isError: isCollectionError,
   } = useCollectionById(cid!);
-  console.log("collection", collection);
 
-  // Check localStorage for global NFT minted status when quests are loaded
   useEffect(() => {
-    if (!mounted) return; // Don't access localStorage before mounting
+    if (!mounted) return;
 
     if (quests.length > 0) {
       const completedQuests = quests.filter(
@@ -78,7 +74,6 @@ const QuestsPageContent = () => {
       if (savedNftStatus === "true" && currentCompletionPercentage === 100) {
         setNftMinted(true);
       } else if (currentCompletionPercentage < 100) {
-        // Reset minted status if quests aren't completed
         setNftMinted(false);
         localStorage.removeItem("nft_minted_ns_daily");
       }
@@ -91,7 +86,6 @@ const QuestsPageContent = () => {
     const prev = prevIsConnectedRef.current;
     prevIsConnectedRef.current = isWalletConnected;
 
-    // Show spinner when wallet state changes
     if (prev !== isWalletConnected) {
       setLoading(true);
       setInitialLoad(true);
@@ -117,7 +111,6 @@ const QuestsPageContent = () => {
     }
   }, [mounted, isWalletConnected, quests.length]);
 
-  // Only compute these values after mounting to prevent hydration mismatch
   const completedQuests =
     mounted && isWalletConnected && !loading
       ? quests.filter((q) => q.is_completed).length
@@ -129,7 +122,6 @@ const QuestsPageContent = () => {
       : 0;
 
   const fetchQuests = async () => {
-    // SAFETY CHECK: Don't proceed if collection is not available
     if (!collection || !collection.owner_id) {
       console.log("⚠️ Collection not available yet, skipping quest fetch");
       return [];
@@ -138,19 +130,9 @@ const QuestsPageContent = () => {
     try {
       setLoading(true);
       const walletAddress = currentAccount?.address || zkAddress;
-      console.log(
-        "🔍 fetchQuests called with wallet:",
-        walletAddress,
-        "mounted:",
-        mounted,
-        "isWalletConnected:",
-        isWalletConnected,
-        "collection:",
-        collection
-      );
 
       const params: { owner_id: number; wallet_address?: string } = {
-        owner_id: collection.owner_id, // Now safe because we checked above
+        owner_id: collection.owner_id,
       };
       if (walletAddress) {
         params.wallet_address = walletAddress;
@@ -159,7 +141,6 @@ const QuestsPageContent = () => {
       const response = await axiosInstance.get("/platform/quest/by-owner", {
         params,
       });
-      console.log("📡 Raw API response:", response.data.quests);
 
       let sessionCompleted: number[] = [];
       try {
@@ -169,7 +150,6 @@ const QuestsPageContent = () => {
         sessionCompleted = sessionKey
           ? JSON.parse(sessionStorage.getItem(sessionKey) || "[]")
           : [];
-        console.log("📦 Session completed quests:", sessionCompleted);
       } catch {}
 
       const transformedQuests = (response.data.quests || []).map(
@@ -177,15 +157,6 @@ const QuestsPageContent = () => {
           const isCompletedFromAPI = quest.userProgress?.isCompleted || false;
           const isCompletedFromSession = sessionCompleted.includes(quest.id);
           const isCompleted = isCompletedFromAPI || isCompletedFromSession;
-
-          console.log(`🎯 Quest ${quest.quest_code}:`, {
-            id: quest.id,
-            userProgress: quest.userProgress,
-            isCompletedFromAPI,
-            isCompletedFromSession,
-            finalCompleted: isCompleted,
-            walletConnected: !!walletAddress,
-          });
 
           return {
             id: quest.id,
@@ -201,19 +172,10 @@ const QuestsPageContent = () => {
         }
       );
 
-      const completedCount = transformedQuests.filter(
-        (q: Quest) => q.is_completed
-      ).length;
-      console.log(
-        `📊 Final quest state: ${completedCount}/${transformedQuests.length} completed`
-      );
-
-      // Only set quests if we have valid data
       if (transformedQuests.length > 0) {
         setQuests(transformedQuests);
         return transformedQuests;
       } else {
-        console.log("⚠️ No quests returned from API, keeping spinner active");
         return [];
       }
     } catch (err) {
@@ -226,51 +188,48 @@ const QuestsPageContent = () => {
     }
   };
 
-  // FIXED: Added collection to dependencies and proper safety checks
   useEffect(() => {
     if (mounted && collection && collection.owner_id) {
-      console.log("🚀 Collection available, fetching quests...", collection);
       setLoading(true);
       fetchQuests();
     }
-  }, [user?.id, walletAddress, mounted, collection]); // Added collection to dependencies
+  }, [user?.id, walletAddress, mounted, collection]);
 
   useEffect(() => {
     const onStorage = (e: StorageEvent) => {
       if (e.key === "quest_progress_ping" && e.newValue) {
-        console.log("🔄 Cross-tab sync triggered:", e.newValue);
         fetchQuests();
       }
     };
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);
-  }, [collection]); // Added collection dependency
+  }, [collection]);
 
   useEffect(() => {
     if (mounted && isWalletConnected && collection && collection.owner_id) {
       fetchQuests();
     }
-  }, [mounted, isWalletConnected, collection]); // Added collection dependency
+  }, [mounted, isWalletConnected, collection]);
 
-  // Don't render anything until mounted to prevent hydration mismatch
   if (!mounted) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
+      <div className="min-h-screen bg-black flex items-center justify-center px-4">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-white border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
-          <h2 className="text-2xl font-bold text-white">Loading...</h2>
+          <div className="w-12 h-12 sm:w-16 sm:h-16 border-4 border-white border-t-transparent rounded-full animate-spin mx-auto mb-4 sm:mb-6"></div>
+          <h2 className="text-xl sm:text-2xl font-bold text-white">
+            Loading...
+          </h2>
         </div>
       </div>
     );
   }
 
-  // Show loading while collection is being fetched
   if (isCollectionLoading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
+      <div className="min-h-screen bg-black flex items-center justify-center px-4">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-white border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
-          <h2 className="text-2xl font-bold text-white">
+          <div className="w-12 h-12 sm:w-16 sm:h-16 border-4 border-white border-t-transparent rounded-full animate-spin mx-auto mb-4 sm:mb-6"></div>
+          <h2 className="text-xl sm:text-2xl font-bold text-white">
             Loading Collection...
           </h2>
         </div>
@@ -278,19 +237,20 @@ const QuestsPageContent = () => {
     );
   }
 
-  // Show error if collection failed to load
   if (isCollectionError || !collection) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
+      <div className="min-h-screen bg-black flex items-center justify-center px-4">
         <div className="text-center">
-          <div className="text-red-400 text-4xl mb-4">⚠️</div>
-          <h2 className="text-2xl font-bold text-white mb-4">
+          <div className="text-red-400 text-3xl sm:text-4xl mb-4">⚠️</div>
+          <h2 className="text-xl sm:text-2xl font-bold text-white mb-4">
             Collection Not Found
           </h2>
-          <p className="text-gray-400 mb-6">Unable to load collection data</p>
+          <p className="text-gray-400 mb-6 text-sm sm:text-base">
+            Unable to load collection data
+          </p>
           <button
             onClick={() => router.push("/collections")}
-            className="px-6 py-3 bg-white text-black rounded-lg hover:bg-gray-200 transition-colors"
+            className="px-4 sm:px-6 py-2 sm:py-3 bg-white text-black rounded-lg hover:bg-gray-200 transition-colors text-sm sm:text-base"
           >
             Back to Collections
           </button>
@@ -299,14 +259,17 @@ const QuestsPageContent = () => {
     );
   }
 
-  // Show loading while quests are being fetched
   if (initialLoad || loading || quests.length === 0) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
+      <div className="min-h-screen bg-black flex items-center justify-center px-4">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-white border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
-          <h2 className="text-2xl font-bold text-white">Loading Quests...</h2>
-          <p className="text-gray-400 mt-2">Collection: {collection?.name}</p>
+          <div className="w-12 h-12 sm:w-16 sm:h-16 border-4 border-white border-t-transparent rounded-full animate-spin mx-auto mb-4 sm:mb-6"></div>
+          <h2 className="text-xl sm:text-2xl font-bold text-white">
+            Loading Quests...
+          </h2>
+          <p className="text-gray-400 mt-2 text-sm sm:text-base">
+            Collection: {collection?.name}
+          </p>
         </div>
       </div>
     );
@@ -315,42 +278,55 @@ const QuestsPageContent = () => {
   return (
     <div className="min-h-screen bg-black">
       <div className="relative">
-        {/* Back Button - Top Left */}
-        <div className="absolute top-4 left-4 z-10">
-          <button
-            onClick={() => {
-              try {
-                const cid = searchParams.get("collection_id");
-                if (cid) {
-                  router.push(`/loyalties/${cid}`);
-                  return;
+        {/* Navigation - Mobile: Centered, Desktop: Corners */}
+        <div className="absolute top-3 sm:top-4 left-3 sm:left-4 right-3 sm:right-4 z-10">
+          <div className="flex items-center justify-between sm:justify-start">
+            {/* Back Button */}
+            <button
+              onClick={() => {
+                try {
+                  const cid = searchParams.get("collection_id");
+                  if (cid) {
+                    router.push(`/loyalties/${cid}`);
+                    return;
+                  }
+                  router.push("/loyalties/214");
+                } catch {
+                  if (
+                    typeof window !== "undefined" &&
+                    window.history.length > 1
+                  )
+                    window.history.back();
+                  else router.push("/loyalties");
                 }
-                router.push("/loyalties/214");
-              } catch {
-                if (typeof window !== "undefined" && window.history.length > 1)
-                  window.history.back();
-                else router.push("/loyalties");
-              }
-            }}
-            className="text-white hover:text-gray-300 font-semibold transition-colors duration-300 flex items-center gap-2"
-          >
-            ← Back
-          </button>
+              }}
+              className="text-white hover:text-gray-300 font-semibold transition-colors duration-300 flex items-center gap-2 text-sm sm:text-base"
+            >
+              ← Back
+            </button>
+
+            {/* Connect Button - Mobile: Same row, Desktop: Positioned absolutely */}
+            <div className="sm:hidden">
+              <ConnectButton />
+            </div>
+          </div>
         </div>
-        <div className="absolute top-4 right-4 z-[9999]">
+
+        {/* Desktop Connect Button */}
+        <div className="hidden sm:block absolute top-3 sm:top-4 right-3 sm:right-4 z-[9999]">
           <ConnectButton />
         </div>
       </div>
 
-      {/* NFT Reward Section - Above Header */}
-      <div className="pt-32 pb-6">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Large NFT Display */}
-          <div className="max-w-4xl mx-auto mb-24">
-            <div className="flex items-center space-x-8">
-              {/* Large NFT Image */}
-              <div className="flex-shrink-0">
-                <div className="w-48 h-48 rounded-2xl shadow-2xl border-2 border-purple-300/30 overflow-hidden">
+      {/* Main Content */}
+      <div className="pt-20 sm:pt-20 md:pt-32 pb-6 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-4xl mx-auto">
+          {/* NFT Display Section */}
+          <div className="mb-12 sm:mb-16 md:mb-24">
+            <div className="flex flex-col sm:flex-row items-center sm:space-x-6 md:space-x-8 space-y-6 sm:space-y-0">
+              {/* NFT Image */}
+              <div className="w-full sm:flex-shrink-0 sm:w-auto">
+                <div className="w-full sm:w-40 sm:h-40 md:w-48 md:h-48 aspect-square rounded-2xl shadow-2xl border-2 border-purple-300/30 overflow-hidden">
                   {collection.name === "NS" ? (
                     <img
                       src="https://client-uploads.nyc3.digitaloceanspaces.com/images/3b1daaad-c7dc-4884-a78b-739a3ce3dfaa/2025-08-28T12-25-58-895Z-38bc0eae.png"
@@ -366,31 +342,37 @@ const QuestsPageContent = () => {
                   )}
                 </div>
               </div>
+
               {/* NFT Info */}
-              <div className="flex-1 max-w-lg">
-                <h2 className="text-3xl font-bold text-white mb-3">
+              <div className="flex-1 text-center sm:text-left max-w-lg">
+                <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3">
                   {collection.name}
                 </h2>
-                <p className="text-gray-300 text-lg leading-relaxed">
+                <p className="text-gray-300 text-base sm:text-lg leading-relaxed">
                   Complete the tasks for the day to claim this reward.
                 </p>
               </div>
             </div>
           </div>
 
+          {/* Quest Section Header */}
           <div className="text-center mb-6">
-            <h1 className="text-2xl font-bold text-white mb-2">
+            <h1 className="text-xl sm:text-2xl font-bold text-white mb-2">
               Available Quests
             </h1>
+
+            {/* Progress Bar */}
             {mounted && isWalletConnected && !loading && (
               <div className="max-w-md mx-auto mb-6">
                 <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm text-gray-400">Progress</span>
-                  <span className="text-sm font-semibold text-white">
+                  <span className="text-xs sm:text-sm text-gray-400">
+                    Progress
+                  </span>
+                  <span className="text-xs sm:text-sm font-semibold text-white">
                     {completedQuests}/{totalQuests} ({completionPercentage}%)
                   </span>
                 </div>
-                <div className="w-full bg-gray-800 rounded-full h-3 overflow-hidden">
+                <div className="w-full bg-gray-800 rounded-full h-2 sm:h-3 overflow-hidden">
                   <div
                     className="bg-white h-full rounded-full transition-all duration-500 ease-out"
                     style={{ width: `${completionPercentage}%` }}
@@ -400,34 +382,36 @@ const QuestsPageContent = () => {
             )}
           </div>
 
-          <div className="space-y-2">
+          {/* Quest List */}
+          <div className="space-y-2 sm:space-y-3">
             {quests.map((quest) => (
               <div
                 key={quest.id}
-                className="group bg-gray-900 border border-gray-700 rounded-lg p-3 relative overflow-hidden"
+                className="group bg-gray-900 border border-gray-700 rounded-lg p-3 sm:p-4 relative overflow-hidden"
               >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div className="flex flex-col">
-                      <h3 className="text-base font-bold text-white">
-                        {quest.title}
-                      </h3>
-                      <p className="text-gray-400 text-xs hidden md:block">
-                        {quest.description}
-                      </p>
-                    </div>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
+                  {/* Quest Info */}
+                  <div className="flex-1">
+                    <h3 className="text-sm sm:text-base font-bold text-white mb-1 sm:mb-0">
+                      {quest.title}
+                    </h3>
+                    <p className="text-gray-400 text-xs sm:text-sm">
+                      {quest.description}
+                    </p>
                   </div>
-                  <div className="flex items-center space-x-4">
+
+                  {/* Quest Status */}
+                  <div className="flex-shrink-0">
                     {quest.is_completed ? (
-                      <span className="text-xs text-green-400 bg-green-900/20 px-2 py-1 rounded border border-green-700">
+                      <span className="text-xs sm:text-sm text-green-400 bg-green-900/20 px-2 sm:px-3 py-1 rounded border border-green-700 inline-block">
                         ✓ Completed
                       </span>
                     ) : !isWalletConnected ? (
-                      <span className="text-sm text-gray-400 bg-gray-800/20 px-4 py-1 rounded border border-gray-600">
+                      <span className="text-xs sm:text-sm text-gray-400 bg-gray-800/20 px-2 sm:px-3 py-1 rounded border border-gray-600 inline-block">
                         Connect Wallet to Claim
                       </span>
                     ) : (
-                      <span className="text-sm text-gray-400 bg-gray-800/20 px-4 py-1 rounded border border-gray-600">
+                      <span className="text-xs sm:text-sm text-gray-400 bg-gray-800/20 px-2 sm:px-3 py-1 rounded border border-gray-600 inline-block">
                         Not Completed
                       </span>
                     )}
@@ -439,7 +423,7 @@ const QuestsPageContent = () => {
 
           {/* Claim NFT Button */}
           {quests.length > 0 && (
-            <div className="text-center mt-8">
+            <div className="text-center mt-6 sm:mt-8">
               <button
                 onClick={async () => {
                   if (nftMinted) {
@@ -480,7 +464,6 @@ const QuestsPageContent = () => {
                     );
 
                     if (response.data.success) {
-                      // Store NFT data and show modal
                       setMintedNftData({
                         name: nftData.name,
                         description: nftData.description,
@@ -488,13 +471,8 @@ const QuestsPageContent = () => {
                         recipient: nftData.recipient,
                       });
                       setNftMinted(true);
-
-                      // Save to localStorage for global state across pages
                       localStorage.setItem("nft_minted_ns_daily", "true");
-
                       setShowNftModal(true);
-
-                      // Still show the toast for immediate feedback
                       toast.success("🎉 NS Daily NFT minted successfully!");
                     } else {
                       toast.error(
@@ -521,29 +499,42 @@ const QuestsPageContent = () => {
                 }}
                 disabled={claiming || !isWalletConnected}
                 className={`
-                    px-8 py-2 rounded-lg font-semibold text-lg transition-all duration-300 transform
-                    ${
-                      nftMinted
-                        ? "bg-white text-black cursor-default"
-                        : !isWalletConnected
-                        ? "bg-gray-600 text-gray-300 cursor-not-allowed opacity-60"
-                        : completionPercentage === 100 && !claiming
-                        ? "bg-white text-black shadow-lg hover:shadow-xl cursor-pointer"
-                        : "bg-gray-700 text-gray-400 cursor-not-allowed opacity-50"
-                    }
-                  `}
+                  w-full sm:w-auto px-6 sm:px-8 py-2 sm:py-3 rounded-lg font-semibold text-sm sm:text-base md:text-lg transition-all duration-300 transform
+                  ${
+                    nftMinted
+                      ? "bg-white text-black cursor-default"
+                      : !isWalletConnected
+                      ? "bg-gray-600 text-gray-300 cursor-not-allowed opacity-60"
+                      : completionPercentage === 100 && !claiming
+                      ? "bg-white text-black shadow-lg hover:shadow-xl cursor-pointer"
+                      : "bg-gray-700 text-gray-400 cursor-not-allowed opacity-50"
+                  }
+                `}
               >
-                {nftMinted
-                  ? " NFT Minted"
-                  : claiming
-                  ? " Minting NFT..."
-                  : !isWalletConnected
-                  ? "Connect Wallet to Claim NFT"
-                  : completionPercentage === 100
-                  ? "Claim NFT"
-                  : `Complete ${
-                      totalQuests - completedQuests
-                    } more quests to Claim NFT`}
+                <span className="block sm:hidden">
+                  {nftMinted
+                    ? "✓ NFT Minted"
+                    : claiming
+                    ? "Minting..."
+                    : !isWalletConnected
+                    ? "Connect Wallet"
+                    : completionPercentage === 100
+                    ? "Claim NFT"
+                    : `Complete ${totalQuests - completedQuests} more`}
+                </span>
+                <span className="hidden sm:block">
+                  {nftMinted
+                    ? "✓ NFT Minted"
+                    : claiming
+                    ? "🎨 Minting NFT..."
+                    : !isWalletConnected
+                    ? "Connect Wallet to Claim NFT"
+                    : completionPercentage === 100
+                    ? "🎉 Claim NFT"
+                    : `Complete ${
+                        totalQuests - completedQuests
+                      } more quests to Claim NFT`}
+                </span>
               </button>
             </div>
           )}
@@ -552,8 +543,8 @@ const QuestsPageContent = () => {
 
       {/* NFT Minted Success Modal */}
       {showNftModal && mintedNftData && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-80 backdrop-blur-md">
-          {/* Particle Effects Background - Around the modal */}
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-80 backdrop-blur-md p-4">
+          {/* Particle Effects Background */}
           <div className="absolute inset-0 overflow-hidden pointer-events-none">
             {[...Array(30)].map((_, i) => (
               <div
@@ -569,12 +560,12 @@ const QuestsPageContent = () => {
             ))}
           </div>
 
-          {/* Minimal Modal Content */}
-          <div className="relative bg-black/60 backdrop-blur-xl rounded-3xl p-8 max-w-sm w-full mx-4 border border-white/10 shadow-2xl">
+          {/* Modal Content */}
+          <div className="relative bg-black/60 backdrop-blur-xl rounded-3xl p-6 sm:p-8 max-w-sm w-full mx-4 border border-white/10 shadow-2xl">
             {/* Close Button */}
             <button
               onClick={() => setShowNftModal(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+              className="absolute top-3 sm:top-4 right-3 sm:right-4 text-gray-400 hover:text-white transition-colors text-lg"
             >
               ✕
             </button>
@@ -588,17 +579,19 @@ const QuestsPageContent = () => {
                   setShowNftModal(false);
                 }
               }}
-              className="absolute top-4 right-16 text-gray-400 hover:text-blue-400 transition-colors flex flex-row items-center gap-1"
+              className="absolute top-3 sm:top-4 right-12 sm:right-16 text-gray-400 hover:text-blue-400 transition-colors flex flex-row items-center gap-1"
               title="View in Profile"
             >
-              <span className="text-xs">View in Profile</span>
-              <ArrowRight size={16} />
+              <span className="text-xs hidden sm:inline">View in Profile</span>
+              <span className="text-xs sm:hidden">Profile</span>
+              <ArrowRight size={14} className="sm:hidden" />
+              <ArrowRight size={16} className="hidden sm:block" />
             </button>
 
             {/* Content */}
             <div className="text-center">
               {/* NFT Image */}
-              <div className="w-24 h-24 mx-auto mb-4 rounded-2xl overflow-hidden border border-white/20">
+              <div className="w-20 h-20 sm:w-24 sm:h-24 mx-auto mb-4 rounded-2xl overflow-hidden border border-white/20">
                 <Image
                   src={mintedNftData.image_url}
                   alt={mintedNftData.name}
@@ -607,7 +600,7 @@ const QuestsPageContent = () => {
               </div>
 
               {/* Title */}
-              <h2 className="text-xl font-bold text-white mb-2">
+              <h2 className="text-lg sm:text-xl font-bold text-white mb-2">
                 {mintedNftData.name}
               </h2>
               <p className="text-green-400 text-sm mb-4">
@@ -618,15 +611,21 @@ const QuestsPageContent = () => {
               <div className="bg-white/5 rounded-lg p-3 mb-6">
                 <p className="text-gray-400 text-xs mb-1">Sent to:</p>
                 <p className="text-white font-mono text-xs break-all">
-                  {mintedNftData.recipient.slice(0, 8)}...
-                  {mintedNftData.recipient.slice(-8)}
+                  <span className="sm:hidden">
+                    {mintedNftData.recipient.slice(0, 6)}...
+                    {mintedNftData.recipient.slice(-6)}
+                  </span>
+                  <span className="hidden sm:inline">
+                    {mintedNftData.recipient.slice(0, 8)}...
+                    {mintedNftData.recipient.slice(-8)}
+                  </span>
                 </p>
               </div>
 
               {/* Close Button */}
               <button
                 onClick={() => setShowNftModal(false)}
-                className="w-full bg-white/10 hover:bg-white/20 text-white font-medium py-2 px-4 rounded-lg transition-all duration-200"
+                className="w-full bg-white/10 hover:bg-white/20 text-white font-medium py-2 px-4 rounded-lg transition-all duration-200 text-sm sm:text-base"
               >
                 Done
               </button>
@@ -642,10 +641,12 @@ const QuestsPage = () => {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="min-h-screen bg-black flex items-center justify-center px-4">
           <div className="text-center">
-            <div className="w-16 h-16 border-4 border-white border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
-            <h2 className="text-2xl font-bold text-white">Loading...</h2>
+            <div className="w-12 h-12 sm:w-16 sm:h-16 border-4 border-white border-t-transparent rounded-full animate-spin mx-auto mb-4 sm:mb-6"></div>
+            <h2 className="text-xl sm:text-2xl font-bold text-white">
+              Loading...
+            </h2>
           </div>
         </div>
       }

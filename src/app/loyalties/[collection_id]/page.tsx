@@ -24,8 +24,8 @@ import LoyaltyCodesTable from "./LoyaltyCodesTable";
 import BadgesTable from "./BadgesTable";
 
 const CollectionLoyaltiesPage = () => {
-  const [mounted, setMounted] = useState(false)
-  useEffect(() => setMounted(true), [])
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
   const params = useParams();
   const router = useRouter();
   const currentAccount = useCurrentAccount();
@@ -48,9 +48,7 @@ const CollectionLoyaltiesPage = () => {
   const { spendLoyaltyPoints } = useLoyaltyPointsTransactions();
 
   // States to handle the tab change
-  const [activeTab, setActiveTab] = useState<"loyalty" | "badges">(
-    "loyalty"
-  );
+  const [activeTab, setActiveTab] = useState<"loyalty" | "badges">("loyalty");
 
   const handleTabChange = (tab: "loyalty" | "badges") => {
     setActiveTab(tab);
@@ -81,8 +79,6 @@ const CollectionLoyaltiesPage = () => {
 
     getOwnerData();
   }, [params.collection_id]);
-
-
 
   // Fetch token data
   // Add refetch capability to the query
@@ -146,8 +142,6 @@ const CollectionLoyaltiesPage = () => {
     }
   };
 
-
-
   // Show wallet not connected message if wallet is not connected
   if (!mounted || !isWalletConnected) {
     return (
@@ -155,7 +149,7 @@ const CollectionLoyaltiesPage = () => {
         {/* Glowing background elements */}
         <div className="absolute top-0 left-0 w-1/3 h-full bg-gradient-to-r from-blue-900/20 to-transparent -skew-x-12 -translate-x-1/3"></div>
         <div className="absolute bottom-0 right-0 w-1/3 h-full bg-gradient-to-l from-purple-900/20 to-transparent skew-x-12 translate-x-1/3"></div>
-        
+
         <div className="relative z-10 text-center">
           <p className="text-sm text-white/80">Wallet not connected</p>
         </div>
@@ -170,7 +164,7 @@ const CollectionLoyaltiesPage = () => {
         {/* Glowing background elements */}
         <div className="absolute top-0 left-0 w-1/3 h-full bg-gradient-to-r from-blue-900/20 to-transparent -skew-x-12 -translate-x-1/3"></div>
         <div className="absolute bottom-0 right-0 w-1/3 h-full bg-gradient-to-l from-purple-900/20 to-transparent skew-x-12 translate-x-1/3"></div>
-        
+
         <div className="relative z-10 text-center">
           <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
           <h1 className="text-4xl sm:text-4xl font-extrabold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-blue-300 via-blue-400 to-purple-500 drop-shadow-lg leading-tight">
@@ -191,7 +185,7 @@ const CollectionLoyaltiesPage = () => {
   //       {/* Glowing background elements */}
   //       <div className="absolute top-0 left-0 w-1/3 h-full bg-gradient-to-r from-blue-900/20 to-transparent -skew-x-12 -translate-x-1/3"></div>
   //       <div className="absolute bottom-0 right-0 w-1/3 h-full bg-gradient-to-l from-purple-900/20 to-transparent skew-x-12 translate-x-1/3"></div>
-        
+
   //       <div className="relative z-10 text-center">
   //         {/* <h1 className="text-4xl sm:text-6xl font-extrabold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-blue-300 via-blue-400 to-purple-500 drop-shadow-lg leading-tight">
   //           Connect Wallet
@@ -286,7 +280,7 @@ const CollectionLoyaltiesPage = () => {
   //             <button
   //               key={tab.key}
   //               onClick={() => handleTabChange(tab.key as any)}
-  //               className={`relative px-6 py-2 rounded-lg font-semibold text-sm transition-all duration-300 
+  //               className={`relative px-6 py-2 rounded-lg font-semibold text-sm transition-all duration-300
   //           ${
   //             activeTab === tab.key
   //               ? "text-white bg-gradient-to-r from-blue-500 to-purple-500 shadow-md"
@@ -305,7 +299,7 @@ const CollectionLoyaltiesPage = () => {
   //             </button>
   //           ))}
   //         </div>
-          
+
   //         {/* View Quests Button */}
   //         <button
   //           onClick={() => window.location.href = '/quests'}
@@ -323,7 +317,6 @@ const CollectionLoyaltiesPage = () => {
   //       )}
 
   //       {ownerId && activeTab === "badges" && <BadgesTable owner_id={ownerId} />}
-
 
   //     </>
   //   );
@@ -400,8 +393,9 @@ const CollectionLoyaltiesPage = () => {
       */}
 
       {/* Navbar Element */}
-      <div className="bg-[#00041f] flex flex-col items-center pt-20 gap-4">
-        <div className="backdrop-blur-sm rounded-xl border p-2 flex gap-4 shadow-md">
+      <div className="bg-[#00041f] flex flex-col items-center pt-12 sm:pt-16 md:pt-20 gap-3 sm:gap-4 px-4 pb-3 md:pb-0 ">
+        {/* Tab Buttons Container */}
+        <div className="backdrop-blur-sm rounded-xl border p-1.5 sm:p-2 flex gap-2 sm:gap-4 shadow-md w-full max-w-sm sm:max-w-md md:max-w-lg">
           {[
             { key: "loyalty", label: "Loyalty Codes" },
             { key: "badges", label: "Badges" },
@@ -409,14 +403,14 @@ const CollectionLoyaltiesPage = () => {
             <button
               key={tab.key}
               onClick={() => handleTabChange(tab.key as any)}
-              className={`relative px-6 py-2 rounded-lg font-semibold text-sm transition-all duration-300 
+              className={`relative flex-1 px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 rounded-lg font-semibold text-xs sm:text-sm md:text-base transition-all duration-300 
           ${
             activeTab === tab.key
               ? "text-white bg-gradient-to-r from-blue-500 to-purple-500 shadow-md"
               : "text-white/60 hover:text-white hover:bg-white/10"
           }`}
             >
-              {tab.label}
+              <span className="truncate">{tab.label}</span>
               {/* Neon border glow on hover */}
               <span
                 className={`absolute inset-0 rounded-lg pointer-events-none transition duration-300 ${
@@ -428,7 +422,7 @@ const CollectionLoyaltiesPage = () => {
             </button>
           ))}
         </div>
-        
+
         {/* View Quests Button */}
         <button
           onClick={() => {
@@ -436,35 +430,40 @@ const CollectionLoyaltiesPage = () => {
               toast.error("Please connect your wallet to view quests", {
                 duration: 3000,
                 style: {
-                  background: '#1f2937',
-                  color: '#fff',
-                  border: '1px solid #374151',
+                  background: "#1f2937",
+                  color: "#fff",
+                  border: "1px solid #374151",
                 },
               });
               return;
             }
             router.push(`/quests?collection_id=${params.collection_id}`);
           }}
-          className={`border-2 transition duration-300 font-bold py-3 px-6 rounded-xl text-sm transition-all duration-300 transform ${
-            isWalletConnected 
-              ? 'border-gray-600 hover:border-gray-500 text-white cursor-pointer'
-              : 'border-gray-700 text-gray-400 cursor-not-allowed opacity-60'
+          className={`border-2 transition duration-300 font-semibold sm:font-bold py-2.5 sm:py-3 md:py-3.5 px-4 sm:px-5 md:px-6 rounded-lg sm:rounded-xl text-xs sm:text-sm md:text-base transition-all duration-300 transform w-full max-w-xs sm:max-w-sm md:max-w-md ${
+            isWalletConnected
+              ? "border-gray-600 hover:border-gray-500 text-white cursor-pointer hover:scale-105"
+              : "border-gray-700 text-gray-400 cursor-not-allowed opacity-60"
           }`}
         >
-          {isWalletConnected ? 'View All Quests' : 'Connect Wallet to View Quests'}
-        </button>       
+          <span className="block sm:hidden">
+            {isWalletConnected ? "View Quests" : "Connect Wallet"}
+          </span>
+          <span className="hidden sm:block">
+            {isWalletConnected
+              ? "View All Quests"
+              : "Connect Wallet to View Quests"}
+          </span>
+        </button>
       </div>
 
-            {ownerId && activeTab === "loyalty" && (
+      {ownerId && activeTab === "loyalty" && (
         <LoyaltyCodesTable
           owner_id={ownerId}
           onPointsUpdate={handlePointsUpdate}
         />
       )}
       {ownerId && activeTab === "loyalty" && (
-        <LeaderboardTable 
-          owner_id={ownerId} 
-        />
+        <LeaderboardTable owner_id={ownerId} />
       )}
 
       {ownerId && activeTab === "badges" && <BadgesTable owner_id={ownerId} />}

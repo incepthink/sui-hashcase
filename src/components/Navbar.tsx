@@ -1,30 +1,40 @@
 "use client";
-import { Wallet } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import {
+  AppBar,
+  Toolbar,
+  Box,
+  Button,
+  IconButton,
+  Menu,
+  MenuItem,
+  Container,
+  Divider,
+  useTheme,
+  useMediaQuery,
+  Fade,
+} from "@mui/material";
+import { Menu as MenuIcon, Close as CloseIcon } from "@mui/icons-material";
 import { useCurrentAccount } from "@mysten/dapp-kit";
 import { useZkLogin } from "@mysten/enoki/react";
 import Link from "next/link";
-import { Work_Sans } from "next/font/google";
-import { HashcaseText } from "../assets";
-import { AppContext } from "@/context/AppContext";
-import { useContext, useEffect, useState } from "react";
-import Hamburger from "hamburger-react";
-import { useGlobalAppStore } from "@/store/globalAppStore";
-import ConnectButton from "./ConnectButton";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-// Modal and ZkLogin now handled globally
-
-const workSans = Work_Sans({ subsets: ["latin"] });
+import { HashcaseText } from "../assets";
+import ConnectButton from "./ConnectButton";
 
 export const Navbar = () => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const currentAccount = useCurrentAccount();
   const { address } = useZkLogin();
   const router = useRouter();
 
-  const [isOpen, setOpen] = useState<boolean>(false);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
 
   const user_address = currentAccount?.address || address;
+  const open = Boolean(anchorEl);
 
   useEffect(() => {
     if (currentAccount?.address) {
@@ -38,114 +48,135 @@ export const Navbar = () => {
     }
   }, [address, currentAccount]);
 
+  const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleProfileClick = () => {
+    if (user_address) {
+      router.push(`/profile/${user_address}`);
+      handleClose();
+    } else {
+      toast.error("Please connect your wallet to view your profile");
+    }
+  };
+
+  const handleNavigation = (path: string) => {
+    router.push(path);
+    handleClose();
+  };
+
+  const navigationItems = [
+    { label: "Home", path: "/" },
+    { label: "Collections", path: "/collections" },
+    { label: "Profile", onClick: handleProfileClick },
+  ];
+
   return (
-    <div className="sticky top-0 z-50 backdrop-blur bg-gray-900 py-5 border-b border-white/10">
-      <div className="max-w-7xl mx-auto px-4 md:px-8">
-        <div className="flex items-center h-16">
+    <AppBar
+      position="sticky"
+      className="!bg-[#111827] backdrop-blur-md border-b border-white/10 shadow-lg"
+    >
+      <Container maxWidth="lg" className="px-4 sm:px-6 md:px-8 md:py-1">
+        <Toolbar className="flex justify-between items-center min-h-14 sm:min-h-16 !px-0">
           {/* Logo */}
-          <div className="flex flex-col items-center w-1/3">
-            <Link href={"/"} className="flex items-center">
+          <Box className="flex items-center">
+            <Link href="/" className="flex items-center no-underline">
               <HashcaseText />
             </Link>
-           
+          </Box>
 
-            {/* Old mobile connect button removed - now using centered ConnectButton */}
-          </div>
+          {/* Desktop Navigation */}
+          {!isMobile && (
+            <Box className="flex items-center gap-1 bg-white/5 backdrop-blur-md rounded-full px-5 py-2 border border-white/10 shadow-lg">
+              {navigationItems.map((item) => (
+                <Button
+                  key={item.label}
+                  onClick={item.onClick || (() => handleNavigation(item.path!))}
+                  className="!text-white !font-medium !px-4 !py-1 !rounded-full !normal-case !transition-all !duration-300 hover:!bg-white/10 hover:backdrop-blur-md focus-visible:!outline-2 focus-visible:!outline-white/30"
+                >
+                  {item.label}
+                </Button>
+              ))}
+            </Box>
+          )}
 
-          {/* Desktop Navigation - Centered */}
-          <div className="hidden md:flex items-center justify-center w-1/3">
-            <div className="flex items-center gap-1 bg-white/5 backdrop-blur-md rounded-full px-5 py-2 border border-white/10 shadow-lg">
-              <Link
-                href="/"
-                className="hover:bg-white/10 hover:backdrop-blur-md rounded-full transition-all duration-300 px-4 py-2 text-white font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
-              >
-                Home
-              </Link>
-              <Link
-                href="/collections"
-                className="hover:bg-white/10 hover:backdrop-blur-md rounded-full transition-all duration-300 px-4 py-2 text-white font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
-              >
-                Collections
-              </Link>
-              <button
-                onClick={() => {
-                  if (user_address) {
-                    router.push(`/profile/${user_address}`);
-                  } else {
-                    toast.error("Please connect your wallet to view your profile");
-                  }
-                }}
-                className="hover:bg-white/10 hover:backdrop-blur-md rounded-full transition-all duration-300 px-4 py-2 text-white font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
-              >
-                Profile
-              </button>
-            </div>
-          </div>
+          {/* Right side controls */}
+          <Box className="flex items-center gap-3">
+            {/* Desktop Connect Button */}
+            {!isMobile && <ConnectButton />}
 
-          {/* Center Connect/Disconnect Button - Mobile */}
-          
-          {/* Desktop Connect / Controls - right aligned */}
-          <div className="ml-auto flex items-center gap-3">
-            {/* Desktop only - hidden on mobile */}
-            <div className="hidden md:block">
-              <ConnectButton />
-            </div>
-            
             {/* Mobile Menu Button */}
-            <div className="md:hidden">
-              <Hamburger
-                toggled={isOpen}
-                toggle={setOpen}
-                color="#ffffff"
-                easing="ease-in"
-                size={25}
-              />
-            </div>
-          </div>
-        </div>
-      </div>
+            {isMobile && (
+              <IconButton
+                size="large"
+                edge="end"
+                color="inherit"
+                aria-label="menu"
+                aria-controls="mobile-menu"
+                aria-haspopup="true"
+                onClick={handleMenu}
+                className="!text-white hover:!bg-white/10"
+              >
+                {open ? <CloseIcon /> : <MenuIcon />}
+              </IconButton>
+            )}
+          </Box>
+        </Toolbar>
+      </Container>
 
       {/* Mobile Menu */}
-      {isOpen && (
-        <div className="md:hidden fixed top-16 left-0 w-full z-[9999] bg-[#00041F]/95 backdrop-blur-md border-t border-white/10 shadow-lg">
-          <div className="flex flex-col px-6 py-4 gap-y-1">
-            <Link 
-              className="w-full px-4 py-3  transition-colors text-white font-medium" 
-              href={"/"}
-              onClick={() => setOpen(false)}
+      <Menu
+        id="mobile-menu"
+        anchorEl={anchorEl}
+        open={open}
+        onClose={handleClose}
+        TransitionComponent={Fade}
+        anchorOrigin={{
+          vertical: "bottom",
+          horizontal: "left",
+        }}
+        transformOrigin={{
+          vertical: "top",
+          horizontal: "left",
+        }}
+        PaperProps={{
+          className:
+            "!bg-slate-900/98 !backdrop-blur-xl !border-0 !rounded-none !shadow-2xl !shadow-black/50 !mt-0 !w-screen !max-w-none",
+          style: {
+            left: "0 !important",
+            right: "0 !important",
+            width: "100vw",
+            maxWidth: "none",
+            backgroundColor: "#00041F",
+          },
+        }}
+        MenuListProps={{
+          className: "!p-0",
+        }}
+      >
+        <div className="px-4 sm:px-6 py-4 space-y-1">
+          {navigationItems.map((item, index) => (
+            <MenuItem
+              key={item.label}
+              onClick={item.onClick || (() => handleNavigation(item.path!))}
+              className="!text-white !font-medium !py-3 !px-4 !rounded-lg !mx-0 !my-1 !transition-all !duration-200 hover:!bg-white/15 focus-visible:!outline-2 focus-visible:!outline-white/30"
             >
-              Home
-            </Link>
-            <Link 
-              className="w-full px-4 py-3 hover:text-white/10 transition-colors text-white font-medium" 
-              href={"/collections"}
-              onClick={() => setOpen(false)}
-            >
-              Collections
-            </Link>
-            <button
-              onClick={() => {
-                if (user_address) {
-                  router.push(`/profile/${user_address}`);
-                  setOpen(false);
-                } else {
-                  toast.error("Please connect your wallet to view your profile");
-                }
-              }}
-              className="w-full text-left rounded-lg px-4 py-3 hover:bg-white/10 transition-colors text-white font-medium"
-            >
-              Profile
-            </button>
-          </div>
-        </div>
-      )}
+              {item.label}
+            </MenuItem>
+          ))}
 
-<div className="md:hidden flex justify-center w-1/3 mt-4 ml-20">
+          <div className="h-px bg-gradient-to-r from-transparent via-white/30 to-transparent my-4" />
+
+          <div className="px-4 py-2">
             <ConnectButton />
           </div>
-
-      {/* ZK Login Modal */}
-      {/* ZK Login Modal is now handled globally via WalletConnectionModal */}
-    </div>
+        </div>
+      </Menu>
+    </AppBar>
   );
 };
