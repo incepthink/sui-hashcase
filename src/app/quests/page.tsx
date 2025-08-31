@@ -213,7 +213,11 @@ const QuestsPageContent = () => {
 
   if (!mounted) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center px-4">
+      <div
+        className={`min-h-screen ${
+          collection.name === "NS" ? "bg-black" : "bg-[#000421]"
+        } flex items-center justify-center px-4`}
+      >
         <div className="text-center">
           <div className="w-12 h-12 sm:w-16 sm:h-16 border-4 border-white border-t-transparent rounded-full animate-spin mx-auto mb-4 sm:mb-6"></div>
           <h2 className="text-xl sm:text-2xl font-bold text-white">
@@ -226,7 +230,11 @@ const QuestsPageContent = () => {
 
   if (isCollectionLoading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center px-4">
+      <div
+        className={`min-h-screen ${
+          collection.name === "NS" ? "bg-black" : "bg-[#000421]"
+        } flex items-center justify-center px-4`}
+      >
         <div className="text-center">
           <div className="w-12 h-12 sm:w-16 sm:h-16 border-4 border-white border-t-transparent rounded-full animate-spin mx-auto mb-4 sm:mb-6"></div>
           <h2 className="text-xl sm:text-2xl font-bold text-white">
@@ -239,7 +247,11 @@ const QuestsPageContent = () => {
 
   if (isCollectionError || !collection) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center px-4">
+      <div
+        className={`min-h-screen ${
+          collection.name === "NS" ? "bg-black" : "bg-[#000421]"
+        } flex items-center justify-center px-4`}
+      >
         <div className="text-center">
           <div className="text-red-400 text-3xl sm:text-4xl mb-4">⚠️</div>
           <h2 className="text-xl sm:text-2xl font-bold text-white mb-4">
@@ -261,7 +273,11 @@ const QuestsPageContent = () => {
 
   if (initialLoad || loading || quests.length === 0) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center px-4">
+      <div
+        className={`min-h-screen ${
+          collection.name === "NS" ? "bg-black" : "bg-[#000421]"
+        } flex items-center justify-center px-4`}
+      >
         <div className="text-center">
           <div className="w-12 h-12 sm:w-16 sm:h-16 border-4 border-white border-t-transparent rounded-full animate-spin mx-auto mb-4 sm:mb-6"></div>
           <h2 className="text-xl sm:text-2xl font-bold text-white">
@@ -276,7 +292,11 @@ const QuestsPageContent = () => {
   }
 
   return (
-    <div className="min-h-screen bg-black">
+    <div
+      className={`min-h-screen ${
+        collection.name === "NS" ? "bg-black" : "bg-[#000421]"
+      }`}
+    >
       <div className="relative">
         {/* Navigation - Mobile: Centered, Desktop: Corners */}
         <div className="absolute top-3 sm:top-4 left-3 sm:left-4 right-3 sm:right-4 z-10">
@@ -543,7 +563,11 @@ const QuestsPageContent = () => {
 
       {/* NFT Minted Success Modal */}
       {showNftModal && mintedNftData && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-80 backdrop-blur-md p-4">
+        <div
+          className={`fixed inset-0 z-50 flex items-center justify-center ${
+            collection.name === "NS" ? "bg-black" : "bg-[#000421]"
+          } bg-opacity-80 backdrop-blur-md p-4`}
+        >
           {/* Particle Effects Background */}
           <div className="absolute inset-0 overflow-hidden pointer-events-none">
             {[...Array(30)].map((_, i) => (
@@ -561,7 +585,9 @@ const QuestsPageContent = () => {
           </div>
 
           {/* Modal Content */}
-          <div className="relative bg-black/60 backdrop-blur-xl rounded-3xl p-6 sm:p-8 max-w-sm w-full mx-4 border border-white/10 shadow-2xl">
+          <div
+            className={`relative {collection.name === "NS" ? "bg-black" : "bg-[#000421]"} backdrop-blur-xl rounded-3xl p-6 sm:p-8 max-w-sm w-full mx-4 border border-white/10 shadow-2xl`}
+          >
             {/* Close Button */}
             <button
               onClick={() => setShowNftModal(false)}
@@ -638,10 +664,22 @@ const QuestsPageContent = () => {
 };
 
 const QuestsPage = () => {
+  const searchParams = useSearchParams();
+  const cid = searchParams.get("collection_id");
+  const {
+    collection,
+    isLoading: isCollectionLoading,
+    isError: isCollectionError,
+  } = useCollectionById(cid!);
+
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-black flex items-center justify-center px-4">
+        <div
+          className={`min-h-screen ${
+            collection.name === "NS" ? "bg-black" : "bg-[#000421]"
+          } flex items-center justify-center px-4`}
+        >
           <div className="text-center">
             <div className="w-12 h-12 sm:w-16 sm:h-16 border-4 border-white border-t-transparent rounded-full animate-spin mx-auto mb-4 sm:mb-6"></div>
             <h2 className="text-xl sm:text-2xl font-bold text-white">
