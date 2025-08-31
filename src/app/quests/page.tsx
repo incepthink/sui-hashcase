@@ -469,7 +469,7 @@ const QuestsPageContent = () => {
                       collection_id: cid,
                       name: collection.name,
                       description: collection.description,
-                      image_url: backgroundImageHeroSection,
+                      image_url: collection.image_uri,
                       attributes: collection.attributes.split(", "),
                       recipient: walletAddress!,
                     };
