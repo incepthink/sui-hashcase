@@ -10,7 +10,7 @@ import ConnectButton from "@/components/ConnectButton";
 import { ArrowRight } from "lucide-react";
 import { useCollectionById } from "@/hooks/useCollections";
 import backgroundImageHeroSection from "@/assets/images/high_rise.jpg";
-import Image from "next/image";
+import Image, { StaticImageData } from "next/image";
 
 interface Quest {
   id: number;
@@ -41,7 +41,7 @@ const QuestsPageContent = () => {
   const [mintedNftData, setMintedNftData] = useState<{
     name: string;
     description: string;
-    image_url: string;
+    image_url: string | StaticImageData;
     recipient: string;
   } | null>(null);
 
@@ -469,7 +469,7 @@ const QuestsPageContent = () => {
                       collection_id: cid,
                       name: collection.name,
                       description: collection.description,
-                      image_url: collection.image_uri,
+                      image_url: backgroundImageHeroSection,
                       attributes: collection.attributes.split(", "),
                       recipient: walletAddress!,
                     };
@@ -599,7 +599,7 @@ const QuestsPageContent = () => {
             <div className="text-center">
               {/* NFT Image */}
               <div className="w-24 h-24 mx-auto mb-4 rounded-2xl overflow-hidden border border-white/20">
-                <img
+                <Image
                   src={mintedNftData.image_url}
                   alt={mintedNftData.name}
                   className="w-full h-full object-cover"
