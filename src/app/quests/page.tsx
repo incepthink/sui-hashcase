@@ -664,21 +664,21 @@ const QuestsPageContent = () => {
 };
 
 const QuestsPage = () => {
-  const searchParams = useSearchParams();
-  const cid = searchParams.get("collection_id");
-  const {
-    collection,
-    isLoading: isCollectionLoading,
-    isError: isCollectionError,
-  } = useCollectionById(cid!);
+  // const searchParams = useSearchParams();
+  // const cid = searchParams.get("collection_id");
+  // const {
+  //   collection,
+  //   isLoading: isCollectionLoading,
+  //   isError: isCollectionError,
+  // } = useCollectionById(cid!);
 
   return (
     <Suspense
       fallback={
         <div
-          className={`min-h-screen ${
-            collection.name === "NS" ? "bg-black" : "bg-[#000421]"
-          } flex items-center justify-center px-4`}
+          className={`min-h-screen 
+            //
+           flex items-center justify-center px-4`}
         >
           <div className="text-center">
             <div className="w-12 h-12 sm:w-16 sm:h-16 border-4 border-white border-t-transparent rounded-full animate-spin mx-auto mb-4 sm:mb-6"></div>
