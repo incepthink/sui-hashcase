@@ -38,6 +38,7 @@ const CollectionsPage: React.FC = () => {
   const router = useRouter();
 
   const { data, isLoading, isError, error } = useCollections();
+  console.log("COLLECTIONS", data);
 
   if (isLoading) {
     return (
@@ -172,7 +173,7 @@ const CollectionsPage: React.FC = () => {
               "0x79e4f927919068602bae38387132f8c0dd52dc3207098355ece9e9ba61eb2290";
             if (contractAddress === oldPackage) contractAddress = newCollection;
             const chainType =
-              collection.chain_type || collection.chainType || "SUI";
+              collection.chain_name || collection.chainType || "SUI";
             const collectionName = collection.name || "Unnamed Collection";
             const dbCollection =
               "0x6c7ff54132f7693ad1334e85ff7c5cf2f967b37cc785e51019c42b42a5c38b6f";

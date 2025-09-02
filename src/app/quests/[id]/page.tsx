@@ -37,7 +37,11 @@ const QuestDetailPage = () => {
   const [claimingQuestId, setClaimingQuestId] = useState<number | null>(null);
   const [nftMinted, setNftMinted] = useState(false);
 
-  const isSuper = activeQuestCode === "Q5541" || "Q9866" || "Q1257";
+  const isSuper =
+    activeQuestCode === "Q9866" ||
+    activeQuestCode === "Q1257" ||
+    activeQuestCode === "Q9300";
+  console.log(isSuper, activeQuestCode);
 
   useEffect(() => {
     if (quests.length > 0) {
@@ -314,7 +318,11 @@ const QuestDetailPage = () => {
 
   if (!mounted) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center px-4">
+      <div
+        className={`min-h-screen ${
+          nftData.name === "NS Daily" ? "bg-black" : "bg-[#000421]"
+        } flex items-center justify-center px-4`}
+      >
         <div className="text-center">
           <div className="w-12 h-12 sm:w-16 sm:h-16 border-4 border-white border-t-transparent rounded-full animate-spin mx-auto mb-4 sm:mb-6"></div>
           <h2 className="text-xl sm:text-2xl font-bold text-white">
@@ -327,7 +335,11 @@ const QuestDetailPage = () => {
 
   if (initialLoad || loading || quests.length === 0) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center px-4">
+      <div
+        className={`min-h-screen ${
+          nftData.name === "NS Daily" ? "bg-black" : "bg-[#000421]"
+        } flex items-center justify-center px-4`}
+      >
         <div className="text-center">
           <div className="w-12 h-12 sm:w-16 sm:h-16 border-4 border-white border-t-transparent rounded-full animate-spin mx-auto mb-4 sm:mb-6"></div>
           <h2 className="text-xl sm:text-2xl font-bold text-white">
@@ -339,7 +351,11 @@ const QuestDetailPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-black">
+    <div
+      className={`min-h-screen ${
+        nftData.name === "NS Daily" ? "bg-black" : "bg-[#000421]"
+      }`}
+    >
       <div className="relative">
         {/* Navigation - Mobile: Centered, Desktop: Corners */}
         <div className="absolute top-3 sm:top-4 left-3 sm:left-4 right-3 sm:right-4 z-10">
@@ -399,6 +415,8 @@ const QuestDetailPage = () => {
                     src={nftData.image_url}
                     alt="NFT Reward"
                     className="w-full h-full object-cover"
+                    width={192}
+                    height={192}
                   />
                 </div>
               </div>
@@ -649,7 +667,11 @@ const QuestDetailPage = () => {
 
       {/* NFT Minted Success Modal */}
       {showNftModal && mintedNftData && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-80 backdrop-blur-md p-4">
+        <div
+          className={`fixed inset-0 z-50 flex items-center justify-center ${
+            nftData.name === "NS Daily" ? "bg-black" : "bg-[#000421]"
+          } bg-opacity-80 backdrop-blur-md p-4`}
+        >
           {/* Particle Effects Background */}
           <div className="absolute inset-0 overflow-hidden pointer-events-none">
             {[...Array(30)].map((_, i) => (
@@ -667,7 +689,11 @@ const QuestDetailPage = () => {
           </div>
 
           {/* Modal Content */}
-          <div className="relative bg-black/60 backdrop-blur-xl rounded-3xl p-6 sm:p-8 max-w-sm w-full mx-4 border border-white/10 shadow-2xl">
+          <div
+            className={`relative ${
+              nftData.name === "NS Daily" ? "bg-black" : "bg-[#000421]"
+            }/60 backdrop-blur-xl rounded-3xl p-6 sm:p-8 max-w-sm w-full mx-4 border border-white/10 shadow-2xl`}
+          >
             {/* Close Button */}
             <button
               onClick={() => setShowNftModal(false)}
@@ -702,6 +728,8 @@ const QuestDetailPage = () => {
                   src={mintedNftData.image_url}
                   alt={mintedNftData.name}
                   className="w-full h-full object-cover"
+                  width={96}
+                  height={96}
                 />
               </div>
 

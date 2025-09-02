@@ -552,7 +552,11 @@ const App: React.FC = () => {
                 <NftCard
                   key={nft.id}
                   href={`/loyalties/${nft.collection_id}`}
-                  imageUrl={backgroundImageHeroSection}
+                  imageUrl={
+                    nft.name === "Hashcase Super Cool Collection"
+                      ? backgroundImageHeroSection
+                      : nft.image_uri
+                  }
                   title={nft.name}
                   description={nft.description}
                   footer={
