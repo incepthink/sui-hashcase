@@ -23,9 +23,16 @@ interface UseQuestsProps {
   walletAddress: string | null | undefined;
   isWalletConnected: boolean;
   mounted: boolean;
+  requiredChainType?: 'sui' | 'evm';
 }
 
-export const useQuests = ({ collection, walletAddress, isWalletConnected, mounted }: UseQuestsProps) => {
+export const useQuests = ({ 
+  collection, 
+  walletAddress, 
+  isWalletConnected, 
+  mounted, 
+  requiredChainType = 'sui' 
+}: UseQuestsProps) => {
   const [nftMinted, setNftMinted] = useState(false);
   const prevIsConnectedRef = useRef<boolean | null>(null);
 
@@ -35,7 +42,7 @@ export const useQuests = ({ collection, walletAddress, isWalletConnected, mounte
     refetch,
     error,
   } = useQuery({
-    queryKey: ["quests", collection?.owner_id, walletAddress],
+    queryKey: ["quests", collection?.owner_id, walletAddress, requiredChainType],
     queryFn: async () => {
       if (!collection || !collection.owner_id) {
         return [];
@@ -48,6 +55,8 @@ export const useQuests = ({ collection, walletAddress, isWalletConnected, mounte
         if (walletAddress) {
           params.wallet_address = walletAddress;
         }
+
+        console.log(`🔍 Fetching quests for ${requiredChainType} chain with wallet:`, walletAddress?.slice(0, 8) + '...');
 
         const response = await axiosInstance.get("/platform/quest/by-owner", {
           params,
@@ -106,6 +115,7 @@ export const useQuests = ({ collection, walletAddress, isWalletConnected, mounte
     prevIsConnectedRef.current = isWalletConnected;
 
     if (prev !== isWalletConnected) {
+      console.log(`🔄 Wallet connection changed for ${requiredChainType}, refetching quests`);
       refetch();
     }
 
@@ -122,7 +132,7 @@ export const useQuests = ({ collection, walletAddress, isWalletConnected, mounte
         keysToRemove.forEach((k) => sessionStorage.removeItem(k));
       } catch {}
     }
-  }, [mounted, isWalletConnected, refetch]);
+  }, [mounted, isWalletConnected, refetch, requiredChainType]);
 
   // Handle NFT minted status
   useEffect(() => {

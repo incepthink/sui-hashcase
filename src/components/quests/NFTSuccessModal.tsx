@@ -94,6 +94,8 @@ export const NFTSuccessModal: React.FC<NFTSuccessModalProps> = ({
               src={mintedNftData.image_url}
               alt={mintedNftData.name}
               className="w-full h-full object-cover"
+              width={96}
+              height={96}
             />
           </div>
 

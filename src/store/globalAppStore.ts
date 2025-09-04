@@ -1,69 +1,198 @@
 import { create } from "zustand";
 import Cookies from "js-cookie";
 
+/* ========= Types ========= */
+
 interface User {
-  // Define the shape of your user object
   id: number;
-  walletAddress: string;
   email: string | null;
   badges: string;
+  user_name?: string;
+  description?: string;
+  profile_image?: string;
+  banner_image?: string;
 }
+
+type WalletType = "sui-wallet" | "zk-login" | "metamask" | "phantom" | "coinbase";
+
+interface WalletInfo {
+  address: string;
+  type: WalletType;
+}
+
+/** Mapping of chain -> wallet (no nulls; use absence of key) */
+type Chain = "sui" | "evm";
+type WalletMap = Partial<Record<Chain, WalletInfo>>;
 
 interface AppState {
   user: User | null;
   isUserVerified: boolean;
   openModal: boolean;
+
+  // Multi-wallet support (no nulls inside; use absence of key)
+  connectedWallets: WalletMap;
+
+  // Deprecated but kept for backward compatibility
   userWalletAddress: string | null;
+
+  // Actions
   setUser: (user: User, jwt: string) => void;
   unsetUser: () => void;
   inferUser: () => void;
   setOpenModal: (open: boolean) => void;
-  setUserWalletAddress: (address: string) => void;
+  setUserWalletAddress: (address: string) => void; // Deprecated
+
+  // New wallet management actions
+  setSuiWallet: (wallet: WalletInfo | null) => void;
+  setEvmWallet: (wallet: WalletInfo | null) => void;
+  getWalletForChain: (chain: Chain) => WalletInfo | null;
+  hasWalletForChain: (chain: Chain) => boolean;
+  disconnectWallet: (chain: Chain) => void;
+  disconnectAllWallets: () => void;
 }
 
-export const useGlobalAppStore = create<AppState>((set) => ({
+/* ========= Helpers ========= */
+
+const COOKIE_EXPIRY_DATE = () => new Date(Date.now() + 60 * 60 * 1000); // 60 mins
+
+const readJSONCookie = <T>(key: string, fallback: T): T => {
+  const raw = Cookies.get(key);
+  if (!raw) return fallback;
+  try {
+    return JSON.parse(raw) as T;
+  } catch {
+    return fallback;
+  }
+};
+
+const safeString = (val: unknown): string | undefined =>
+  typeof val === "string" ? val : undefined;
+
+/* ========= Store ========= */
+
+export const useGlobalAppStore = create<AppState>((set, get) => ({
   user: null,
   isUserVerified: false,
   openModal: false,
+  connectedWallets: {} as WalletMap,
   userWalletAddress: null,
 
-  // Action to set the user and JWT in cookies and state
+  // Set user and JWT in cookies and state
   setUser: (user, jwt) => {
-    console.log("AUTH DEBUG", jwt);
-    
-    Cookies.set("user", JSON.stringify(user), {
-      expires: new Date(new Date().getTime() + 60 * 60 * 1000), // 60 minutes
-    });
-    Cookies.set("jwt", jwt, {
-      expires: new Date(new Date().getTime() + 60 * 60 * 1000), // 60 minutes
-    });
-    set({ user: user, isUserVerified: true });
+    Cookies.set("user", JSON.stringify(user), { expires: COOKIE_EXPIRY_DATE() });
+    Cookies.set("jwt", jwt, { expires: COOKIE_EXPIRY_DATE() });
+    set({ user, isUserVerified: true });
   },
 
-  // Action to unset the user and remove cookies
+  // Unset user and remove cookies
   unsetUser: () => {
     Cookies.remove("user");
     Cookies.remove("jwt");
-    set({ user: null, isUserVerified: false });
+    Cookies.remove("connectedWallets");
+    set({
+      user: null,
+      isUserVerified: false,
+      connectedWallets: {},
+      userWalletAddress: null,
+    });
   },
 
-  // Action to infer the user from cookies
+  // Infer user from cookies
   inferUser: () => {
-    const user = Cookies.get("user");
-    const jwt = Cookies.get("jwt");
-    if (user && jwt) {
-      set({ user: JSON.parse(user), isUserVerified: true });
+    const userStr = Cookies.get("user");
+    const jwtStr = Cookies.get("jwt");
+
+    if (safeString(userStr) && safeString(jwtStr)) {
+      const user = readJSONCookie<User>("user", null as unknown as User);
+      const parsedWallets = readJSONCookie<WalletMap>("connectedWallets", {});
+      // Back-compat address selection: prefer Sui, then EVM
+      const compatAddress =
+        parsedWallets.sui?.address ?? parsedWallets.evm?.address ?? null;
+
+      set({
+        user,
+        isUserVerified: true,
+        connectedWallets: parsedWallets,
+        userWalletAddress: compatAddress,
+      });
     } else {
       set({ isUserVerified: false });
     }
   },
 
-  // Action to set the modal state
+  // Set modal state
   setOpenModal: (open) => set({ openModal: open }),
 
-  // Action to set the userWalletAddress
+  // Deprecated - kept for backward compatibility
   setUserWalletAddress: (address) => set({ userWalletAddress: address }),
+
+  // New wallet management actions
+  setSuiWallet: (wallet) => {
+    const current = get().connectedWallets;
+    const newWallets: WalletMap = { ...current };
+
+    if (wallet) newWallets.sui = wallet;
+    else delete newWallets.sui;
+
+    Cookies.set("connectedWallets", JSON.stringify(newWallets), {
+      expires: COOKIE_EXPIRY_DATE(),
+    });
+
+    set({
+      connectedWallets: newWallets,
+      // Back-compat: prefer Sui, else EVM
+      userWalletAddress: newWallets.sui?.address ?? newWallets.evm?.address ?? null,
+    });
+  },
+
+  setEvmWallet: (wallet) => {
+    const current = get().connectedWallets;
+    const newWallets: WalletMap = { ...current };
+
+    if (wallet) newWallets.evm = wallet;
+    else delete newWallets.evm;
+
+    Cookies.set("connectedWallets", JSON.stringify(newWallets), {
+      expires: COOKIE_EXPIRY_DATE(),
+    });
+
+    set({
+      connectedWallets: newWallets,
+      // Back-compat: prefer Sui, else EVM
+      userWalletAddress: newWallets.sui?.address ?? newWallets.evm?.address ?? null,
+    });
+  },
+
+  getWalletForChain: (chain) => {
+    return get().connectedWallets[chain] ?? null;
+  },
+
+  hasWalletForChain: (chain) => {
+    return Boolean(get().connectedWallets[chain]);
+  },
+
+  disconnectWallet: (chain) => {
+    const newWallets: WalletMap = { ...get().connectedWallets };
+    delete newWallets[chain];
+
+    Cookies.set("connectedWallets", JSON.stringify(newWallets), {
+      expires: COOKIE_EXPIRY_DATE(),
+    });
+
+    set({
+      connectedWallets: newWallets,
+      userWalletAddress: newWallets.sui?.address ?? newWallets.evm?.address ?? null,
+    });
+  },
+
+  disconnectAllWallets: () => {
+    Cookies.remove("connectedWallets");
+    set({
+      connectedWallets: {},
+      userWalletAddress: null,
+    });
+  },
 }));
 
-//this line is meant to allow us to infer the user if a refresh happens
+// Infer user on store initialization
 useGlobalAppStore.getState().inferUser();

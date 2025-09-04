@@ -1,68 +1,46 @@
-// components/ClaimNFTButton.tsx
+// components/quests/QuestDetailClaimButton.tsx
 "use client";
 
-import { useEffect } from "react";
-import toast from "react-hot-toast";
-import { useNFTMinting, MintNFTData } from "@/hooks/useNFTMinting";
+import { StaticImageData } from "next/image";
 import { useGlobalAppStore } from "@/store/globalAppStore";
+import axiosInstance from "@/utils/axios";
+import toast from "react-hot-toast";
 
-interface ClaimNFTButtonProps {
+interface NFTData {
+  collection_id: string;
+  name: string;
+  description: string;
+  image_url: string | StaticImageData;
+  attributes: string[];
+  recipient: string | undefined | null;
+}
+
+interface QuestDetailClaimButtonProps {
   nftMinted: boolean;
+  claiming: boolean;
+  setClaiming: (claiming: boolean) => void;
   completionPercentage: number;
   totalQuests: number;
   completedQuests: number;
-  collection: any;
-  collectionId: string;
+  isWalletConnected: boolean;
+  nftData: NFTData;
   onSuccess: (nftData: any) => void;
-  onNftMintedChange: (minted: boolean) => void;
-  chain?: "sui" | "ethereum" | "polygon" | "solana";
   requiredChainType?: "sui" | "evm";
 }
 
-export const ClaimNFTButton: React.FC<ClaimNFTButtonProps> = ({
+export const QuestDetailClaimButton: React.FC<QuestDetailClaimButtonProps> = ({
   nftMinted,
+  claiming,
+  setClaiming,
   completionPercentage,
   totalQuests,
   completedQuests,
-  collection,
-  collectionId,
+  isWalletConnected,
+  nftData,
   onSuccess,
-  onNftMintedChange,
-  chain = "sui",
   requiredChainType = "sui",
 }) => {
-  const { getWalletForChain, hasWalletForChain, setOpenModal } =
-    useGlobalAppStore();
-
-  const { mintNFT, isLoading: claiming, isSuccess, data } = useNFTMinting();
-
-  // Get wallet info from store
-  const walletInfo = getWalletForChain(requiredChainType);
-  const walletAddress = walletInfo?.address;
-  const isWalletConnected = hasWalletForChain(requiredChainType);
-
-  // Handle success case
-  useEffect(() => {
-    if (isSuccess && data?.success && walletAddress) {
-      onNftMintedChange(true);
-      const nftData = {
-        collection_id: collectionId,
-        name: collection.name,
-        description: collection.description,
-        image_url: collection.image_uri,
-        recipient: walletAddress,
-      };
-      onSuccess(nftData);
-    }
-  }, [
-    isSuccess,
-    data,
-    onNftMintedChange,
-    onSuccess,
-    collectionId,
-    collection,
-    walletAddress,
-  ]);
+  const { getWalletForChain, setOpenModal } = useGlobalAppStore();
 
   const handleClaimNFT = async () => {
     if (nftMinted) {
@@ -74,6 +52,10 @@ export const ClaimNFTButton: React.FC<ClaimNFTButtonProps> = ({
       toast.error("Complete all quests to claim the NFT");
       return;
     }
+
+    // Get the correct wallet address for this chain
+    const walletInfo = getWalletForChain(requiredChainType);
+    const walletAddress = walletInfo?.address;
 
     if (!isWalletConnected || !walletAddress) {
       const chainName =
@@ -94,20 +76,61 @@ export const ClaimNFTButton: React.FC<ClaimNFTButtonProps> = ({
       return;
     }
 
+    setClaiming(true);
     try {
-      const nftData: MintNFTData = {
-        collection_id: collectionId,
-        name: collection.name,
-        description: collection.description,
-        image_url: collection.image_uri,
-        attributes: collection.attributes?.split(", ") || [],
+      // Use the appropriate endpoint based on chain type
+      const endpoint =
+        requiredChainType === "evm"
+          ? "/platform/ethereum/mint-nft" // or base-sepolia endpoint
+          : "/platform/sui/mint-nft";
+
+      // Prepare NFT data with correct wallet address
+      const mintData = {
+        ...nftData,
         recipient: walletAddress,
-        chain: chain,
+        chain_type: requiredChainType, // Include chain type for backend validation
       };
 
-      mintNFT(nftData);
-    } catch (error) {
-      console.error("Failed to mint NFT:", error);
+      const response = await axiosInstance.post(endpoint, mintData);
+
+      if (response.data.success) {
+        onSuccess({
+          name: nftData.name,
+          description: nftData.description,
+          image_url: nftData.image_url,
+          recipient: walletAddress,
+        });
+
+        const chainName = requiredChainType === "evm" ? "EVM" : "Sui";
+        toast.success(`NFT minted successfully with ${chainName} wallet!`);
+      } else {
+        toast.error(response.data.message || "Failed to claim NFT");
+      }
+    } catch (error: any) {
+      console.error("Error claiming NFT:", error);
+      const errorMessage =
+        error.response?.data?.message || "Failed to claim NFT";
+
+      if (errorMessage.includes("wrong wallet")) {
+        toast.error(
+          "Incorrect wallet type connected. Please connect the appropriate wallet for this quest."
+        );
+      } else if (
+        errorMessage.includes("already minted") ||
+        errorMessage.includes("already claimed")
+      ) {
+        onSuccess({
+          name: nftData.name,
+          description: nftData.description,
+          image_url: nftData.image_url,
+          recipient: walletAddress,
+        });
+        toast.error("NFT already minted for today's quests!");
+      } else {
+        toast.error(errorMessage);
+      }
+    } finally {
+      setClaiming(false);
     }
   };
 

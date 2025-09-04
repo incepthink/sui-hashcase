@@ -9,6 +9,7 @@ import "react-toastify/dist/ReactToastify.css";
 import { Toaster } from "react-hot-toast";
 import WalletConnectionModal from "@/components/WalletConnectionModal";
 import Footer from "@/components/Footer";
+import RainbowkitProvider from "@/providers/RainbowkitProvider";
 
 const dmSans = DM_Sans({ subsets: ["latin"] });
 
@@ -17,11 +18,11 @@ export const metadata: Metadata = {
   description: "Mint a unique digital asset on the Sui blockchain",
   icons: {
     icon: [
-      { url: '/favicon.ico' },
-      { url: '/icon.svg', type: 'image/svg+xml' }
+      { url: "/favicon.ico" },
+      { url: "/icon.svg", type: "image/svg+xml" },
     ],
-    shortcut: '/favicon.ico',
-    apple: '/favicon.ico',
+    shortcut: "/favicon.ico",
+    apple: "/favicon.ico",
   },
 };
 
@@ -33,14 +34,14 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={clsx(dmSans.className, "antialiased")}>
-        <TanstackProvider>
-          <Toaster />
-          <LayoutChrome>
-            {children}
-          </LayoutChrome>
-          <WalletConnectionModal />
-          <ToastContainer />
-        </TanstackProvider>
+        <RainbowkitProvider>
+          <TanstackProvider>
+            <Toaster />
+            <LayoutChrome>{children}</LayoutChrome>
+            <WalletConnectionModal />
+            <ToastContainer />
+          </TanstackProvider>
+        </RainbowkitProvider>
       </body>
     </html>
   );

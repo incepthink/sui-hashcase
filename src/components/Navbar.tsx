@@ -17,36 +17,50 @@ import {
 import { Menu as MenuIcon, Close as CloseIcon } from "@mui/icons-material";
 import { useCurrentAccount } from "@mysten/dapp-kit";
 import { useZkLogin } from "@mysten/enoki/react";
+import { useAccount } from "wagmi";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { HashcaseText } from "../assets";
 import ConnectButton from "./ConnectButton";
+import { useGlobalAppStore } from "@/store/globalAppStore";
 
 export const Navbar = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
-  const currentAccount = useCurrentAccount();
-  const { address } = useZkLogin();
   const router = useRouter();
 
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [walletAddress, setWalletAddress] = useState<string | null>(null);
+  // Global store
+  const { connectedWallets, getWalletForChain } = useGlobalAppStore();
 
-  const user_address = currentAccount?.address || address;
+  // Individual wallet hooks
+  const currentAccount = useCurrentAccount(); // Sui wallet
+  const { address: zkAddress } = useZkLogin(); // Sui zkLogin
+  const { address: evmAddress } = useAccount(); // EVM wallet
+
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [displayAddress, setDisplayAddress] = useState<string | null>(null);
+
   const open = Boolean(anchorEl);
 
+  // Determine which address to use for profile navigation
+  const getProfileAddress = (): string | null => {
+    // Priority: Sui wallet -> zkLogin -> EVM wallet
+    return currentAccount?.address || zkAddress || evmAddress || null;
+  };
+
+  // Update display address when wallets change
   useEffect(() => {
-    if (currentAccount?.address) {
-      setWalletAddress(
-        currentAccount.address.slice(0, 6) +
-          "..." +
-          currentAccount.address.slice(-4)
+    const profileAddress = getProfileAddress();
+
+    if (profileAddress) {
+      setDisplayAddress(
+        profileAddress.slice(0, 6) + "..." + profileAddress.slice(-4)
       );
-    } else if (address) {
-      setWalletAddress(address.slice(0, 6) + "..." + address.slice(-4));
+    } else {
+      setDisplayAddress(null);
     }
-  }, [address, currentAccount]);
+  }, [currentAccount?.address, zkAddress, evmAddress]);
 
   const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -57,8 +71,10 @@ export const Navbar = () => {
   };
 
   const handleProfileClick = () => {
-    if (user_address) {
-      router.push(`/profile/${user_address}`);
+    const profileAddress = getProfileAddress();
+
+    if (profileAddress) {
+      router.push(`/profile/${profileAddress}`);
       handleClose();
     } else {
       toast.error("Please connect your wallet to view your profile");

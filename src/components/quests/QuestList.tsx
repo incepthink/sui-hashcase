@@ -14,12 +14,19 @@ interface Quest {
 interface QuestListProps {
   quests: Quest[];
   isWalletConnected: boolean;
+  requiredChainType?: "sui" | "evm";
 }
 
 export const QuestList: React.FC<QuestListProps> = ({
   quests,
   isWalletConnected,
+  requiredChainType = "sui",
 }) => {
+  const getWalletConnectMessage = () => {
+    const chainName = requiredChainType === "evm" ? "EVM Wallet" : "Sui Wallet";
+    return `Connect ${chainName} to Claim`;
+  };
+
   return (
     <div className="space-y-2 sm:space-y-3">
       {quests.map((quest) => (
@@ -45,8 +52,13 @@ export const QuestList: React.FC<QuestListProps> = ({
                   ✓ Completed
                 </span>
               ) : !isWalletConnected ? (
-                <span className="text-xs sm:text-sm text-gray-400 bg-gray-800/20 px-2 sm:px-3 py-1 rounded border border-gray-600 inline-block">
-                  Connect Wallet to Claim
+                <span
+                  className="text-xs sm:text-sm text-gray-400 bg-gray-800/20 px-2 sm:px-3 py-1 rounded border border-gray-600 inline-block"
+                  title={`Connect a ${
+                    requiredChainType === "evm" ? "EVM" : "Sui"
+                  } wallet to complete quests`}
+                >
+                  {getWalletConnectMessage()}
                 </span>
               ) : (
                 <span className="text-xs sm:text-sm text-gray-400 bg-gray-800/20 px-2 sm:px-3 py-1 rounded border border-gray-600 inline-block">

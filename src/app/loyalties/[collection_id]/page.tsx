@@ -2,44 +2,44 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
-
-import Link from "next/link";
-
-import axiosInstance from "@/utils/axios";
 import toast from "react-hot-toast";
 
 import { useLoyaltyPointsTransactions } from "@/app/hooks/useLoyaltyPointsTransactions";
 import { useCurrentAccount, useSuiClientQuery } from "@mysten/dapp-kit";
 import { useZkLogin } from "@mysten/enoki/react";
+import { useAccount } from "wagmi";
 
 import { PlusCircle, MinusCircle } from "lucide-react";
 import HeroImage from "@/assets/images/sui-bg.png";
 
 import { useGlobalAppStore } from "@/store/globalAppStore";
+import { useCollectionById } from "@/hooks/useCollections";
+import ChainMismatchInfo from "@/components/WalletConnect/ChainMismatchInfo";
 
 import LeaderboardTable from "./LeaderboardTable";
 import LoyaltyCodesTable from "./LoyaltyCodesTable";
-// import QuestsTable from "./QuestsTable"; // REMOVED - moved to separate page
-// import OnChainQuestsTable from "./OnChainQuestsTable"; // COMMENTED OUT
 import BadgesTable from "./BadgesTable";
 
 const CollectionLoyaltiesPage = () => {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
+
   const params = useParams();
   const router = useRouter();
   const currentAccount = useCurrentAccount();
   const { address: zkAddress } = useZkLogin();
+  const { address: evmAddress } = useAccount();
   const { user } = useGlobalAppStore();
 
-  // Check if any wallet is connected (Sui wallet or zk Google login)
-  const isWalletConnected = !!(currentAccount?.address || zkAddress);
+  // Check if any wallet is connected (Sui wallet or zk Google login or EVM wallet)
+  const hasSuiWallet = !!(currentAccount?.address || zkAddress);
+  const hasEvmWallet = !!evmAddress;
+  const isWalletConnected = hasSuiWallet || hasEvmWallet;
 
   const userTokenType =
     process.env.NEXT_PUBLIC_USER_TOKEN_TYPE ||
     "0x2::token::Token<0xdcbdbd4ef617c266d71cb8b5042d09cfcf2895bb7e05b1cbebd8adb5fc6f1f8d::loyalty_points::LOYALTY_POINTS>";
 
-  const [ownerId, setOwnerId] = useState<number | null>(null);
   const [onChainPointsState, setOnChainPointsState] = useState(0);
   const [offChainPointsState, setOffChainPointsState] = useState(0);
   const [points, setPoints] = useState<string>("");
@@ -54,37 +54,30 @@ const CollectionLoyaltiesPage = () => {
     setActiveTab(tab);
   };
 
+  // Fetch collection data
+  const {
+    collection,
+    isLoading: isCollectionLoading,
+    isError: isCollectionError,
+  } = useCollectionById(params.collection_id! as string);
+
+  console.log("COLLECTION LOYALTIES", collection);
+
+  // Get owner_id directly from collection data
+  const ownerId = collection?.owner_id;
+  const requiredChain = collection?.contract?.Chain?.chain_type as
+    | "ethereum"
+    | "sui";
+
   // Handle points update from loyalty codes
   const handlePointsUpdate = (newPoints: number) => {
     setOffChainPointsState(newPoints);
   };
 
-  // Fetch owner data
-  useEffect(() => {
-    const getOwnerData = async () => {
-      try {
-        const ownerResponse = await axiosInstance.get(
-          "/platform/owner-by-collection",
-          {
-            params: {
-              collection_id: params.collection_id,
-            },
-          }
-        );
-        setOwnerId(ownerResponse.data.owner_instance.id);
-      } catch (error) {
-        console.error("Error fetching owner data:", error);
-      }
-    };
-
-    getOwnerData();
-  }, [params.collection_id]);
-
-  // Fetch token data
-  // Add refetch capability to the query
+  // Fetch token data - only for Sui wallets
   const {
     data: fetchedTokenData,
-    isLoading,
+    isLoading: isTokenLoading,
     refetch: refetchTokenData,
   } = useSuiClientQuery(
     "getOwnedObjects",
@@ -116,15 +109,13 @@ const CollectionLoyaltiesPage = () => {
     }
   }, [fetchedTokenData]);
 
-  // For zk login users, we don't have on-chain tokens, so show 0 or fetch from backend
+  // For zk login users and EVM users, we don't have on-chain tokens, so show 0
   useEffect(() => {
-    if (zkAddress && !currentAccount?.address) {
-      // For zk login users, set on-chain points to 0 or fetch from backend
+    if ((zkAddress && !currentAccount?.address) || hasEvmWallet) {
+      // For zk login users and EVM users, set on-chain points to 0
       setOnChainPointsState(0);
     }
-  }, [zkAddress, currentAccount?.address]);
-
-  // Removed handleAddLoyaltyPoints - no longer needed
+  }, [zkAddress, currentAccount?.address, hasEvmWallet]);
 
   const handleSpendLoyaltyPoints = async () => {
     if (points && userTokenId) {
@@ -142,8 +133,45 @@ const CollectionLoyaltiesPage = () => {
     }
   };
 
+  // Show loading spinner while collection is loading
+  if (!mounted || isCollectionLoading) {
+    return (
+      <div className="w-full min-h-[70vh] flex flex-col items-center justify-center bg-gradient-to-br from-[#000212] via-[#03082a] to-[#0a0e3a] px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+        {/* Glowing background elements */}
+        <div className="absolute top-0 left-0 w-1/3 h-full bg-gradient-to-r from-blue-900/20 to-transparent -skew-x-12 -translate-x-1/3"></div>
+        <div className="absolute bottom-0 right-0 w-1/3 h-full bg-gradient-to-l from-purple-900/20 to-transparent skew-x-12 translate-x-1/3"></div>
+
+        <div className="relative z-10 text-center">
+          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
+          <h1 className="text-4xl sm:text-4xl font-extrabold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-blue-300 via-blue-400 to-purple-500 drop-shadow-lg leading-tight">
+            Loading...
+          </h1>
+          <p className="text-xl sm:text-2xl text-white/80 mb-8 leading-relaxed max-w-2xl">
+            Fetching collection data
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error if collection failed to load
+  if (isCollectionError || !collection) {
+    return (
+      <div className="w-full min-h-[70vh] flex flex-col items-center justify-center bg-gradient-to-br from-[#000212] via-[#03082a] to-[#0a0e3a] px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+        <div className="relative z-10 text-center">
+          <h1 className="text-4xl sm:text-4xl font-extrabold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-red-400 to-red-600 drop-shadow-lg leading-tight">
+            Collection Not Found
+          </h1>
+          <p className="text-xl sm:text-2xl text-white/80 mb-8 leading-relaxed max-w-2xl">
+            The requested collection could not be found.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   // Show wallet not connected message if wallet is not connected
-  if (!mounted || !isWalletConnected) {
+  if (!isWalletConnected) {
     return (
       <div className="w-full min-h-[70vh] flex flex-col items-center justify-center bg-gradient-to-br from-[#000212] via-[#03082a] to-[#0a0e3a] px-4 sm:px-6 lg:px-8 relative overflow-hidden">
         {/* Glowing background elements */}
@@ -157,8 +185,8 @@ const CollectionLoyaltiesPage = () => {
     );
   }
 
-  // Show loading spinner only when wallet is connected but data is loading
-  if (isLoading) {
+  // Show loading spinner for token data (only when wallet is connected but token data is loading)
+  if (isTokenLoading && hasSuiWallet && !hasEvmWallet) {
     return (
       <div className="w-full min-h-[70vh] flex flex-col items-center justify-center bg-gradient-to-br from-[#000212] via-[#03082a] to-[#0a0e3a] px-4 sm:px-6 lg:px-8 relative overflow-hidden">
         {/* Glowing background elements */}
@@ -178,222 +206,22 @@ const CollectionLoyaltiesPage = () => {
     );
   }
 
-  // Show main content only if wallet is connected
-  // if (!isWalletConnected) {
-  //   return (
-  //     <div className="w-full min-h-[70vh] flex flex-col items-center justify-center bg-gradient-to-br from-[#000212] via-[#03082a] to-[#0a0e3a] px-4 sm:px-6 lg:px-8 relative overflow-hidden">
-  //       {/* Glowing background elements */}
-  //       <div className="absolute top-0 left-0 w-1/3 h-full bg-gradient-to-r from-blue-900/20 to-transparent -skew-x-12 -translate-x-1/3"></div>
-  //       <div className="absolute bottom-0 right-0 w-1/3 h-full bg-gradient-to-l from-purple-900/20 to-transparent skew-x-12 translate-x-1/3"></div>
-
-  //       <div className="relative z-10 text-center">
-  //         {/* <h1 className="text-4xl sm:text-6xl font-extrabold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-blue-300 via-blue-400 to-purple-500 drop-shadow-lg leading-tight">
-  //           Connect Wallet
-  //         </h1> */}
-  //         <p className="text-xl sm:text-2xl text-white/80 mb-8 leading-relaxed max-w-2xl">
-  //           Please connect your wallet to view and manage your loyalty points
-  //         </p>
-  //       </div>
-  //     </div>
-  //   );
-  // }
-
-  // For zk login users, skip blockchain data check since they don't have on-chain tokens
-  // if (!currentAccount?.address && zkAddress) {
-  //   // Zk login user - show the main content without on-chain points
-  //   return (
-  //     <>
-  //       <div className="w-full min-h-[70vh] flex flex-col lg:flex-row items-center justify-center bg-gradient-to-br from-[#000212] via-[#03082a] to-[#0a0e3a] px-4 sm:px-6 lg:px-8 relative overflow-hidden">
-  //         {/* Glowing background elements */}
-  //         <div className="absolute top-0 left-0 w-1/3 h-full bg-gradient-to-r from-blue-900/20 to-transparent -skew-x-12 -translate-x-1/3"></div>
-  //         <div className="absolute bottom-0 right-0 w-1/3 h-full bg-gradient-to-l from-purple-900/20 to-transparent skew-x-12 translate-x-1/3"></div>
-
-  //         {/* Left Side: Image with enhanced styling */}
-  //         <div className="w-full lg:w-1/2 flex justify-center items-center relative z-10 px-4 py-8 lg:py-0">
-  //           <div className="relative w-full max-w-md group">
-  //             <Image
-  //               src={HeroImage}
-  //               alt="Loyalty Points"
-  //               width={600}
-  //               height={600}
-  //               className="w-full h-auto rounded-xl shadow-2xl transform transition-all duration-500 group-hover:scale-105"
-  //             />
-  //             <div className="absolute inset-0 bg-gradient-to-tr from-blue-500/20 via-transparent to-purple-500/20 rounded-xl mix-blend-overlay"></div>
-  //             <div className="absolute -inset-4 rounded-xl border-2 border-blue-400/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
-  //           </div>
-  //         </div>
-
-  //         {/* Right Side: Content */}
-  //         <div className="w-full lg:w-1/2 flex flex-col items-start justify-center text-left space-y-6 relative z-10 px-4 py-8 lg:py-0">
-  //           <div className="max-w-lg">
-  //             <h1 className="text-3xl sm:text-4xl font-extrabold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-blue-300 via-blue-400 to-purple-500 drop-shadow-lg leading-tight">
-  //               <span className="text-white">Loyalty Points</span>
-  //               <span className="block text-2xl sm:text-3xl mt-2 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">
-  //                 Zk Login User
-  //               </span>
-  //             </h1>
-
-  //             <p className="text-lg sm:text-xl text-white/80 mb-8 leading-relaxed">
-  //               Welcome! You&apos;re connected via zk Google login. You can participate in quests and earn loyalty points.
-  //             </p>
-
-  //             <div className="space-y-6 w-full">
-  //               <div className="relative">
-  //                 <input
-  //                   type="number"
-  //                   value={points}
-  //                   onChange={(e) => setPoints(e.target.value)}
-  //                   placeholder="Enter points amount"
-  //                   className="w-full px-5 py-4 text-lg rounded-xl bg-white/5 text-white placeholder-white/40 border focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/30"
-  //                   disabled
-  //                 />
-  //               </div>
-
-  //               <div className="flex flex-col sm:flex-row gap-4">
-  //                 <button
-  //                   disabled
-  //                   className="flex-1 flex items-center justify-center gap-3 bg-gray-600 text-white text-lg px-6 py-4 rounded-xl font-medium opacity-60 cursor-not-allowed"
-  //                 >
-  //                   <PlusCircle size={24} className="flex-shrink-0" />
-  //                   <span>Add Points (Sui Wallet Only)</span>
-  //                 </button>
-  //                 <button
-  //                   disabled
-  //                   className="flex-1 flex items-center justify-center gap-3 bg-gray-600 text-white text-lg px-6 py-4 rounded-xl font-medium opacity-60 cursor-not-allowed"
-  //                 >
-  //                   <MinusCircle size={24} className="flex-shrink-0" />
-  //                   <span>Spend Points (Sui Wallet Only)</span>
-  //                 </button>
-  //               </div>
-  //             </div>
-  //           </div>
-  //         </div>
-  //       </div>
-
-  //       {/* Navbar Element */}
-  //       <div className="bg-[#00041f] flex flex-col items-center pt-10 gap-4">
-  //         <div className="backdrop-blur-sm rounded-xl border p-2 flex gap-4 shadow-md">
-  //           {[
-  //             { key: "loyalty", label: "Loyalty Codes" },
-  //             { key: "badges", label: "Badges" },
-  //           ].map((tab) => (
-  //             <button
-  //               key={tab.key}
-  //               onClick={() => handleTabChange(tab.key as any)}
-  //               className={`relative px-6 py-2 rounded-lg font-semibold text-sm transition-all duration-300
-  //           ${
-  //             activeTab === tab.key
-  //               ? "text-white bg-gradient-to-r from-blue-500 to-purple-500 shadow-md"
-  //               : "text-white/60 hover:text-white hover:bg-white/10"
-  //           }`}
-  //             >
-  //               {tab.label}
-  //               {/* Neon border glow on hover */}
-  //               <span
-  //                 className={`absolute inset-0 rounded-lg pointer-events-none transition duration-300 ${
-  //                   activeTab === tab.key
-  //                     ? "ring-2 ring-blue-500/40"
-  //                     : "hover:ring-1 hover:ring-purple-500/20"
-  //                 }`}
-  //               />
-  //             </button>
-  //           ))}
-  //         </div>
-
-  //         {/* View Quests Button */}
-  //         <button
-  //           onClick={() => window.location.href = '/quests'}
-  //           className="bg-gradient-to-r from-[#00ff88] to-[#00ccff] hover:from-[#00ccff] hover:to-[#00ff88] text-black font-bold py-3 px-6 rounded-xl text-sm transition-all duration-300 transform"
-  //         >
-  //            View All Quests
-  //         </button>
-  //       </div>
-
-  //       {ownerId && activeTab === "loyalty" && (
-  //         <LoyaltyCodesTable owner_id={ownerId} />
-  //       )}
-  //       {ownerId && activeTab === "loyalty" && (
-  //         <LeaderboardTable owner_id={ownerId} />
-  //       )}
-
-  //       {ownerId && activeTab === "badges" && <BadgesTable owner_id={ownerId} />}
-
-  //     </>
-  //   );
-  // }
-
-  // This duplicate loading condition was causing infinite loading for ZK users - REMOVED
-
   return (
     <>
-      {/* COMMENTED OUT: On-Chain Points Section */}
-      {/*
-      <div className="w-full min-h-[70vh] flex flex-col lg:flex-row items-center justify-center bg-gradient-to-br from-[#000212] via-[#03082a] to-[#0a0e3a] px-4 sm:px-6 lg:px-8 relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-1/3 h-full bg-gradient-to-r from-blue-900/20 to-transparent -skew-x-12 -translate-x-1/3"></div>
-        <div className="absolute bottom-0 right-0 w-1/3 h-full bg-gradient-to-l from-purple-900/20 to-transparent skew-x-12 translate-x-1/3"></div>
-
-        <div className="w-full lg:w-1/2 flex justify-center items-center relative z-10 px-4 py-8 lg:py-0">
-          <div className="relative w-full max-w-md group">
-            <Image
-              src={HeroImage}
-              alt="Loyalty Points"
-              width={600}
-              height={600}
-              className="w-full h-auto rounded-xl shadow-2xl transform transition-all duration-500 group-hover:scale-105"
-            />
-            <div className="absolute inset-0 bg-gradient-to-tr from-blue-500/20 via-transparent to-purple-500/20 rounded-xl mix-blend-overlay"></div>
-            <div className="absolute -inset-4 rounded-xl border-2 border-blue-400/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
-          </div>
+      {/* Chain Mismatch Warning */}
+      {/* {requiredChain && (
+        <div className="bg-[#00041f] pt-6 px-4">
+          <ChainMismatchInfo
+            requiredChain={requiredChain}
+            className="max-w-6xl"
+          />
         </div>
-
-        <div className="w-full lg:w-1/2 flex flex-col items-start justify-center text-left space-y-6 relative z-10 px-4 py-8 lg:py-0">
-          <div className="max-w-lg">
-            <h1 className="text-3xl sm:text-4xl font-extrabold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-blue-300 via-blue-400 to-purple-500 drop-shadow-lg leading-tight">
-              {onChainPointsState !== undefined ? (
-                <>
-                  On-Chain <span className="text-white">Loyalty Points</span>
-                  <span className="block text-2xl sm:text-3xl mt-2 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">
-                    {onChainPointsState} Points
-                  </span>
-                </>
-              ) : (
-                "Fetching Loyalty Points..."
-              )}
-            </h1>
-
-            <p className="text-lg sm:text-xl text-white/80 mb-8 leading-relaxed">
-              Earn and redeem points in our secure, transparent, and
-              decentralized loyalty ecosystem powered by blockchain technology.
-            </p>
-
-            <div className="space-y-6 w-full">
-              <div className="relative">
-                <input
-                  type="number"
-                  value={points}
-                  onChange={(e) => setPoints(e.target.value)}
-                  placeholder="Enter points amount to spend"
-                  className="w-full px-5 py-4 text-lg rounded-xl bg-white/5 text-white placeholder-white/40 border focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/30"
-                />
-              </div>
-
-              <div className="flex flex-col sm:flex-row gap-4">
-                <button
-                  onClick={handleSpendLoyaltyPoints}
-                  className="flex-1 flex items-center justify-center gap-3 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-400 hover:to-purple-500 text-white text-lg px-6 py-4 rounded-xl font-medium transition-all duration-300 shadow-lg hover:shadow-purple-500/20 hover:-translate-y-0.5"
-                >
-                  <MinusCircle size={24} className="flex-shrink-0" />
-                  <span>Spend Points</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      */}
+      )} */}
 
       {/* Navbar Element */}
-      <div className="bg-[#00041f] flex flex-col items-center pt-12 sm:pt-16 md:pt-20 gap-3 sm:gap-4 px-4 pb-3 md:pb-0 ">
+      <div
+        className={`bg-[#00041f] flex flex-col items-center pt-12 sm:pt-16 md:pt-20 gap-3 sm:gap-4 px-4 pb-3 md:pb-0`}
+      >
         {/* Tab Buttons Container */}
         <div className="backdrop-blur-sm rounded-xl border p-1.5 sm:p-2 flex gap-2 sm:gap-4 shadow-md w-full max-w-sm sm:max-w-md md:max-w-lg">
           {[
@@ -437,6 +265,27 @@ const CollectionLoyaltiesPage = () => {
               });
               return;
             }
+
+            // Check if user has the correct chain connected
+            const hasCorrectChain =
+              requiredChain === "sui" ? hasSuiWallet : hasEvmWallet;
+            if (requiredChain && !hasCorrectChain) {
+              toast.error(
+                `Please connect a ${
+                  requiredChain === "sui" ? "Sui" : "EVM"
+                } wallet to view quests`,
+                {
+                  duration: 3000,
+                  style: {
+                    background: "#1f2937",
+                    color: "#fff",
+                    border: "1px solid #374151",
+                  },
+                }
+              );
+              return;
+            }
+
             router.push(`/quests?collection_id=${params.collection_id}`);
           }}
           className={`border-2 transition duration-300 font-semibold sm:font-bold py-2.5 sm:py-3 md:py-3.5 px-4 sm:px-5 md:px-6 rounded-lg sm:rounded-xl text-xs sm:text-sm md:text-base transition-all duration-300 transform w-full max-w-xs sm:max-w-sm md:max-w-md ${
@@ -460,6 +309,7 @@ const CollectionLoyaltiesPage = () => {
         <LoyaltyCodesTable
           owner_id={ownerId}
           onPointsUpdate={handlePointsUpdate}
+          collection={collection}
         />
       )}
       {ownerId && activeTab === "loyalty" && (
@@ -467,8 +317,6 @@ const CollectionLoyaltiesPage = () => {
       )}
 
       {ownerId && activeTab === "badges" && <BadgesTable owner_id={ownerId} />}
-      {/* COMMENTED OUT: On-Chain Quests Table */}
-      {/* {ownerId && activeTab === "onchain_quests" && <OnChainQuestsTable owner_id={ownerId} />} */}
     </>
   );
 };

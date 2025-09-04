@@ -1,166 +1,147 @@
 "use client";
 
 import { useGlobalAppStore } from "@/store/globalAppStore";
-import { useCurrentAccount } from "@mysten/dapp-kit";
+import { useCurrentAccount, useDisconnectWallet } from "@mysten/dapp-kit";
 import { useZkLogin, useEnokiFlow } from "@mysten/enoki/react";
+import { useAccount, useDisconnect as useEvmDisconnect } from "wagmi";
 import { Wallet } from "lucide-react";
-import React, { useContext, useEffect, useState } from "react";
-import { useDisconnectWallet } from "@mysten/dapp-kit";
-import axiosInstance from "@/utils/axios";
-import { AppContext } from "@/context/AppContext";
-import { ActionKind } from "@/context/context-types";
+import React, { useEffect, useState } from "react";
 
-const ConnectButton = () => {
+const ConnectButton: React.FC = () => {
   const {
     openModal,
     setOpenModal,
     unsetUser,
-    setUserWalletAddress,
     isUserVerified,
-    user,
-    setUser,
+    getWalletForChain,
+    hasWalletForChain,
+    disconnectWallet,
+    disconnectAllWallets,
   } = useGlobalAppStore();
-  const currentAccount = useCurrentAccount();
-  const { address } = useZkLogin();
-  const { mutate: disconnect } = useDisconnectWallet();
+
+  // Wallet connections
+  const currentAccount = useCurrentAccount(); // Sui wallet
+  const { address: zkAddress } = useZkLogin(); // ZkLogin
+  const { address: evmAddress, isConnected: isEvmConnected } = useAccount(); // EVM wallet
+
+  // Disconnect functions
+  const { mutate: disconnectSui } = useDisconnectWallet();
+  const { disconnect: disconnectEvm } = useEvmDisconnect();
   const enokiFlow = useEnokiFlow();
 
-  const { state, dispatch } = useContext(AppContext);
-
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
+  const [activeWalletType, setActiveWalletType] = useState<
+    "sui" | "evm" | null
+  >(null);
 
-  const user_address = currentAccount?.address || address;
-
-  const handleUserCreation = async () => {
-    if (isUserVerified) return;
-
-    const res = await axiosInstance.post("auth/zk-login/login", {
-      address: address,
-    });
-    console.log("AUTH RES", res);
-
-    const token = res.data.token;
-    const user_instance = res.data.user_instance;
-
-    // Update AppContext
-    dispatch({
-      type: ActionKind.SET_USER,
-      payload: [user_instance, token],
-    });
-
-    // Also update global app store for ConnectButton compatibility
-    const userDataToStoreInGlobalStore = {
-      id: user_instance.id,
-      walletAddress: user_instance.sui_wallet_address || address,
-      email: user_instance.email,
-      badges: user_instance.badges,
-      user_name: user_instance.username || "guest_user",
-      description:
-        user_instance.description || "this is a guest_user description",
-      profile_image: user_instance.profile_image,
-      banner_image: user_instance.banner_image,
-    };
-
-    setUser(userDataToStoreInGlobalStore, token);
-  };
-
-  useEffect(() => {
-    if (address) {
-      if (!state.user) {
-        console.log("call the user create server api for zklogin");
-        handleUserCreation();
-      }
-    }
-  }, [address]);
+  // Get wallet info from store
+  const suiWallet = getWalletForChain("sui");
+  const evmWallet = getWalletForChain("evm");
 
   // Debug logging
   useEffect(() => {
     console.log("🔍 ConnectButton Debug:", {
       openModal,
       isUserVerified,
-      user,
+      suiWallet,
+      evmWallet,
       currentAccountAddress: currentAccount?.address,
-      zkAddress: address,
-      user_address,
-      walletAddress,
+      zkAddress,
+      evmAddress,
+      hasEvm: hasWalletForChain("evm"),
+      hasSui: hasWalletForChain("sui"),
     });
   }, [
     openModal,
     isUserVerified,
-    user,
+    suiWallet,
+    evmWallet,
     currentAccount?.address,
-    address,
-    user_address,
-    walletAddress,
+    zkAddress,
+    evmAddress,
+    hasWalletForChain,
   ]);
 
+  // Update display based on connected wallets
   useEffect(() => {
-    // Show wallet address if user is verified OR if we have a zk login address
-    if (isUserVerified && currentAccount?.address) {
-      setWalletAddress(
-        currentAccount.address.slice(0, 10) +
-          "..." +
-          currentAccount.address.slice(-8)
-      );
-    } else if (isUserVerified && address) {
-      setWalletAddress(address.slice(0, 10) + "..." + address.slice(-8));
-    } else if (address) {
-      // Show zk login address even if not fully verified yet
-      setWalletAddress(address.slice(0, 10) + "..." + address.slice(-8));
-    } else {
-      // Clear wallet address when not authenticated
-      setWalletAddress(null);
-    }
-  }, [address, currentAccount, isUserVerified]);
+    let displayAddress: string | null = null;
+    let walletType: "sui" | "evm" | null = null; // <-- key fix: narrow the type
 
-  // Additional effect to handle wallet disconnection
-  useEffect(() => {
-    if (!currentAccount && !address) {
-      setWalletAddress(null);
-      console.log("Wallet disconnected - cleared wallet address");
+    // Priority: Show EVM if connected, otherwise Sui
+    if (isUserVerified && evmWallet && evmAddress) {
+      displayAddress = `${evmAddress.slice(0, 10)}...${evmAddress.slice(-8)}`;
+      walletType = "evm";
+    } else if (isUserVerified && suiWallet) {
+      const address = suiWallet.address;
+      displayAddress = `${address.slice(0, 10)}...${address.slice(-8)}`;
+      walletType = "sui";
+    } else if (zkAddress) {
+      // Show zkLogin address even if not fully verified yet
+      displayAddress = `${zkAddress.slice(0, 10)}...${zkAddress.slice(-8)}`;
+      walletType = "sui";
     }
-  }, [currentAccount, address]);
+
+    setWalletAddress(displayAddress);
+    setActiveWalletType(walletType); // now matches 'sui' | 'evm' | null
+  }, [isUserVerified, suiWallet, evmWallet, zkAddress, evmAddress]);
+
+  // Clear wallet address when nothing is connected
+  useEffect(() => {
+    if (!currentAccount && !zkAddress && !evmAddress) {
+      setWalletAddress(null);
+      setActiveWalletType(null);
+      console.log("All wallets disconnected - cleared wallet address");
+    }
+  }, [currentAccount, zkAddress, evmAddress]);
 
   const handleModal = () => {
     console.log(
       "🔘 Connect button clicked, current openModal state:",
       openModal
     );
-    if (openModal) {
-      setOpenModal(false);
-    } else {
-      setOpenModal(true);
-    }
+    setOpenModal(!openModal);
   };
 
   const handleDisconnect = () => {
     console.log("Disconnect button clicked");
-    console.log("Current wallet address:", walletAddress);
-    console.log("Current account:", currentAccount);
-    console.log("ZkLogin address:", address);
+    console.log("Active wallet type:", activeWalletType);
+    console.log("Current wallets:", { suiWallet, evmWallet });
 
     // Clear wallet address state immediately for instant UI feedback
     setWalletAddress(null);
+    setActiveWalletType(null);
 
     // Clear user data from global store immediately
     unsetUser();
-    setUserWalletAddress("");
+    disconnectAllWallets();
     console.log("Cleared user data from global store");
 
-    // Disconnect based on what type of wallet is connected
-    if (address) {
-      // Zk login logout
-      enokiFlow.logout();
-      console.log("Called zk login logout");
+    // Disconnect based on active wallet type or disconnect all
+    if (activeWalletType === "evm" && evmAddress) {
+      disconnectEvm();
+      console.log("Called EVM wallet disconnect");
+    } else if (activeWalletType === "sui") {
+      if (zkAddress) {
+        // enokiFlow.logout is defined by @mysten/enoki
+        enokiFlow.logout?.();
+        console.log("Called zk login logout");
+      } else if (currentAccount) {
+        disconnectSui();
+        console.log("Called Sui wallet disconnect");
+      }
     } else {
-      // Regular wallet disconnect
-      disconnect();
-      console.log("Called regular wallet disconnect");
+      // Disconnect all if unsure
+      if (evmAddress) disconnectEvm();
+      if (zkAddress) enokiFlow.logout?.();
+      if (currentAccount) disconnectSui();
+      console.log("Disconnected all wallets");
     }
   };
 
-  // If wallet is connected and user is verified, show address and disconnect button
-  if (walletAddress && (isUserVerified || address)) {
+  // If any wallet is connected and user is verified (or zk logged in), show address and disconnect button
+  if (walletAddress && (isUserVerified || zkAddress)) {
+    const walletTypeDisplay = activeWalletType === "evm" ? "EVM" : "Sui";
+
     console.log(
       "✅ ConnectButton: Showing connected state with address:",
       walletAddress
@@ -173,6 +154,7 @@ const ConnectButton = () => {
           <span className="sm:hidden">
             {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
           </span>
+          <span className="text-xs opacity-75">({walletTypeDisplay})</span>
         </div>
         <button
           onClick={handleDisconnect}
