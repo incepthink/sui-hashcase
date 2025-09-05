@@ -4,63 +4,14 @@ import axiosInstance from "@/utils/axios";
 import { Flame, Clock, Calendar, Info } from "lucide-react";
 import toast from "react-hot-toast";
 import { useGlobalAppStore } from "@/store/globalAppStore";
-
-type Loyalty = {
-  id: number;
-  owner_id: number;
-  code: string;
-  value: number;
-  type: string;
-};
-
-type LoyaltyTransaction = {
-  id: number;
-  user_id: number;
-  owner_id: number;
-  code: string;
-  points: number;
-  type: string;
-  status: string;
-  created_at: string;
-};
-
-type TimeRule = {
-  id: number;
-  name: string;
-  rule_type: "recurring_reset" | "availability_window";
-  timezone: string;
-  reset_value?: number;
-  reset_unit?: "minutes" | "hours" | "days" | "weeks" | "months";
-  reset_time?: string;
-  reset_day?: string;
-  start_date?: string;
-  end_date?: string;
-  start_time?: string;
-  end_time?: string;
-  available_days?: string[];
-};
-
-type TransactionSummary = {
-  code: string;
-  type: string;
-  usage_count: number;
-  last_used: string;
-  can_use_again: boolean;
-  eligibility_message: string;
-  next_eligible_at: string | null;
-  loyalty_type: string;
-  has_time_rules: boolean;
-  time_rules: {
-    availability_rule: TimeRule | null;
-    reset_rule: TimeRule | null;
-  };
-};
+import { useLoyalty } from "@/hooks/useLoyalty"; // Import the new hook
+import { useAddLoyalty } from "@/hooks/useAddLoyalty"; // Import the new hook
 
 interface User {
   id: number;
-  walletAddress: string;
+  walletAddress?: string; // Make optional to match global store User type
   email: string | null;
-  badges: string;
+  badges?: string;
 }
 
 interface Collection {
@@ -92,17 +43,54 @@ const LoyaltyCodesTable = ({
     setOpenModal,
   } = useGlobalAppStore();
 
-  const [loyaltyCodes, setLoyaltyCodes] = useState<Loyalty[]>([]);
-  const [usedCodes, setUsedCodes] = useState<string[]>([]);
-  const [transactionSummary, setTransactionSummary] = useState<
-    TransactionSummary[]
-  >([]);
   const [offChainPointsState, setOffChainPointsState] = useState(0);
   const [currentStreak, setCurrentStreak] = useState(0);
   const [isPageLoading, setIsPageLoading] = useState(false);
 
+  // Use the loyalty hook
+  const {
+    loyaltyCodes,
+    usedCodes,
+    transactionSummary,
+    isLoading: loyaltyLoading,
+    hasTransactionError,
+    getLoyaltyCodesAndPoints,
+    getUsedLoyaltyCodes,
+    getLoyaltyCodeStatus,
+    formatTimeRule,
+    setUsedCodes,
+  } = useLoyalty();
+
+  // Use the add loyalty hook
+  const {
+    handleAddLoyalty,
+    isLoading: addLoyaltyLoading,
+    getRequiredChainType,
+  } = useAddLoyalty({
+    user,
+    isUserVerified,
+    hasWalletForChain,
+    getWalletForChain,
+    setOpenModal,
+    collection,
+    onPointsUpdate: (newPoints) => {
+      setOffChainPointsState(newPoints);
+      if (onPointsUpdate) {
+        onPointsUpdate(newPoints);
+      }
+    },
+    onSuccess: async () => {
+      // Refresh data after successful loyalty redemption
+      await fetchOffChainPoints();
+      await getLoyaltyCodesAndPoints(owner_id);
+      await getUsedLoyaltyCodes(user!.id, owner_id);
+      // Update used codes immediately for UI feedback
+      setUsedCodes((prev) => [...prev]);
+    },
+  });
+
   // Determine required chain type based on collection
-  const getRequiredChainType = (): "sui" | "evm" => {
+  const getRequiredChainTypeLocal = (): "sui" | "evm" => {
     const chainType = collection?.contract?.Chain?.chain_type;
     return chainType === "ethereum" ? "evm" : "sui";
   };
@@ -118,7 +106,7 @@ const LoyaltyCodesTable = ({
       return { isValid: false };
     }
 
-    const requiredChain = getRequiredChainType();
+    const requiredChain = getRequiredChainTypeLocal();
     const hasCorrectWallet = hasWalletForChain(requiredChain);
 
     if (!hasCorrectWallet) {
@@ -143,148 +131,6 @@ const LoyaltyCodesTable = ({
     };
   };
 
-  const getLoyaltyCodesAndPoints = async (): Promise<void> => {
-    setIsPageLoading(true);
-    try {
-      const loyaltyResponse = await axiosInstance.get(
-        "/platform/get-loyalties",
-        {
-          params: {
-            owner_id: owner_id,
-          },
-        }
-      );
-
-      setLoyaltyCodes(loyaltyResponse.data.loyalties || []);
-    } catch (error) {
-      console.error("Error fetching loyalty codes:", error);
-      setLoyaltyCodes([]);
-    } finally {
-      setIsPageLoading(false);
-    }
-  };
-
-  const getUsedLoyaltyCodes = async (): Promise<void> => {
-    if (!user?.id) return;
-
-    try {
-      const response = await axiosInstance.get("/user/loyalty/transactions", {
-        params: {
-          user_id: user.id,
-          owner_id: owner_id,
-        },
-      });
-
-      // Store the summary data for eligibility checks
-      const summaryData: TransactionSummary[] = response.data.summary || [];
-      setTransactionSummary(summaryData);
-
-      // Keep the old usedCodes for backward compatibility
-      const usedCodesList: string[] = response.data.data.map(
-        (transaction: LoyaltyTransaction) => transaction.code
-      );
-      setUsedCodes(usedCodesList);
-    } catch (error) {
-      console.error("Error fetching used loyalty codes:", error);
-      setUsedCodes([]);
-      setTransactionSummary([]);
-    }
-  };
-
-  const handleAddLoyalty = async (
-    code: string,
-    value: number | undefined
-  ): Promise<void> => {
-    // Validate wallet connection before proceeding
-    const validation = validateWalletConnection();
-    if (!validation.isValid) {
-      return;
-    }
-
-    setIsPageLoading(true);
-
-    try {
-      const loyaltyCode = loyaltyCodes.find((lc) => lc.code === code);
-      let backendType = loyaltyCode?.type || "";
-      if (backendType === "one_time_fixed") backendType = "ONE_FIXED";
-      else if (backendType === "repeat_fixed") backendType = "FIXED";
-      else if (backendType === "repeat_variable") backendType = "VARIABLE";
-      else if (backendType === "one_time_variable")
-        backendType = "ONE_VARIABLE";
-
-      const loyaltyResponse = await axiosInstance.post(
-        "/user/achievements/add-points",
-        {
-          loyalty: {
-            code,
-            value: value || 0,
-            type: backendType,
-          },
-          walletAddress: validation.walletAddress,
-          chainType: getRequiredChainType(),
-        },
-        {
-          params: {
-            owner_id,
-            user_id: user!.id,
-          },
-        }
-      );
-
-      let newPoints = 0;
-      if (loyaltyResponse.data.user?.total_loyalty_points) {
-        newPoints = loyaltyResponse.data.user.total_loyalty_points;
-        setOffChainPointsState(newPoints);
-      } else if (loyaltyResponse.data.totalPoints) {
-        newPoints = loyaltyResponse.data.totalPoints;
-        setOffChainPointsState(newPoints);
-      }
-
-      const requiredChain = getRequiredChainType();
-      const chainName = requiredChain === "evm" ? "EVM" : "Sui";
-
-      toast.success(
-        `Successfully redeemed ${code} with ${chainName} wallet! +${value} points added. Total: ${newPoints} points`
-      );
-
-      if (onPointsUpdate && newPoints > 0) {
-        onPointsUpdate(newPoints);
-      }
-
-      setUsedCodes((prev) => [...prev, code]);
-
-      await fetchOffChainPoints();
-      await getLoyaltyCodesAndPoints();
-      await getUsedLoyaltyCodes();
-    } catch (error: any) {
-      console.error("Full error object:", error);
-
-      if (error.response?.status === 401 || error.response?.status === 403) {
-        toast.error(
-          "Authentication failed. Please reconnect your wallet and try again."
-        );
-      } else if (error.response?.data?.message?.includes("wrong wallet")) {
-        toast.error(
-          "Incorrect wallet type connected. Please connect the appropriate wallet for this collection."
-        );
-      } else if (
-        error.response?.data?.message === "Loyalty code already claimed"
-      ) {
-        toast.error("This loyalty code has already been claimed.");
-      } else if (error.response?.data?.message === "Loyalty code not found") {
-        toast.error("Invalid loyalty code.");
-      } else {
-        toast.error(
-          `Failed to redeem loyalty code: ${
-            error.response?.data?.message || error.message
-          }`
-        );
-      }
-    } finally {
-      setIsPageLoading(false);
-    }
-  };
-
   const performDailyCheckIn = async (): Promise<void> => {
     if (!user?.id) {
       console.log("No user ID available for streak check-in");
@@ -302,7 +148,7 @@ const LoyaltyCodesTable = ({
         "/user/achievements/extend-streak",
         {
           walletAddress: validation.walletAddress,
-          chainType: getRequiredChainType(),
+          chainType: getRequiredChainTypeLocal(),
         },
         {
           params: {
@@ -317,7 +163,7 @@ const LoyaltyCodesTable = ({
       setOffChainPointsState(user_achievements.total_loyalty_points);
 
       console.log(
-        `Daily check-in successful with ${getRequiredChainType()} wallet`
+        `Daily check-in successful with ${getRequiredChainTypeLocal()} wallet`
       );
     } catch (error: any) {
       console.log("Daily check-in failed:", error);
@@ -345,141 +191,43 @@ const LoyaltyCodesTable = ({
     }
   };
 
-  const getLoyaltyCodeStatus = (
-    loyalty: Loyalty
-  ): {
-    canUse: boolean;
-    isUsed: boolean;
-    eligibilityMessage: string;
-    usageCount: number;
-    canRedeem: boolean;
-    statusText: string;
-    timeRules: {
-      availability_rule: TimeRule | null;
-      reset_rule: TimeRule | null;
-    };
-  } => {
-    // Convert frontend type to backend type for matching
-    let backendType = loyalty.type;
-    if (loyalty.type === "one_time_fixed") backendType = "ONE_FIXED";
-    else if (loyalty.type === "repeat_fixed") backendType = "FIXED";
-    else if (loyalty.type === "repeat_variable") backendType = "VARIABLE";
-    else if (loyalty.type === "one_time_variable") backendType = "ONE_VARIABLE";
-
-    // Find the summary entry for this specific code+type combination using backend type
-    const summaryEntry = transactionSummary.find(
-      (summary) => summary.code === loyalty.code && summary.type === backendType
-    );
-
-    const canUse = summaryEntry ? summaryEntry.can_use_again : true;
-    const isUsed = summaryEntry ? summaryEntry.usage_count > 0 : false;
-    const eligibilityMessage = summaryEntry?.eligibility_message || "";
-    const usageCount = summaryEntry?.usage_count || 0;
-    const timeRules = summaryEntry?.time_rules || {
-      availability_rule: null,
-      reset_rule: null,
-    };
-
-    const canRedeem = hasWalletForChain(getRequiredChainType()) && canUse;
-
-    let statusText = "";
-    if (!canUse && isUsed) {
-      if (usageCount === 1 && backendType.includes("ONE_")) {
-        statusText = "✓ Used";
-      } else {
-        statusText = "On Cooldown";
-      }
-    }
-
-    return {
-      canUse,
-      isUsed,
-      eligibilityMessage,
-      usageCount,
-      canRedeem,
-      statusText,
-      timeRules,
-    };
-  };
-
-  const formatTimeRule = (rule: TimeRule | null): string => {
-    if (!rule) return "None";
-
-    if (rule.rule_type === "recurring_reset") {
-      let resetText = `Every ${rule.reset_value} ${rule.reset_unit}`;
-      if (
-        rule.reset_time &&
-        (rule.reset_unit === "days" || rule.reset_unit === "weeks")
-      ) {
-        resetText += ` at ${rule.reset_time}`;
-      }
-      resetText += ` (GMT${rule.timezone})`;
-      return resetText;
-    }
-
-    if (rule.rule_type === "availability_window") {
-      const parts: string[] = [];
-
-      if (rule.start_date || rule.end_date) {
-        if (rule.start_date && rule.end_date) {
-          parts.push(`${rule.start_date} to ${rule.end_date}`);
-        } else if (rule.start_date) {
-          parts.push(`From ${rule.start_date}`);
-        } else if (rule.end_date) {
-          parts.push(`Until ${rule.end_date}`);
-        }
-      }
-
-      if (rule.start_time || rule.end_time) {
-        if (rule.start_time && rule.end_time) {
-          parts.push(`${rule.start_time}-${rule.end_time} daily`);
-        } else if (rule.start_time) {
-          parts.push(`From ${rule.start_time} daily`);
-        } else if (rule.end_time) {
-          parts.push(`Until ${rule.end_time} daily`);
-        }
-      }
-
-      if (rule.available_days && rule.available_days.length > 0) {
-        const days = rule.available_days
-          .map((day) => day.charAt(0).toUpperCase() + day.slice(1))
-          .join(", ");
-        parts.push(`On ${days}`);
-      }
-
-      if (parts.length > 0) {
-        return `${parts.join(", ")} (GMT${rule.timezone})`;
-      }
-
-      return `GMT${rule.timezone}`;
-    }
-
-    return "Unknown";
+  // Wrapper function for handleAddLoyalty to maintain compatibility
+  const handleLoyaltyRedeem = async (
+    code: string,
+    value: number | undefined
+  ) => {
+    await handleAddLoyalty(code, value, owner_id, loyaltyCodes);
   };
 
   useEffect(() => {
-    getLoyaltyCodesAndPoints();
+    getLoyaltyCodesAndPoints(owner_id);
     fetchOffChainPoints();
 
-    const requiredChain = getRequiredChainType();
+    const requiredChain = getRequiredChainTypeLocal();
     if (hasWalletForChain(requiredChain)) {
       performDailyCheckIn();
     }
 
-    getUsedLoyaltyCodes();
+    if (user?.id) {
+      getUsedLoyaltyCodes(user.id, owner_id);
+    }
   }, [user?.id]);
 
   useEffect(() => {
-    const requiredChain = getRequiredChainType();
+    const requiredChain = getRequiredChainTypeLocal();
     if (user?.id && hasWalletForChain(requiredChain)) {
       performDailyCheckIn();
     }
-  }, [hasWalletForChain(getRequiredChainType())]);
+  }, [hasWalletForChain(getRequiredChainTypeLocal())]);
+
+  // Set page loading based on both loyalty loading and add loyalty loading
+  const isCurrentlyLoading =
+    loyaltyLoading || addLoyaltyLoading || isPageLoading;
 
   return (
     <div className="bg-gradient-to-b from-[#00041f] to-[#030828] flex flex-col items-center justify-start p-4 sm:p-6 md:p-8 text-white pb-16 md:pb-16">
       {/* Page Loading Spinner */}
-      {isPageLoading && (
+      {isCurrentlyLoading && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 sm:p-8 flex flex-col items-center gap-4">
             <div className="w-10 h-10 sm:w-12 sm:h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
@@ -490,21 +238,34 @@ const LoyaltyCodesTable = ({
         </div>
       )}
 
+      {/* Error State - Show when transaction error occurs */}
+      {hasTransactionError && (
+        <div className="mb-4 p-4 bg-red-500/20 border border-red-500/50 rounded-lg">
+          <div className="flex items-center gap-2 text-red-300">
+            <Info className="w-5 h-5" />
+            <span className="text-sm font-medium">
+              Unable to verify code eligibility. All codes are temporarily
+              disabled. Please refresh the page.
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Wallet Status Indicator */}
       {isUserVerified && (
         <div className="mb-4 p-3 bg-white/10 rounded-lg border border-white/20">
           <div className="flex items-center gap-2 text-sm">
             <div
               className={`w-2 h-2 rounded-full ${
-                hasWalletForChain(getRequiredChainType())
+                hasWalletForChain(getRequiredChainTypeLocal())
                   ? "bg-green-500"
                   : "bg-red-500"
               }`}
             ></div>
             <span>
-              {hasWalletForChain(getRequiredChainType())
-                ? `Connected to ${getRequiredChainType().toUpperCase()} wallet`
-                : `${getRequiredChainType().toUpperCase()} wallet required for this collection`}
+              {hasWalletForChain(getRequiredChainTypeLocal())
+                ? `Connected to ${getRequiredChainTypeLocal().toUpperCase()} wallet`
+                : `${getRequiredChainTypeLocal().toUpperCase()} wallet required for this collection`}
             </span>
           </div>
         </div>
@@ -529,7 +290,11 @@ const LoyaltyCodesTable = ({
       {/* Mobile Card View */}
       <div className="w-full max-w-6xl md:hidden space-y-3">
         {loyaltyCodes?.map((loyalty) => {
-          const status = getLoyaltyCodeStatus(loyalty);
+          const status = getLoyaltyCodeStatus(
+            loyalty,
+            hasWalletForChain,
+            getRequiredChainTypeLocal
+          );
 
           return (
             <div
@@ -554,17 +319,23 @@ const LoyaltyCodesTable = ({
                     ) : (
                       <button
                         onClick={() =>
-                          handleAddLoyalty(loyalty.code, loyalty.value)
+                          handleLoyaltyRedeem(loyalty.code, loyalty.value)
                         }
-                        disabled={isPageLoading || !status.canRedeem}
+                        disabled={
+                          isCurrentlyLoading ||
+                          !status.canRedeem ||
+                          hasTransactionError
+                        }
                         className={`px-3 py-1.5 rounded-md transition-colors text-sm mt-1 ${
-                          status.canRedeem
+                          status.canRedeem && !hasTransactionError
                             ? "bg-[#3f54b4] hover:bg-[#3f54b4]/80"
                             : "bg-gray-600 opacity-50 cursor-not-allowed"
                         } disabled:opacity-50 disabled:cursor-not-allowed`}
                         title={
-                          !status.canRedeem
-                            ? `Connect ${getRequiredChainType().toUpperCase()} wallet to redeem`
+                          hasTransactionError
+                            ? "Code verification error - please refresh"
+                            : !status.canRedeem
+                            ? `Connect ${getRequiredChainTypeLocal().toUpperCase()} wallet to redeem`
                             : ""
                         }
                       >
@@ -654,7 +425,11 @@ const LoyaltyCodesTable = ({
           </thead>
           <tbody>
             {loyaltyCodes?.map((loyalty) => {
-              const status = getLoyaltyCodeStatus(loyalty);
+              const status = getLoyaltyCodeStatus(
+                loyalty,
+                hasWalletForChain,
+                getRequiredChainTypeLocal
+              );
 
               return (
                 <tr
@@ -674,17 +449,23 @@ const LoyaltyCodesTable = ({
                     ) : (
                       <button
                         onClick={() =>
-                          handleAddLoyalty(loyalty.code, loyalty.value)
+                          handleLoyaltyRedeem(loyalty.code, loyalty.value)
                         }
-                        disabled={isPageLoading || !status.canRedeem}
+                        disabled={
+                          isCurrentlyLoading ||
+                          !status.canRedeem ||
+                          hasTransactionError
+                        }
                         className={`px-2 py-1 rounded-md transition-colors text-sm ${
-                          status.canRedeem
+                          status.canRedeem && !hasTransactionError
                             ? "bg-[#3f54b4] hover:bg-[#3f54b4]/80"
                             : "bg-gray-600 opacity-50 cursor-not-allowed"
                         } disabled:opacity-50 disabled:cursor-not-allowed`}
                         title={
-                          !status.canRedeem
-                            ? `Connect ${getRequiredChainType().toUpperCase()} wallet to redeem`
+                          hasTransactionError
+                            ? "Code verification error - please refresh"
+                            : !status.canRedeem
+                            ? `Connect ${getRequiredChainTypeLocal().toUpperCase()} wallet to redeem`
                             : ""
                         }
                       >
@@ -725,10 +506,15 @@ const LoyaltyCodesTable = ({
                         </span>
                       </div>
                     )}
-                    {status.canUse && !status.isUsed && (
-                      <span className="text-green-400 text-sm">
-                        ✓ Available
-                      </span>
+                    {status.canUse &&
+                      !status.isUsed &&
+                      !hasTransactionError && (
+                        <span className="text-green-400 text-sm">
+                          ✓ Available
+                        </span>
+                      )}
+                    {hasTransactionError && (
+                      <span className="text-red-400 text-sm">⚠ Error</span>
                     )}
                   </td>
                 </tr>
@@ -739,7 +525,7 @@ const LoyaltyCodesTable = ({
       </div>
 
       {/* Empty State */}
-      {loyaltyCodes.length === 0 && !isPageLoading && (
+      {loyaltyCodes.length === 0 && !isCurrentlyLoading && (
         <div className="text-center py-8">
           <p className="text-white/60 text-base sm:text-lg">
             No loyalty codes available
