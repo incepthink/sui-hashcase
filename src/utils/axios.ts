@@ -5,6 +5,8 @@ const axiosInstance = axios.create({
   baseURL:  "https://api.hashcase.co",
 });
 
+let del
+
 axiosInstance.interceptors.request.use(
   (config) => {
     const jwt = Cookies.get("jwt");
