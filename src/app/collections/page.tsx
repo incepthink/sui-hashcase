@@ -23,10 +23,6 @@ const HeaderSection = () => {
               Collections
             </span>
           </h1>
-          <p className="text-lg text-white/80 max-w-2xl mx-auto">
-            Explore unique digital collections and discover amazing NFTs on the
-            Sui blockchain
-          </p>
         </div>
       </div>
     </div>

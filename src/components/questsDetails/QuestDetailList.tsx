@@ -1,68 +1,73 @@
 // components/quests/QuestDetailList.tsx
 "use client";
 
-import { useGlobalAppStore } from "@/store/globalAppStore";
+import { RequirementRule, TaskWithCompletion } from "@/hooks/useQuestById";
+
+interface Task extends TaskWithCompletion {
+  is_completed?: boolean; // Legacy compatibility
+}
 
 interface Quest {
   id: number;
-  title: string;
-  description: string;
-  quest_code: string;
-  points_reward: number;
-  is_completed?: boolean;
   owner_id: number;
-  created_at: string;
-  updated_at: string;
+  title: string;
+  description?: string;
+  is_active?: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
+  claimable_metadata?: number | null;
+  tasks: Task[];
+  total_tasks: number;
+  completed_tasks: number;
+  is_completed: boolean;
+  total_points: number;
 }
 
 interface QuestDetailListProps {
-  quests: Quest[];
+  quest: Quest;
   isWalletConnected: boolean;
-  allowClaim: boolean;
-  activeQuestCode: string;
-  claimingQuestId: number | null;
-  onClaimQuest: (questId: number) => void;
   requiredChainType?: "sui" | "evm";
 }
 
 export const QuestDetailList: React.FC<QuestDetailListProps> = ({
-  quests,
+  quest,
   isWalletConnected,
-  allowClaim,
-  activeQuestCode,
-  claimingQuestId,
-  onClaimQuest,
   requiredChainType = "sui",
 }) => {
-  const { setOpenModal } = useGlobalAppStore();
-
-  const getClaimButtonText = () => {
-    if (!isWalletConnected) {
-      const chainName =
-        requiredChainType === "evm" ? "EVM Wallet" : "Sui Wallet";
-      return `Connect ${chainName}`;
-    }
-    return "Claim";
+  const getTaskStatusIcon = (task: Task): string => {
+    if (!isWalletConnected) return "🔒";
+    // Check both isCompleted (from backend) and is_completed (legacy)
+    const completed = task.isCompleted || task.is_completed;
+    return completed ? "✅" : "⏳";
   };
 
-  const getWalletConnectMessage = () => {
-    const chainName = requiredChainType === "evm" ? "EVM Wallet" : "Sui Wallet";
-    return `Connect ${chainName} to Claim`;
+  const getTaskStatusText = (task: Task): string => {
+    if (!isWalletConnected) return "Connect Wallet";
+    const completed = task.isCompleted || task.is_completed;
+    return completed ? "Completed" : "Pending";
   };
 
-  const handleConnectWallet = () => {
-    setOpenModal(true);
+  const getTaskStatusColor = (task: Task): string => {
+    if (!isWalletConnected)
+      return "text-gray-400 bg-gray-800/20 border-gray-600";
+    const completed = task.isCompleted || task.is_completed;
+    return completed
+      ? "text-green-400 bg-green-900/20 border-green-700"
+      : "text-blue-400 bg-blue-900/20 border-blue-700";
   };
 
-  if (quests.length === 0) {
+  // Filter active tasks
+  const activeTasks = quest.tasks.filter((task: Task) => task.is_active);
+
+  if (activeTasks.length === 0) {
     return (
       <div className="text-center py-12">
-        <div className="text-4xl sm:text-6xl mb-4">🎯</div>
+        <div className="text-4xl sm:text-6xl mb-4">📝</div>
         <h3 className="text-xl sm:text-2xl font-bold text-white mb-2">
-          No Quests Available
+          No Active Tasks
         </h3>
         <p className="text-gray-400 text-sm sm:text-base">
-          Check back later for new quests!
+          This quest has no active tasks at the moment.
         </p>
       </div>
     );
@@ -70,79 +75,95 @@ export const QuestDetailList: React.FC<QuestDetailListProps> = ({
 
   return (
     <div className="space-y-2 sm:space-y-3">
-      {quests.map((quest) => (
-        <div
-          key={quest.id}
-          className="group bg-gray-900 border border-gray-700 rounded-lg p-3 sm:p-4 relative overflow-hidden"
-        >
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
-            {/* Quest Info */}
-            <div className="flex-1">
-              <h3 className="text-sm sm:text-base font-bold text-white mb-1 sm:mb-0">
-                {quest.title}
-              </h3>
-              <p className="text-gray-400 text-xs sm:text-sm">
-                {quest.description}
-              </p>
+      {activeTasks.map((task: Task, index: number) => {
+        const isCompleted = task.isCompleted || task.is_completed;
+
+        return (
+          <div
+            key={task.id}
+            className="group bg-gray-900 border border-gray-700 rounded-lg p-3 sm:p-4 relative overflow-hidden"
+          >
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between space-y-3 sm:space-y-0">
+              {/* Task Info */}
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-2">
+                  {/* <span className="text-sm">{getTaskStatusIcon(task)}</span> */}
+                  <h3 className="text-sm sm:text-base font-bold text-white">
+                    {task.title}
+                  </h3>
+                  <span className="text-xs text-gray-500 bg-gray-800/50 px-2 py-1 rounded">
+                    Task {index + 1}
+                  </span>
+                </div>
+
+                {task.description && (
+                  <p className="text-gray-400 text-xs sm:text-sm mb-3 ml-6">
+                    {task.description}
+                  </p>
+                )}
+
+                {/* Task Stats */}
+                <div className="flex flex-wrap items-center gap-3 ml-6 text-xs text-gray-500">
+                  <span className="flex items-center gap-1">
+                    <span className="text-yellow-400">🎯</span>
+                    {task.reward_loyalty_points} points
+                  </span>
+                  {task.required_completions > 1 && (
+                    <span className="flex items-center gap-1">
+                      <span className="text-blue-400">🔄</span>
+                      {task.required_completions} completions required
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Task Status */}
+              <div className="flex-shrink-0 sm:ml-4">
+                <span
+                  className={`text-xs sm:text-sm px-3 py-2 rounded border inline-block ${getTaskStatusColor(
+                    task
+                  )}`}
+                >
+                  {getTaskStatusText(task)}
+                </span>
+              </div>
             </div>
 
-            {/* Quest Status */}
-            <div className="flex-shrink-0">
-              {quest.is_completed ? (
-                <span className="text-xs sm:text-sm text-green-400 bg-green-900/20 px-2 sm:px-3 py-1 rounded border border-green-700 inline-block">
-                  ✓ Completed
-                </span>
-              ) : allowClaim &&
-                activeQuestCode &&
-                quest.quest_code === activeQuestCode ? (
-                <button
-                  onClick={() => {
-                    if (!isWalletConnected) {
-                      handleConnectWallet();
-                      return;
-                    }
-                    onClaimQuest(quest.id);
-                  }}
-                  disabled={claimingQuestId === quest.id}
-                  className={`text-xs sm:text-sm px-3 sm:px-4 py-1 rounded border transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed inline-block ${
-                    !isWalletConnected
-                      ? "text-gray-300 bg-gray-600/60 border-gray-500 hover:bg-gray-600/80"
-                      : "text-black bg-white hover:bg-white/90 border-purple-500 cursor-pointer"
-                  }`}
-                  title={
-                    !isWalletConnected
-                      ? `Connect ${
-                          requiredChainType === "evm" ? "EVM" : "Sui"
-                        } wallet to claim this quest`
-                      : ""
-                  }
-                >
-                  {claimingQuestId === quest.id
-                    ? "Claiming..."
-                    : getClaimButtonText()}
-                </button>
-              ) : allowClaim ? (
-                <span className="text-xs sm:text-sm text-gray-500 bg-gray-800/40 px-2 sm:px-3 py-1 rounded border border-gray-700 inline-block">
-                  Complete other quests first
-                </span>
-              ) : !isWalletConnected ? (
-                <span
-                  className="text-xs sm:text-sm text-gray-400 bg-gray-800/20 px-2 sm:px-3 py-1 rounded border border-gray-600 inline-block"
-                  title={`Connect a ${
-                    requiredChainType === "evm" ? "EVM" : "Sui"
-                  } wallet to complete quests`}
-                >
-                  {getWalletConnectMessage()}
-                </span>
-              ) : (
-                <span className="text-xs sm:text-sm text-gray-400 bg-gray-800/20 px-2 sm:px-3 py-1 rounded border border-gray-600 inline-block">
-                  Not Completed
-                </span>
+            {/* Task completion indicator */}
+            {isCompleted && (
+              <div className="absolute top-2 right-2">
+                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+              </div>
+            )}
+
+            {/* Requirement Rules Display (if available) */}
+            {task.requirement_rules &&
+              Array.isArray(task.requirement_rules) &&
+              task.requirement_rules.length > 0 && (
+                <div className="mt-3 pt-3 border-t border-gray-700">
+                  <div className="text-xs text-gray-500 mb-2">
+                    Requirements:
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {task.requirement_rules.map(
+                      (rule: RequirementRule, ruleIndex: number) => (
+                        <span
+                          key={ruleIndex}
+                          className="text-xs bg-gray-800/50 text-gray-400 px-2 py-1 rounded border border-gray-600"
+                        >
+                          {rule.field}:{" "}
+                          {rule.values?.join(", ") ||
+                            rule.stringValues?.join(", ") ||
+                            "Any"}
+                        </span>
+                      )
+                    )}
+                  </div>
+                </div>
               )}
-            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 };

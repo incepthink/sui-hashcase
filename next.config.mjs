@@ -57,6 +57,22 @@ const nextConfig = {
         hostname: "client-uploads.nyc3.digitaloceanspaces.com",
         pathname: "/**", // allow all paths under this domain
       },
+      {
+        protocol: "https",
+        hostname: "chocolate-certain-cockroach-300.mypinata.cloud",
+        pathname: "/**",
+      },
+      // Add this entry for Pinata gateway
+      {
+        protocol: "https",
+        hostname: "gateway.pinata.cloud",
+        pathname: "/**",
+      },
+      {
+      protocol: "https",
+      hostname: "metadata-hashcase-admin.s3.us-east-2.amazonaws.com",
+      pathname: "/**",
+    },
     ],
   },
 };

@@ -52,10 +52,10 @@ export const QuestDetailProgress: React.FC<QuestDetailProgressProps> = ({
 
       <h1 className="text-xl sm:text-2xl font-bold text-white mb-2">
         Available Quests
-        <span className="text-sm font-normal text-gray-400 block mt-1">
+        {/* <span className="text-sm font-normal text-gray-400 block mt-1">
           Requires {requiredChainType === "evm" ? "EVM" : "Sui"} wallet
           connection
-        </span>
+        </span> */}
       </h1>
 
       {/* Progress Bar */}

@@ -24,6 +24,7 @@ export default function SuiWalletConnect() {
     unsetUser,
     getWalletForChain,
     disconnectWallet,
+    setUserHasInteracted,
   } = useGlobalAppStore();
 
   const { mutateAsync: signPersonalMessage } = useSignPersonalMessage();
@@ -33,7 +34,6 @@ export default function SuiWalletConnect() {
   const wallets = useWallets();
 
   const [loading, setLoading] = useState(true);
-  const [creatingUser, setCreatingUser] = useState(false);
   const [connectingWallet, setConnectingWallet] = useState(false);
 
   // Check if Sui wallet is connected in store
@@ -46,10 +46,15 @@ export default function SuiWalletConnect() {
     console.log("Sui wallet in store:", suiWallet);
   }, [wallets, currentAccount, isUserVerified, suiWallet]);
 
-  const handleUserCreation = async () => {
-    if (isUserVerified || !currentAccount?.address) return;
+  useEffect(() => {
+    setLoading(false);
+  }, [currentAccount]);
 
-    const notifyId = notifyPromise("Connecting...", "info");
+  // MANUAL AUTHENTICATION FUNCTION
+  const handleUserAuthentication = async (walletAddress: string) => {
+    if (isUserVerified) return { success: true };
+
+    const notifyId = notifyPromise("Authenticating...", "info");
 
     try {
       const response = await axiosInstance.get("auth/wallet/request-token");
@@ -62,7 +67,7 @@ export default function SuiWalletConnect() {
 
       const res = await axiosInstance.post("auth/sui-wallet/login", {
         signature: signedMessageResponse.signature,
-        address: currentAccount.address,
+        address: walletAddress,
         token: authToken,
       });
 
@@ -84,27 +89,59 @@ export default function SuiWalletConnect() {
 
       // Set Sui wallet in store
       setSuiWallet({
-        address: currentAccount.address,
+        address: walletAddress,
         type: "sui-wallet",
       });
 
-      notifyResolve(notifyId, "Connected", "success");
-    } catch (error: unknown) {
-      console.log(error);
-      notifyResolve(notifyId, "Failed to login", "error");
-    } finally {
-      setOpenModal(false);
-      setCreatingUser(false);
+      notifyResolve(notifyId, "Connected successfully!", "success");
+      return { success: true };
+    } catch (error: any) {
+      console.error("Authentication error:", error);
+
+      if (error?.code === 4001 || error?.message?.includes("User rejected")) {
+        notifyResolve(
+          notifyId,
+          "Signature cancelled. You can try connecting again.",
+          "error"
+        );
+      } else {
+        notifyResolve(
+          notifyId,
+          "Failed to authenticate. Please try again.",
+          "error"
+        );
+      }
+
+      unsetUser();
+      disconnectWallet("sui");
+
+      if (currentAccount?.address) {
+        try {
+          disconnect();
+        } catch (disconnectError) {
+          console.warn(
+            "Failed to disconnect after auth error:",
+            disconnectError
+          );
+        }
+      }
+
+      return { success: false };
     }
   };
 
-  const ranEffect = useRef(false);
-
-  useEffect(() => {
-    setLoading(false);
-  }, [currentAccount]);
-
   const handleWalletConnect = async (wallet: any) => {
+    setUserHasInteracted(true);
+
+    // If already connected to this wallet, authenticate directly
+    if (currentAccount?.address) {
+      const result = await handleUserAuthentication(currentAccount.address);
+      if (result.success) {
+        setOpenModal(false);
+      }
+      return;
+    }
+
     setConnectingWallet(true);
     const notifyId = notifyPromise(`Connecting to ${wallet.name}...`, "info");
 
@@ -121,52 +158,16 @@ export default function SuiWalletConnect() {
         throw new Error("No wallet address available");
       }
 
-      console.log("Requesting authentication token...");
+      notifyResolve(notifyId, "Wallet connected! Authenticating...", "success");
 
-      const response = (await axiosInstance.get(
-        "auth/wallet/request-token"
-      )) as any;
-      const message = response.data.message;
-      const authToken = response.data.token;
+      const authResult = await handleUserAuthentication(walletAddress);
 
-      const signedMessageResponse = await signPersonalMessage({
-        message: new TextEncoder().encode(message),
-      });
-
-      const res = (await axiosInstance.post("auth/sui-wallet/login", {
-        signature: signedMessageResponse.signature,
-        address: walletAddress,
-        token: authToken,
-      })) as any;
-
-      const token = res.data.token;
-      const user_instance = res.data.user_instance;
-
-      const userDataToStoreInGlobalStore = {
-        id: user_instance.id,
-        email: user_instance.email,
-        badges: user_instance.badges,
-        user_name: user_instance.username || "guest_user",
-        description:
-          user_instance.description || "this is a guest_user description",
-        profile_image: user_instance.profile_image,
-        banner_image: user_instance.banner_image,
-      };
-
-      setUser(userDataToStoreInGlobalStore, token);
-
-      // Set Sui wallet in store
-      setSuiWallet({
-        address: walletAddress,
-        type: "sui-wallet",
-      });
-
-      console.log("Wallet connected and authenticated");
-      notifyResolve(
-        notifyId,
-        `Successfully connected to ${wallet.name}!`,
-        "success"
-      );
+      if (authResult.success) {
+        console.log("Wallet connected and authenticated successfully");
+        setOpenModal(false);
+      } else {
+        console.log("Wallet connected but authentication failed");
+      }
     } catch (error: unknown) {
       console.log("Failed to connect to the wallet");
       console.error(error);
@@ -176,23 +177,12 @@ export default function SuiWalletConnect() {
 
       if (currentAccount?.address) {
         try {
-          await disconnect();
-          console.log("Disconnected wallet due to authentication failure");
+          disconnect();
+          console.log("Disconnected wallet due to connection failure");
         } catch (disconnectError: unknown) {
           console.error("Failed to disconnect wallet:", disconnectError);
         }
       }
-
-      setTimeout(async () => {
-        if (currentAccount?.address) {
-          try {
-            await disconnect();
-            console.log("Forced disconnect after delay");
-          } catch (error: unknown) {
-            console.error("Failed to force disconnect:", error);
-          }
-        }
-      }, 500);
 
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error";
@@ -224,18 +214,6 @@ export default function SuiWalletConnect() {
     }
   };
 
-  const handleWalletDisconnect = async () => {
-    try {
-      unsetUser();
-      disconnectWallet("sui");
-      await disconnect();
-      console.log("Disconnected Sui wallet");
-    } catch (error: unknown) {
-      console.log("Failed to disconnect wallet");
-      console.error(error);
-    }
-  };
-
   if (loading) return <div>Loading Wallets...</div>;
 
   // Show connected state if user is verified and has Sui wallet
@@ -248,7 +226,7 @@ export default function SuiWalletConnect() {
     return (
       <div className="bg-green-600 border-black/20 px-6 py-2 text-white font-semibold rounded-full w-full flex items-center gap-x-8 justify-center">
         <LucideWalletIcon className="w-4 h-4" />
-        Sui Wallet Connected
+        Sui Wallet Connected & Authenticated
       </div>
     );
   }
@@ -257,24 +235,33 @@ export default function SuiWalletConnect() {
     return <div>No wallets were found</div>;
   }
 
-  return wallets.map((wallet) => (
-    <button
-      key={wallet.name}
-      disabled={connectingWallet}
-      className="bg-[#ffffff] border-black/20 px-6 py-2 text-black font-semibold rounded-full w-full flex items-center gap-x-8 disabled:opacity-50 disabled:cursor-not-allowed"
-      onClick={() => handleWalletConnect(wallet)}
-    >
-      {connectingWallet ? (
-        <>
-          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-black"></div>
-          Connecting...
-        </>
-      ) : (
-        <>
-          <Image src={wallet.icon} alt="Sui Logo" width={20} height={20} />
-          {`Connect ${wallet.name} Wallet`}
-        </>
-      )}
-    </button>
-  ));
+  return (
+    <>
+      {wallets.map((wallet) => (
+        <button
+          key={wallet.name}
+          disabled={connectingWallet}
+          className="bg-[#ffffff] border-black/20 px-6 py-2 text-black font-semibold rounded-full w-full flex items-center gap-x-8 disabled:opacity-50 disabled:cursor-not-allowed"
+          onClick={() => handleWalletConnect(wallet)}
+        >
+          {connectingWallet ? (
+            <>
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-black"></div>
+              Connecting...
+            </>
+          ) : (
+            <>
+              <Image
+                src={wallet.icon}
+                alt="Wallet Logo"
+                width={20}
+                height={20}
+              />
+              {`Connect ${wallet.name}`}
+            </>
+          )}
+        </button>
+      ))}
+    </>
+  );
 }

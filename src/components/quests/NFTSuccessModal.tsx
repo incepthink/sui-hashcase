@@ -38,6 +38,30 @@ export const NFTSuccessModal: React.FC<NFTSuccessModalProps> = ({
     }
   };
 
+  // Get the recipient address - fallback to walletAddress if recipient is not set
+  const recipientAddress = mintedNftData.recipient || walletAddress || "";
+
+  // Function to safely format address
+  const formatAddress = (
+    address: string,
+    mobileLength = 6,
+    desktopLength = 8
+  ) => {
+    if (!address || address.length < mobileLength + 4) {
+      return address || "Unknown";
+    }
+    return {
+      mobile: `${address.slice(0, mobileLength)}...${address.slice(
+        -mobileLength
+      )}`,
+      desktop: `${address.slice(0, desktopLength)}...${address.slice(
+        -desktopLength
+      )}`,
+    };
+  };
+
+  const formattedAddress = formatAddress(recipientAddress);
+
   return (
     <div
       className={`fixed inset-0 z-50 flex items-center justify-center ${
@@ -108,16 +132,24 @@ export const NFTSuccessModal: React.FC<NFTSuccessModalProps> = ({
           {/* Wallet */}
           <div className="bg-white/5 rounded-lg p-3 mb-6">
             <p className="text-gray-400 text-xs mb-1">Sent to:</p>
-            <p className="text-white font-mono text-xs break-all">
-              <span className="sm:hidden">
-                {mintedNftData.recipient.slice(0, 6)}...
-                {mintedNftData.recipient.slice(-6)}
-              </span>
-              <span className="hidden sm:inline">
-                {mintedNftData.recipient.slice(0, 8)}...
-                {mintedNftData.recipient.slice(-8)}
-              </span>
-            </p>
+            {recipientAddress ? (
+              <p className="text-white font-mono text-xs break-all">
+                <span className="sm:hidden">
+                  {typeof formattedAddress === "object"
+                    ? formattedAddress.mobile
+                    : formattedAddress}
+                </span>
+                <span className="hidden sm:inline">
+                  {typeof formattedAddress === "object"
+                    ? formattedAddress.desktop
+                    : formattedAddress}
+                </span>
+              </p>
+            ) : (
+              <p className="text-gray-400 font-mono text-xs">
+                Address not available
+              </p>
+            )}
           </div>
 
           {/* Close Button */}

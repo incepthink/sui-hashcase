@@ -1,228 +1,240 @@
+// sui wallet connection modal
 "use client";
 import React, { useEffect, useState } from "react";
 
 import Modal from "@/components/Modal";
 import ZkLogin from "@/components/ZkLogin";
 import SuiWalletConnect from "@/components/SuiWalletConnect";
-import EVMWalletConnect from "@/components/WalletConnect/EvmWalletConnect";
 import { useGlobalAppStore } from "@/store/globalAppStore";
+// import { useAutoOpenModal } from "@/hooks/useAutoOpenModal";
 import { useCurrentAccount } from "@mysten/dapp-kit";
 import { useZkLogin } from "@mysten/enoki/react";
-import { useAccount } from "wagmi";
 
-interface WalletConnectionModalProps {
-  requiredChain?: "sui" | "evm";
-}
-
-const WalletConnectionModal = ({
-  requiredChain,
-}: WalletConnectionModalProps) => {
+const WalletConnectionModal = () => {
   const {
     openModal,
     setOpenModal,
     isUserVerified,
     getWalletForChain,
     hasWalletForChain,
+    setUserHasInteracted,
+    unsetUser,
+    disconnectAllWallets,
   } = useGlobalAppStore();
 
-  // Wallet connections
+  // Enable auto-open functionality
+  // const { hasAutoOpened } = useAutoOpenModal({ enabled: true });
+
+  // State for email-based connection
+  const [email, setEmail] = useState("");
+  const [emailSubmitted, setEmailSubmitted] = useState(false);
+
+  // Wallet hooks for disconnect functionality
   const currentAccount = useCurrentAccount(); // Sui wallet
   const { address: zkAddress } = useZkLogin(); // Sui zkLogin
-  const { address: evmAddress } = useAccount(); // EVM wallet
 
-  const [activeTab, setActiveTab] = useState<"sui" | "evm">("sui");
-
-  // Get wallet states from store
+  // Get Sui wallet state from store ONLY
   const suiWallet = getWalletForChain("sui");
-  const evmWallet = getWalletForChain("evm");
 
-  // Auto-close modal when user is verified and has required wallet
+  // Check for pending state (wallet connected but not authenticated)
+  const [isPending, setIsPending] = useState(false);
+
   useEffect(() => {
-    let shouldClose = false;
+    let pending = false;
 
-    if (requiredChain === "sui" && hasWalletForChain("sui") && isUserVerified) {
-      shouldClose = true;
-    } else if (
-      requiredChain === "evm" &&
-      hasWalletForChain("evm") &&
-      isUserVerified
-    ) {
-      shouldClose = true;
-    } else if (
-      !requiredChain &&
-      isUserVerified &&
-      (hasWalletForChain("sui") || hasWalletForChain("evm"))
-    ) {
-      shouldClose = true;
+    // Check if any Sui wallet is connected but user not verified
+    if ((currentAccount?.address || zkAddress) && !isUserVerified) {
+      pending = true;
     }
 
-    if (shouldClose && openModal) {
+    setIsPending(pending);
+  }, [currentAccount, zkAddress, isUserVerified]);
+
+  // Auto-close modal when user is verified and has Sui wallet
+  useEffect(() => {
+    const hasWallet = hasWalletForChain("sui");
+    if (hasWallet && isUserVerified && openModal) {
+      console.log("Auto-closing modal - user verified with wallet");
       setOpenModal(false);
     }
-  }, [
-    isUserVerified,
-    suiWallet,
-    evmWallet,
-    openModal,
-    setOpenModal,
-    requiredChain,
-    hasWalletForChain,
-  ]);
+  }, [isUserVerified, suiWallet, openModal, setOpenModal, hasWalletForChain]);
 
-  // Set active tab based on required chain
+  const handleZkLoginSuccess = () => {
+    console.log("ZkLogin successful");
+    setEmailSubmitted(false);
+    setEmail("");
+    // Modal will auto-close via the useEffect above when user becomes verified
+  };
+
+  const handleEmailSubmit = () => {
+    if (email && email.includes("@")) {
+      setEmailSubmitted(true);
+    }
+  };
+
+  const resetEmailFlow = () => {
+    setEmailSubmitted(false);
+    setEmail("");
+  };
+
+  // Mark user interaction when modal opens
   useEffect(() => {
-    if (requiredChain) {
-      setActiveTab(requiredChain);
+    if (openModal) {
+      setUserHasInteracted(true);
     }
-  }, [requiredChain]);
+  }, [openModal, setUserHasInteracted]);
 
-  const renderSuiWalletContent = () => {
-    // If already connected to Sui wallet, show connection status
-    if (suiWallet && (currentAccount?.address || zkAddress)) {
-      return <SuiWalletConnect />;
+  // Handle complete disconnect - clears all wallet connections
+  const handleCompleteDisconnect = async () => {
+    try {
+      console.log("Initiating complete disconnect...");
+
+      // Clear user data from global store immediately
+      unsetUser();
+      disconnectAllWallets();
+
+      // Complete disconnect from all wallet providers
+      // Note: Specific disconnect methods would depend on your Sui wallet implementation
+      // You may need to add disconnect methods for Sui wallets and zkLogin
+
+      // Additional cleanup - clear any localStorage tokens or session data
+      if (typeof window !== "undefined") {
+        // Clear any auth tokens stored in localStorage
+        localStorage.removeItem("authToken");
+        localStorage.removeItem("userToken");
+        localStorage.removeItem("walletConnect");
+        localStorage.removeItem("suiWallet");
+        localStorage.removeItem("zkLogin");
+
+        // Clear any session storage
+        sessionStorage.clear();
+      }
+
+      // Reset email flow
+      resetEmailFlow();
+
+      console.log("Complete disconnect successful");
+    } catch (error) {
+      console.error("Error during complete disconnect:", error);
     }
-
-    // If no Sui wallet connected, show both options
-    return (
-      <div className="space-y-3">
-        <SuiWalletConnect />
-        <ZkLogin setOpenModal={setOpenModal} />
-      </div>
-    );
-  };
-
-  const renderEvmWalletContent = () => {
-    return <EVMWalletConnect />;
-  };
-
-  const renderTabContent = () => {
-    if (activeTab === "evm") {
-      return renderEvmWalletContent();
-    } else {
-      return renderSuiWalletContent();
-    }
-  };
-
-  const getModalTitle = () => {
-    if (requiredChain) {
-      return `Connect Your ${requiredChain.toUpperCase()} Wallet`;
-    }
-    return "Connect Your Wallet";
-  };
-
-  const getWarningMessage = () => {
-    if (!requiredChain) return null;
-
-    const chainName = requiredChain === "sui" ? "Sui" : "EVM";
-    const walletTypes =
-      requiredChain === "sui"
-        ? "Sui wallet or Google (ZkLogin)"
-        : "EVM wallet (MetaMask, Phantom, Coinbase, etc.)";
-
-    return (
-      <div className="w-full p-3 bg-yellow-50 border border-yellow-200 rounded-lg mb-4">
-        <div className="flex items-start space-x-2">
-          <div className="flex-shrink-0">
-            <svg
-              className="w-5 h-5 text-yellow-600 mt-0.5"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-            >
-              <path
-                fillRule="evenodd"
-                d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-                clipRule="evenodd"
-              />
-            </svg>
-          </div>
-          <div>
-            <h3 className="text-sm font-medium text-yellow-800">
-              {chainName} Wallet Required
-            </h3>
-            <p className="text-sm text-yellow-700 mt-1">
-              This action requires a {walletTypes} connection to continue.
-            </p>
-          </div>
-        </div>
-      </div>
-    );
   };
 
   return (
     <Modal
-      context={getModalTitle()}
+      context="Connect Wallet"
       openModal={openModal}
-      onClose={() => setOpenModal(false)}
+      onClose={() => {
+        setOpenModal(false);
+        resetEmailFlow();
+      }}
     >
       <div className="flex flex-col z-[9999] justify-center items-center gap-y-4 my-4 mx-4">
-        {/* Chain Selection Tabs (only show if no specific chain required) */}
-        {!requiredChain && (
-          <div className="flex w-full rounded-lg bg-gray-100 p-1 mb-4">
-            <button
-              onClick={() => setActiveTab("sui")}
-              className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                activeTab === "sui"
-                  ? "bg-white text-blue-600 shadow-sm"
-                  : "text-gray-600 hover:text-gray-800"
-              }`}
-            >
-              <div className="flex items-center justify-center space-x-2">
-                <span>Sui Network</span>
-                {suiWallet && (
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                )}
-              </div>
-            </button>
-            <button
-              onClick={() => setActiveTab("evm")}
-              className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                activeTab === "evm"
-                  ? "bg-white text-blue-600 shadow-sm"
-                  : "text-gray-600 hover:text-gray-800"
-              }`}
-            >
-              <div className="flex items-center justify-center space-x-2">
-                <span>EVM Networks</span>
-                {evmWallet && (
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                )}
-              </div>
-            </button>
+        {/* Auto-opened indicator (optional - for user awareness) */}
+        {/* {hasAutoOpened && openModal && (
+          <div className="w-full p-2 bg-blue-50 border border-blue-200 rounded-lg mb-2">
+            <div className="text-xs text-blue-700 text-center">
+              Complete your wallet authentication to continue
+            </div>
           </div>
-        )}
+        )} */}
 
-        {/* Connection Status Summary (only show if no specific chain required) */}
-        {!requiredChain && (suiWallet || evmWallet) && (
+        {/* Connection Status (if already connected and verified) */}
+        {suiWallet && isUserVerified && (
           <div className="w-full p-3 bg-green-50 border border-green-200 rounded-lg mb-4">
             <div className="text-sm text-green-800">
-              <div className="font-medium mb-1">Connected Wallets:</div>
-              {suiWallet && (
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span>
-                    Sui: {suiWallet.address.slice(0, 8)}...
-                    {suiWallet.address.slice(-6)}
-                  </span>
-                </div>
-              )}
-              {evmWallet && (
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                  <span>
-                    EVM: {evmWallet.address.slice(0, 8)}...
-                    {evmWallet.address.slice(-6)}
-                  </span>
-                </div>
-              )}
+              <div className="font-medium mb-1">
+                ✅ Wallet Connected & Authenticated:
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span>
+                  {suiWallet.type === "zk-login" ? "Google (ZK)" : "Sui"}:{" "}
+                  {suiWallet.address.slice(0, 8)}...
+                  {suiWallet.address.slice(-6)}
+                </span>
+              </div>
             </div>
           </div>
         )}
 
-        {/* Required Chain Warning */}
-        {getWarningMessage()}
+        {/* Connection Status (if connected but not authenticated) */}
+        {suiWallet && !isUserVerified && (
+          <div className="w-full p-3 bg-yellow-50 border border-yellow-200 rounded-lg mb-4">
+            <div className="text-sm text-yellow-800">
+              <div className="font-medium mb-1">
+                ⚠️ Wallet Connected - Authentication Required:
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                <span>
+                  {suiWallet.type === "zk-login" ? "Google (ZK)" : "Sui"}:{" "}
+                  {suiWallet.address.slice(0, 8)}...
+                  {suiWallet.address.slice(-6)}
+                </span>
+              </div>
+              <p className="text-xs text-yellow-700 mt-2">
+                Complete authentication below to finish connecting
+              </p>
+            </div>
+          </div>
+        )}
 
-        {/* Tab Content */}
-        {renderTabContent()}
+        {/* Instructions */}
+        {/* {!suiWallet && (
+          <div className="w-full p-3 bg-blue-50 border border-blue-200 rounded-lg mb-4">
+            <div className="text-sm text-blue-800">
+              <div className="font-medium mb-1">Connect Your Wallet</div>
+              <p className="text-xs text-blue-700">
+                Choose a wallet below to connect. After connecting, you'll need
+                to authenticate to complete the process.
+              </p>
+            </div>
+          </div>
+        )} */}
+
+        {/* ZkLogin Section */}
+        <div className="w-full space-y-3 mt-2">
+          <ZkLogin setOpenModal={setOpenModal} />
+        </div>
+
+        {/* Divider */}
+        <div className="flex items-center w-full">
+          <div className="flex-grow border-t border-gray-300"></div>
+          <span className="flex-shrink mx-4 text-gray-500 text-sm">or</span>
+          <div className="flex-grow border-t border-gray-300"></div>
+        </div>
+
+        {/* Sui Wallet Connection */}
+        <div className="w-full space-y-3">
+          <SuiWalletConnect />
+        </div>
+
+        {/* Disconnect Button - Show when in pending state */}
+        {isPending && (
+          <div className="w-full pt-4 border-t border-gray-200">
+            <button
+              onClick={handleCompleteDisconnect}
+              className="w-full px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors font-medium"
+            >
+              Disconnect All Wallets
+            </button>
+            <p className="text-xs text-gray-500 text-center mt-2">
+              Having trouble? Try disconnecting and reconnecting your wallet.
+            </p>
+          </div>
+        )}
+
+        {/* Instructions Footer */}
+        <div className="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg">
+          <div className="text-xs text-gray-600 text-center">
+            <p className="font-medium mb-1">How it works:</p>
+            <ol className="text-left space-y-1">
+              <li>1. Connect your wallet using one of the options above</li>
+              <li>2. Sign a message to verify ownership</li>
+              <li>3. Complete authentication to access all features</li>
+            </ol>
+          </div>
+        </div>
       </div>
     </Modal>
   );

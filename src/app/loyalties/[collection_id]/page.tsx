@@ -1,3 +1,4 @@
+// sui collection page
 "use client";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -31,7 +32,7 @@ const CollectionLoyaltiesPage = () => {
   const { address: evmAddress } = useAccount();
   const { user } = useGlobalAppStore();
 
-  // Check if any wallet is connected (Sui wallet or zk Google login or EVM wallet)
+  // Check if any wallet is connected (Sui wallet, zk Google login, or EVM wallet)
   const hasSuiWallet = !!(currentAccount?.address || zkAddress);
   const hasEvmWallet = !!evmAddress;
   const isWalletConnected = hasSuiWallet || hasEvmWallet;
@@ -60,8 +61,6 @@ const CollectionLoyaltiesPage = () => {
     isLoading: isCollectionLoading,
     isError: isCollectionError,
   } = useCollectionById(params.collection_id! as string);
-
-  console.log("COLLECTION LOYALTIES", collection);
 
   // Get owner_id directly from collection data
   const ownerId = collection?.owner_id;
@@ -112,32 +111,41 @@ const CollectionLoyaltiesPage = () => {
   // For zk login users and EVM users, we don't have on-chain tokens, so show 0
   useEffect(() => {
     if ((zkAddress && !currentAccount?.address) || hasEvmWallet) {
-      // For zk login users and EVM users, set on-chain points to 0
       setOnChainPointsState(0);
     }
   }, [zkAddress, currentAccount?.address, hasEvmWallet]);
 
   const handleSpendLoyaltyPoints = async () => {
     if (points && userTokenId) {
-      console.log("🔧 Handle Spend Loyalty Points:", { points, userTokenId });
       await spendLoyaltyPoints(userTokenId, points);
-      // Refetch the token data to get updated balance
       const { data } = await refetchTokenData();
       if (data?.data?.[0]?.data?.content) {
         const newBalance = (data.data[0].data.content as any)?.fields?.balance;
         setOnChainPointsState(newBalance);
       }
-      setPoints(""); // Clear input after operation
+      setPoints("");
     } else {
       toast.error("Please enter an amount and ensure you have loyalty tokens");
     }
   };
 
+  // Check if user has the correct chain wallet connected
+  const hasCorrectChainWallet = () => {
+    if (!requiredChain) return true;
+
+    if (requiredChain === "sui") {
+      return hasSuiWallet;
+    } else if (requiredChain === "ethereum") {
+      return hasEvmWallet;
+    }
+
+    return false;
+  };
+
   // Show loading spinner while collection is loading
   if (!mounted || isCollectionLoading) {
     return (
-      <div className="w-full min-h-[70vh] flex flex-col items-center justify-center bg-gradient-to-br from-[#000212] via-[#03082a] to-[#0a0e3a] px-4 sm:px-6 lg:px-8 relative overflow-hidden">
-        {/* Glowing background elements */}
+      <div className="w-full min-h-[90vh] flex flex-col items-center justify-center bg-gradient-to-br from-[#000212] via-[#03082a] to-[#0a0e3a] px-4 sm:px-6 lg:px-8 relative overflow-hidden">
         <div className="absolute top-0 left-0 w-1/3 h-full bg-gradient-to-r from-blue-900/20 to-transparent -skew-x-12 -translate-x-1/3"></div>
         <div className="absolute bottom-0 right-0 w-1/3 h-full bg-gradient-to-l from-purple-900/20 to-transparent skew-x-12 translate-x-1/3"></div>
 
@@ -170,26 +178,10 @@ const CollectionLoyaltiesPage = () => {
     );
   }
 
-  // Show wallet not connected message if wallet is not connected
-  if (!isWalletConnected) {
-    return (
-      <div className="w-full min-h-[70vh] flex flex-col items-center justify-center bg-gradient-to-br from-[#000212] via-[#03082a] to-[#0a0e3a] px-4 sm:px-6 lg:px-8 relative overflow-hidden">
-        {/* Glowing background elements */}
-        <div className="absolute top-0 left-0 w-1/3 h-full bg-gradient-to-r from-blue-900/20 to-transparent -skew-x-12 -translate-x-1/3"></div>
-        <div className="absolute bottom-0 right-0 w-1/3 h-full bg-gradient-to-l from-purple-900/20 to-transparent skew-x-12 translate-x-1/3"></div>
-
-        <div className="relative z-10 text-center">
-          <p className="text-sm text-white/80">Wallet not connected</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Show loading spinner for token data (only when wallet is connected but token data is loading)
+  // Show loading spinner for token data (only when Sui wallet is connected but token data is loading)
   if (isTokenLoading && hasSuiWallet && !hasEvmWallet) {
     return (
       <div className="w-full min-h-[70vh] flex flex-col items-center justify-center bg-gradient-to-br from-[#000212] via-[#03082a] to-[#0a0e3a] px-4 sm:px-6 lg:px-8 relative overflow-hidden">
-        {/* Glowing background elements */}
         <div className="absolute top-0 left-0 w-1/3 h-full bg-gradient-to-r from-blue-900/20 to-transparent -skew-x-12 -translate-x-1/3"></div>
         <div className="absolute bottom-0 right-0 w-1/3 h-full bg-gradient-to-l from-purple-900/20 to-transparent skew-x-12 translate-x-1/3"></div>
 
@@ -208,24 +200,14 @@ const CollectionLoyaltiesPage = () => {
 
   return (
     <>
-      {/* Chain Mismatch Warning */}
-      {/* {requiredChain && (
-        <div className="bg-[#00041f] pt-6 px-4">
-          <ChainMismatchInfo
-            requiredChain={requiredChain}
-            className="max-w-6xl"
-          />
-        </div>
-      )} */}
-
       {/* Navbar Element */}
       <div
-        className={`bg-[#00041f] flex flex-col items-center pt-12 sm:pt-16 md:pt-20 gap-3 sm:gap-4 px-4 pb-3 md:pb-0`}
+        className={`bg-[#00041f] flex flex-col items-center pt-12 sm:pt-16 md:pt-10 gap-3 sm:gap-4 px-4 pb-3 md:pb-4`}
       >
         {/* Tab Buttons Container */}
         <div className="backdrop-blur-sm rounded-xl border p-1.5 sm:p-2 flex gap-2 sm:gap-4 shadow-md w-full max-w-sm sm:max-w-md md:max-w-lg">
           {[
-            { key: "loyalty", label: "Loyalty Codes" },
+            { key: "loyalty", label: "Points" },
             { key: "badges", label: "Badges" },
           ].map((tab) => (
             <button
@@ -239,7 +221,6 @@ const CollectionLoyaltiesPage = () => {
           }`}
             >
               <span className="truncate">{tab.label}</span>
-              {/* Neon border glow on hover */}
               <span
                 className={`absolute inset-0 rounded-lg pointer-events-none transition duration-300 ${
                   activeTab === tab.key
@@ -249,60 +230,30 @@ const CollectionLoyaltiesPage = () => {
               />
             </button>
           ))}
+          {/* View Quests Button */}
+          <button
+            onClick={() => {
+              // Always allow viewing quests, regardless of wallet connection
+              router.push(`/quests?collection_id=${params.collection_id}`);
+            }}
+            className="relative flex-1 px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 rounded-lg font-semibold text-xs sm:text-sm md:text-base transition-all duration-300 text-white/60 hover:text-white hover:bg-white/10"
+          >
+            <span className="block sm:hidden">Quests</span>
+            <span className="hidden sm:block">Quests</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              router.push(`/metadatas/${params.collection_id}`);
+            }}
+            className="relative flex-1 px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 rounded-lg font-semibold text-xs sm:text-sm md:text-base transition-all duration-300 text-white/60 hover:text-white hover:bg-white/10"
+          >
+            NFTs
+          </button>
         </div>
-
-        {/* View Quests Button */}
-        <button
-          onClick={() => {
-            if (!isWalletConnected) {
-              toast.error("Please connect your wallet to view quests", {
-                duration: 3000,
-                style: {
-                  background: "#1f2937",
-                  color: "#fff",
-                  border: "1px solid #374151",
-                },
-              });
-              return;
-            }
-
-            // Check if user has the correct chain connected
-            const hasCorrectChain =
-              requiredChain === "sui" ? hasSuiWallet : hasEvmWallet;
-            if (requiredChain && !hasCorrectChain) {
-              toast.error(
-                `Please connect a ${
-                  requiredChain === "sui" ? "Sui" : "EVM"
-                } wallet to view quests`,
-                {
-                  duration: 3000,
-                  style: {
-                    background: "#1f2937",
-                    color: "#fff",
-                    border: "1px solid #374151",
-                  },
-                }
-              );
-              return;
-            }
-
-            router.push(`/quests?collection_id=${params.collection_id}`);
-          }}
-          className={`border-2 transition duration-300 font-semibold sm:font-bold py-2.5 sm:py-3 md:py-3.5 px-4 sm:px-5 md:px-6 rounded-lg sm:rounded-xl text-xs sm:text-sm md:text-base transition-all duration-300 transform w-full max-w-xs sm:max-w-sm md:max-w-md ${
-            isWalletConnected
-              ? "border-gray-600 hover:border-gray-500 text-white cursor-pointer hover:scale-105"
-              : "border-gray-700 text-gray-400 cursor-not-allowed opacity-60"
-          }`}
-        >
-          <span className="block sm:hidden">
-            {isWalletConnected ? "View Quests" : "Connect Wallet"}
-          </span>
-          <span className="hidden sm:block">
-            {isWalletConnected
-              ? "View All Quests"
-              : "Connect Wallet to View Quests"}
-          </span>
-        </button>
       </div>
 
       {ownerId && activeTab === "loyalty" && (
