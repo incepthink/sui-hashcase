@@ -141,9 +141,13 @@ const ConnectButton: React.FC = () => {
 
   const handleProfile = () => {
     setDropdownOpen(false);
-    // Add your profile navigation logic here
-    console.log("Navigate to profile");
-    router.push("/profile");
+
+    // Get the wallet address from the global store
+    const connectedWallet = suiWallet?.address;
+
+    if (connectedWallet) {
+      router.push(`/profile/${connectedWallet}`);
+    }
   };
 
   const handleCompleteDisconnect = async () => {

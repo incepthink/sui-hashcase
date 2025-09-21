@@ -1,4 +1,4 @@
-// app/quests/[id]/tasks/[task_code]/page.tsx
+// sui app/quests/[id]/tasks/[task_code]/page.tsx
 "use client";
 
 import { useEffect, useState, useCallback, useMemo } from "react";
@@ -98,10 +98,7 @@ const TaskDetailPage = () => {
   const isValidUserId = userId && !isNaN(Number(userId)) && Number(userId) > 0;
 
   // Get wallet info from global store
-  const walletInfo = useMemo(() => {
-    if (!mounted) return null;
-    return getWalletForChain(requiredChainType);
-  }, [mounted, getWalletForChain, requiredChainType]);
+  const walletInfo = mounted ? getWalletForChain(requiredChainType) : null;
 
   const walletAddress = walletInfo?.address || null;
   const isWalletConnected = mounted && hasWalletForChain(requiredChainType);
@@ -235,6 +232,17 @@ const TaskDetailPage = () => {
     setMounted(true);
   }, []);
 
+  console.log("TASKDEBUG === COMPONENT RENDER ===");
+  console.log("TASKDEBUG mounted:", mounted);
+  console.log("TASKDEBUG isWalletConnected:", isWalletConnected);
+  console.log("TASKDEBUG walletAddress:", walletAddress);
+  console.log("TASKDEBUG tasksLoading:", tasksLoading);
+  console.log("TASKDEBUG tasksData:", tasksData);
+  console.log("TASKDEBUG metadataId:", metadataId);
+  console.log("TASKDEBUG metadata:", metadata);
+  console.log("TASKDEBUG metadataLoading:", metadataLoading);
+  console.log("TASKDEBUG metadataError:", metadataError);
+
   // Update required chain type from metadata
   useEffect(() => {
     if (metadata?.collection?.contract?.Chain?.chain_type) {
@@ -248,15 +256,32 @@ const TaskDetailPage = () => {
 
   // Fetch metadata when we have the metadata ID
   useEffect(() => {
+    console.log("TASKDEBUG === METADATA EFFECT TRIGGERED ===");
+    console.log("TASKDEBUG Conditions:", {
+      mounted,
+      isWalletConnected,
+      walletAddress,
+      metadataId,
+      tasksLoading,
+    });
+
     if (mounted && isWalletConnected && walletAddress && metadataId) {
+      console.log("TASKDEBUG CALLING fetchMetadata");
       fetchMetadata();
-    } else if (mounted && (!isWalletConnected || !metadataId)) {
+    } else if (
+      mounted &&
+      (!isWalletConnected || !metadataId) &&
+      !tasksLoading
+    ) {
+      console.log("TASKDEBUG RESETTING metadata state");
       setMetadata(null);
-      setMetadataLoading(true);
+      setMetadataLoading(false);
       setMetadataError("");
       setCanMintAgain(true);
+    } else {
+      console.log("TASKDEBUG NO ACTION TAKEN");
     }
-  }, [mounted, isWalletConnected, walletAddress, metadataId, setCanMintAgain]);
+  }, [mounted, isWalletConnected, walletAddress, metadataId, tasksLoading]);
 
   // Loading states
   if (!mounted) {
@@ -349,7 +374,11 @@ const TaskDetailPage = () => {
   }
 
   // Show error if metadata failed to load (only if we have a metadata ID)
-  if (metadataId && (metadataError || !metadata)) {
+  if (
+    metadataId &&
+    !metadataLoading &&
+    (metadataError || (!metadata && walletAddress))
+  ) {
     return (
       <ErrorScreen
         title="NFT Details Not Found"

@@ -210,7 +210,7 @@ const WalletConnectionModal = () => {
         </div>
 
         {/* Disconnect Button - Show when in pending state */}
-        {isPending && (
+        {/* {isPending && (
           <div className="w-full pt-4 border-t border-gray-200">
             <button
               onClick={handleCompleteDisconnect}
@@ -222,7 +222,7 @@ const WalletConnectionModal = () => {
               Having trouble? Try disconnecting and reconnecting your wallet.
             </p>
           </div>
-        )}
+        )} */}
 
         {/* Instructions Footer */}
         <div className="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg">

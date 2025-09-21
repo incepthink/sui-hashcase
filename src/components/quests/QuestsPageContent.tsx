@@ -106,6 +106,7 @@ const QuestsPageContent = () => {
     nftClaiming,
     setCanMintAgain,
     setIsMinting,
+    connectedWallets,
   } = useGlobalAppStore();
 
   // ===== LOCAL STATE =====
@@ -143,12 +144,7 @@ const QuestsPageContent = () => {
   /**
    * Get wallet info from global store
    */
-  const walletInfo = useMemo(() => {
-    if (!mounted) return null;
-    return getWalletForChain(requiredChainType);
-  }, [mounted, getWalletForChain, requiredChainType]);
-
-  // Simple wallet address and connection status from global store
+  const walletInfo = mounted ? getWalletForChain(requiredChainType) : null;
   const walletAddress = walletInfo?.address || null;
   const isWalletConnected = mounted && hasWalletForChain(requiredChainType);
 
@@ -342,7 +338,7 @@ const QuestsPageContent = () => {
     } else if (mounted && !isWalletConnected) {
       // Reset metadata when wallet disconnected
       setMetadata(null);
-      setMetadataLoading(true);
+      setMetadataLoading(false); // Change from true to false
       setMetadataError("");
       setCanMintAgain(true);
     }
