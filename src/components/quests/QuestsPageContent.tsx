@@ -1,4 +1,4 @@
-// components/QuestsPageContent.tsx
+// sui components/QuestsPageContent.tsx
 "use client";
 
 import { useEffect, useState, useCallback, useMemo } from "react";
@@ -8,10 +8,6 @@ import { useCollectionById } from "@/hooks/useCollections";
 import { useQuests } from "@/hooks/useQuests";
 import axiosInstance from "@/utils/axios";
 import backgroundImageHeroSection from "@/assets/images/high_rise.jpg";
-// import {
-//   NFTMintingService,
-//   MintingStateManager,
-// } from "@/utils/mintingStateManager";  // ← COMMENTED OUT
 
 // Components
 import { LoadingScreen } from "./LoadingScreen";
@@ -20,9 +16,9 @@ import { Navigation } from "./Navigation";
 import { NFTDisplay } from "./NFTDisplay";
 import { QuestHeader } from "./QuestHeader";
 import { QuestList } from "./QuestList";
-// import { ClaimNFTButton } from "./ClaimNFTButton";
 import { NFTSuccessModal } from "./NFTSuccessModal";
-// import { METADATA_ID } from "@/utils/constants";  // ← COMMENTED OUT
+
+// ===== TYPE DEFINITIONS =====
 
 interface MintedNftData {
   name: string;
@@ -56,7 +52,6 @@ interface MetadataInstance {
   updatedAt: string;
 }
 
-// Updated Quest interface to match the new structure
 interface RequirementRule {
   type: string;
   value: any;
@@ -75,7 +70,7 @@ interface Task {
   is_active: boolean;
   created_at?: Date;
   updated_at?: Date;
-  isCompleted: boolean; // Updated from is_completed
+  isCompleted: boolean;
 }
 
 interface Quest {
@@ -87,16 +82,21 @@ interface Quest {
   createdAt?: Date;
   updatedAt?: Date;
   claimable_metadata?: number | null;
-  tasksWithCompletion: Task[]; // Updated from tasks
+  tasksWithCompletion: Task[];
   total_tasks: number;
   completed_tasks: number;
   is_completed: boolean;
   total_points: number;
 }
 
+// ===== MAIN COMPONENT =====
+
 const QuestsPageContent = () => {
+  // ===== ROUTER & NAVIGATION =====
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  // ===== GLOBAL STATE =====
   const {
     user,
     getWalletForChain,
@@ -105,11 +105,10 @@ const QuestsPageContent = () => {
     isUserVerified,
     nftClaiming,
     setCanMintAgain,
-    // canStartMinting,        // ← COMMENTED OUT
-    // setAutoClaimInProgress, // ← COMMENTED OUT
     setIsMinting,
   } = useGlobalAppStore();
 
+  // ===== LOCAL STATE =====
   const [mounted, setMounted] = useState(false);
   const [showNftModal, setShowNftModal] = useState(false);
   const [mintedNftData, setMintedNftData] = useState<MintedNftData | null>(
@@ -121,26 +120,29 @@ const QuestsPageContent = () => {
   const [metadataLoading, setMetadataLoading] = useState<boolean>(true);
   const [metadataError, setMetadataError] = useState<string>("");
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  // ===== COMPUTED VALUES =====
 
-  // Use fallback collection_id if not present
+  // Use fallback collection_id if not present (SUI default: 215)
   const cid = searchParams.get("collection_id") || "215";
 
+  // Get collection data
   const {
     collection,
     isLoading: isCollectionLoading,
     isError: isCollectionError,
   } = useCollectionById(cid);
 
-  // Determine required chain type
+  /**
+   * Determine required chain type based on collection
+   */
   const requiredChainType = useMemo((): "sui" | "evm" => {
-    if (!collection?.contract?.Chain?.chain_type) return "sui"; // Default fallback
+    if (!collection?.contract?.Chain?.chain_type) return "sui"; // Default to SUI
     return collection.contract.Chain.chain_type === "ethereum" ? "evm" : "sui";
   }, [collection?.contract?.Chain?.chain_type]);
 
-  // Get wallet info from global store only
+  /**
+   * Get wallet info from global store
+   */
   const walletInfo = useMemo(() => {
     if (!mounted) return null;
     return getWalletForChain(requiredChainType);
@@ -150,50 +152,102 @@ const QuestsPageContent = () => {
   const walletAddress = walletInfo?.address || null;
   const isWalletConnected = mounted && hasWalletForChain(requiredChainType);
 
-  // ========== COMMENTED OUT COMPLEX MINTING STATE SYNC ==========
-  // useEffect(() => {
-  //   if (mounted && walletAddress) {
-  //     // Check if already minted
-  //     const hasMinted = MintingStateManager.hasMintedSuccessfully(
-  //       walletAddress,
-  //       METADATA_ID
-  //     );
-  //     if (hasMinted) {
-  //       setCanMintAgain(false);
-  //     }
+  /**
+   * Check if this is NS Collection
+   */
+  const isNSCollection = useMemo(() => {
+    return (
+      collection?.name === "NS" ||
+      collection?.name === "Network School Collection" ||
+      collection?.name === "Network School Collection Base"
+    );
+  }, [collection?.name]);
 
-  //     // Check if minting is locked by another tab
-  //     const isLocked = MintingStateManager.isMintingLocked(
-  //       walletAddress,
-  //       METADATA_ID
-  //     );
-  //     if (isLocked) {
-  //       console.log("Minting locked by another tab");
-  //     }
-  //   }
-  // }, [mounted, walletAddress, setCanMintAgain]);
+  /**
+   * Create collection-like object for NFTDisplay
+   */
+  const displayCollection = useMemo(() => {
+    if (!metadata) return null;
+    return {
+      name: metadata.title,
+      description: metadata.description,
+      image_uri: metadata.image_url,
+    };
+  }, [metadata]);
 
-  // ========== COMMENTED OUT CLEANUP LISTENERS ==========
-  // useEffect(() => {
-  //   return () => {
-  //     const store = useGlobalAppStore.getState();
-  //     store.cleanupMintingListeners();
-  //   };
-  // }, []);
+  /**
+   * Create collection-like object for ClaimNFTButton (when re-enabled)
+   */
+  const claimCollection = useMemo(() => {
+    if (!metadata) return null;
+    return {
+      name: metadata.title,
+      description: metadata.description,
+      image_uri: metadata.image_url,
+      image_url: metadata.image_url,
+      attributes: metadata.attributes ? metadata.attributes.split(", ") : [],
+    };
+  }, [metadata]);
 
-  // Simplified metadata fetch - only depends on API response
-  useEffect(() => {
-    if (mounted && isWalletConnected && walletAddress) {
-      fetchMetadata();
-    } else if (mounted && !isWalletConnected) {
-      // Reset metadata when wallet disconnected
-      setMetadata(null);
-      setMetadataLoading(true);
-      setMetadataError("");
-      setCanMintAgain(true);
-    }
-  }, [mounted, isWalletConnected, walletAddress, setCanMintAgain]);
+  /**
+   * Check if minting is disabled
+   */
+  const isMintingDisabled = nftClaiming.isMinting;
 
+  /**
+   * Handle modal close with cleanup
+   */
+  const handleCloseModal = useCallback(() => {
+    setShowNftModal(false);
+    setTimeout(() => {
+      setMintedNftData(null);
+    }, 300);
+  }, []);
+
+  /**
+   * Stable props for modal
+   */
+  const modalProps = useMemo(
+    () => ({
+      isOpen: showNftModal,
+      onClose: handleCloseModal,
+      mintedNftData,
+      walletAddress,
+      isNSCollection,
+    }),
+    [showNftModal, mintedNftData, walletAddress, isNSCollection]
+  );
+
+  // ===== DATA FETCHING =====
+
+  /**
+   * Get quests data with all completion information
+   */
+  const {
+    quests,
+    isLoading: questsLoading,
+    completedQuests,
+    totalQuests,
+    completionPercentage,
+    nftMinted,
+    setNftMinted,
+    refetch: refetchQuests,
+  } = useQuests({
+    collection,
+    walletAddress,
+    isWalletConnected,
+    mounted,
+    requiredChainType,
+    userId: user?.id || null,
+  });
+
+  console.log("quests", quests);
+
+  // ===== UTILITY FUNCTIONS =====
+
+  /**
+   * Fetch metadata from API
+   */
   const fetchMetadata = async () => {
     if (!walletAddress) return;
 
@@ -202,10 +256,7 @@ const QuestsPageContent = () => {
       setMetadataError("");
 
       // Note: You'll need to determine which metadata_id to use here
-      // since METADATA_ID is commented out. This might come from quest data
-      // or collection data, depending on your implementation
-
-      // Placeholder - you'll need to replace this with actual metadata_id logic
+      // This might come from quest data or collection data
       const metadataId = 1; // Replace with actual logic
 
       const response = await axiosInstance.get(
@@ -223,7 +274,7 @@ const QuestsPageContent = () => {
       console.log("can_mint_again", can_mint_again);
       setMetadata(metadata_instance);
 
-      // SIMPLIFIED: Only depend on API response
+      // Set minting availability based on API response
       setCanMintAgain(can_mint_again !== undefined ? can_mint_again : true);
     } catch (error: any) {
       console.error("Error fetching metadata:", error);
@@ -233,33 +284,11 @@ const QuestsPageContent = () => {
     }
   };
 
-  const {
-    quests,
-    isLoading: questsLoading,
-    completedQuests,
-    totalQuests,
-    completionPercentage,
-    nftMinted,
-    setNftMinted,
-    refetch: refetchQuests,
-  } = useQuests({
-    collection,
-    walletAddress,
-    isWalletConnected,
-    mounted,
-    requiredChainType,
-    userId: user?.id || null, // Add userId from global store
-  });
-  console.log("quesrs", quests);
+  // ===== EVENT HANDLERS =====
 
-  // Trigger quest refetch when wallet connection changes
-  useEffect(() => {
-    if (mounted && refetchQuests) {
-      refetchQuests();
-    }
-  }, [isWalletConnected, walletAddress, mounted, refetchQuests]);
-
-  // Memoize handlers to prevent re-renders
+  /**
+   * Handle back navigation with fallback logic
+   */
   const handleBack = useCallback(() => {
     try {
       const cid = searchParams.get("collection_id");
@@ -267,7 +296,7 @@ const QuestsPageContent = () => {
         router.push(`/loyalties/${cid}`);
         return;
       }
-      router.push("/loyalties/218");
+      router.push("/loyalties/218"); // EVM fallback
     } catch {
       if (typeof window !== "undefined" && window.history.length > 1) {
         window.history.back();
@@ -277,6 +306,9 @@ const QuestsPageContent = () => {
     }
   }, [searchParams, router]);
 
+  /**
+   * Handle successful NFT minting
+   */
   const handleNFTMintSuccess = useCallback(
     (nftData: any) => {
       const formattedData: MintedNftData = {
@@ -292,115 +324,55 @@ const QuestsPageContent = () => {
     [setCanMintAgain]
   );
 
-  const handleCloseModal = useCallback(() => {
-    setShowNftModal(false);
-    setTimeout(() => {
-      setMintedNftData(null);
-    }, 300);
+  // ===== EFFECTS =====
+
+  /**
+   * Set mounted state
+   */
+  useEffect(() => {
+    setMounted(true);
   }, []);
 
-  // Memoize collection check
-  const isNSCollection = useMemo(() => {
-    return (
-      collection?.name === "NS" ||
-      collection?.name === "Network School Collection" ||
-      collection?.name === "Network School Collection Base"
-    );
-  }, [collection?.name]);
+  /**
+   * Fetch metadata when wallet is connected
+   */
+  useEffect(() => {
+    if (mounted && isWalletConnected && walletAddress) {
+      fetchMetadata();
+    } else if (mounted && !isWalletConnected) {
+      // Reset metadata when wallet disconnected
+      setMetadata(null);
+      setMetadataLoading(true);
+      setMetadataError("");
+      setCanMintAgain(true);
+    }
+  }, [mounted, isWalletConnected, walletAddress, setCanMintAgain]);
 
-  // Create collection-like object for NFTDisplay
-  const displayCollection = useMemo(() => {
-    if (!metadata) return null;
-    return {
-      name: metadata.title,
-      description: metadata.description,
-      image_uri: metadata.image_url,
-    };
-  }, [metadata]);
+  /**
+   * Trigger quest refetch when wallet connection changes
+   */
+  useEffect(() => {
+    if (mounted && refetchQuests) {
+      refetchQuests();
+    }
+  }, [isWalletConnected, walletAddress, mounted, refetchQuests]);
 
-  // Create collection-like object for ClaimNFTButton
-  const claimCollection = useMemo(() => {
-    if (!metadata) return null;
-    return {
-      name: metadata.title,
-      description: metadata.description,
-      image_uri: metadata.image_url,
-      image_url: metadata.image_url,
-      attributes: metadata.attributes ? metadata.attributes.split(", ") : [],
-    };
-  }, [metadata]);
-
-  // ========== COMMENTED OUT CUSTOM CLAIM FUNCTION ==========
-  // const handleCustomClaim = useCallback(async () => {
-  //   if (!walletAddress || !metadata) return;
-
-  //   // Check if we can start minting
-  //   if (!canStartMinting(walletAddress, METADATA_ID)) {
-  //     console.log("Cannot start minting - global check failed");
-  //     return;
-  //   }
-
-  //   const nftData = {
-  //     collection_id: cid,
-  //     name: metadata.title,
-  //     description: metadata.description,
-  //     image_url: metadata.image_url,
-  //     attributes: metadata.attributes ? metadata.attributes.split(", ") : [],
-  //     recipient: walletAddress,
-  //     chain_type: requiredChainType === "evm" ? "ethereum" : "sui",
-  //     metadata_id: METADATA_ID,
-  //   };
-
-  //   // Use the enhanced minting service
-  //   await NFTMintingService.mintNFT({
-  //     walletAddress,
-  //     metadataId: METADATA_ID,
-  //     nftData,
-  //     onSuccess: (data) => {
-  //       handleNFTMintSuccess(data);
-  //     },
-  //     onError: (error) => {
-  //       console.error("Manual claim error:", error);
-  //     },
-  //   });
-  // }, [
-  //   walletAddress,
-  //   metadata,
-  //   cid,
-  //   requiredChainType,
-  //   handleNFTMintSuccess,
-  //   canStartMinting,
-  // ]);
-
-  // Memoize stable props for modal
-  const modalProps = useMemo(
-    () => ({
-      isOpen: showNftModal,
-      onClose: handleCloseModal,
-      mintedNftData,
-      walletAddress,
-      isNSCollection,
-    }),
-    [
-      showNftModal,
-      handleCloseModal,
-      mintedNftData,
-      walletAddress,
-      isNSCollection,
-    ]
-  );
+  // ===== RENDER CONDITIONS =====
 
   // Loading states
   if (!mounted) {
     return (
-      <LoadingScreen message="Loading..." isNSCollection={isNSCollection} />
+      <LoadingScreen
+        message="Loading Quests..."
+        isNSCollection={isNSCollection}
+      />
     );
   }
 
   if (isCollectionLoading) {
     return (
       <LoadingScreen
-        message="Loading Collection..."
+        message="Loading Quests..."
         isNSCollection={isNSCollection}
       />
     );
@@ -449,7 +421,7 @@ const QuestsPageContent = () => {
   if (metadataLoading) {
     return (
       <LoadingScreen
-        message="Loading Collection Details..."
+        message="Loading Quests..."
         collectionName={collection?.name}
         isNSCollection={isNSCollection}
       />
@@ -460,7 +432,7 @@ const QuestsPageContent = () => {
   if (metadataError || !metadata) {
     return (
       <ErrorScreen
-        title="NFT Details Not Found"
+        title="Reward Details Not Found"
         message="Unable to load NFT reward details"
         onBack={handleBack}
         isNSCollection={isNSCollection}
@@ -468,7 +440,7 @@ const QuestsPageContent = () => {
     );
   }
 
-  if (questsLoading || quests.length === 0) {
+  if (questsLoading) {
     return (
       <LoadingScreen
         message="Loading Quests..."
@@ -478,8 +450,7 @@ const QuestsPageContent = () => {
     );
   }
 
-  // ========== SIMPLIFIED MINTING DISABLED CHECK ==========
-  const isMintingDisabled = nftClaiming.isMinting;
+  // ===== MAIN RENDER =====
 
   return (
     <div className={`min-h-screen bg-[#000421]`}>
@@ -488,22 +459,6 @@ const QuestsPageContent = () => {
       {/* Main Content */}
       <div className="pt-20 sm:pt-20 md:pt-32 pb-6 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto">
-          {/* ========== COMMENTED OUT CROSS-TAB MINTING INDICATOR ========== */}
-          {/* {MintingStateManager.isMintingLocked(
-            walletAddress || "",
-            METADATA_ID
-          ) &&
-            !nftClaiming.autoClaimInProgress && (
-              <div className="mb-6 p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
-                <div className="flex items-center justify-center gap-3">
-                  <div className="animate-pulse h-3 w-3 bg-blue-400 rounded-full"></div>
-                  <p className="text-blue-300 font-medium">
-                    NFT minting in progress in another tab...
-                  </p>
-                </div>
-              </div>
-            )} */}
-
           {/* NFT Display Section - Using Dynamic Metadata */}
           <NFTDisplay
             collection={collection}

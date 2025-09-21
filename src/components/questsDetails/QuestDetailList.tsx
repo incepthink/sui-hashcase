@@ -97,13 +97,13 @@ export const QuestDetailList: React.FC<QuestDetailListProps> = ({
                 </div>
 
                 {task.description && (
-                  <p className="text-gray-400 text-xs sm:text-sm mb-3 ml-6">
+                  <p className="text-gray-400 text-xs sm:text-sm mb-3">
                     {task.description}
                   </p>
                 )}
 
                 {/* Task Stats */}
-                <div className="flex flex-wrap items-center gap-3 ml-6 text-xs text-gray-500">
+                <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500">
                   <span className="flex items-center gap-1">
                     <span className="text-yellow-400">🎯</span>
                     {task.reward_loyalty_points} points

@@ -482,17 +482,6 @@ const TaskDetailPage = () => {
             </div>
           </div>
 
-          {/* Task List with Completion Functionality */}
-          <TaskDetailList
-            tasks={tasksData.tasks}
-            questTitle={tasksData.quest.title}
-            isWalletConnected={isWalletConnected}
-            requiredChainType={requiredChainType}
-            highlightTaskCode={taskCode}
-            onTaskComplete={refetchTasks}
-          />
-
-          {/* Claim NFT Button (only if quest has claimable metadata) */}
           {nftData && (
             <QuestDetailClaimButton
               nftMinted={!nftClaiming.canMintAgain}
@@ -512,6 +501,18 @@ const TaskDetailPage = () => {
               metadataId={metadataId || undefined}
             />
           )}
+
+          {/* Task List with Completion Functionality */}
+          <TaskDetailList
+            tasks={tasksData.tasks}
+            questTitle={tasksData.quest.title}
+            isWalletConnected={isWalletConnected}
+            requiredChainType={requiredChainType}
+            highlightTaskCode={taskCode}
+            onTaskComplete={refetchTasks}
+          />
+
+          {/* Claim NFT Button (only if quest has claimable metadata) */}
         </div>
       </div>
 

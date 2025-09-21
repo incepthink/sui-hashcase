@@ -157,6 +157,7 @@ const CollectionsPage: React.FC = () => {
         {/* Collections Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {collections.map((collection: any) => {
+            if (collection.chain_name !== "sui") return;
             // Handle different possible data structures
             let contractAddress =
               collection.contract?.contract_address ||
@@ -194,9 +195,9 @@ const CollectionsPage: React.FC = () => {
                 href={`/loyalties/${collectionId}`}
                 className="block group"
               >
-                <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 overflow-hidden shadow-lg transition-all duration-300">
+                <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 overflow-hidden shadow-lg transition-all duration-300 h-full flex flex-col">
                   {/* Image Section */}
-                  <div className="relative w-full aspect-square overflow-hidden">
+                  <div className="relative w-full aspect-square overflow-hidden flex-shrink-0">
                     <Image
                       src={collectionImage}
                       alt={collectionName}
@@ -214,11 +215,11 @@ const CollectionsPage: React.FC = () => {
                   </div>
 
                   {/* Content Section */}
-                  <div className="p-4">
+                  <div className="p-4 flex flex-col flex-grow">
                     <h3 className="text-lg font-semibold text-white mb-2 line-clamp-1">
                       {collectionName}
                     </h3>
-                    <p className="text-sm text-white/70 line-clamp-2 mb-3">
+                    <p className="text-sm text-white/70 line-clamp-2 mb-3 flex-grow">
                       {collectionDescription}
                     </p>
 
@@ -237,7 +238,7 @@ const CollectionsPage: React.FC = () => {
                     )}
 
                     {/* Action Buttons */}
-                    <div className="flex gap-2">
+                    {/* <div className="flex gap-2">
                       <button
                         type="button"
                         onClick={(e) => {
@@ -249,11 +250,11 @@ const CollectionsPage: React.FC = () => {
                         aria-label={`View loyalties for ${collectionName}`}
                       >
                         Loyalties
-                      </button>
-                      {/* <button className="flex-1 text-center rounded-lg px-3 py-2 text-sm font-medium text-white bg-white/10 border border-white/20 hover:bg-white/20 transition-all duration-200">
+                      </button> */}
+                    {/* <button className="flex-1 text-center rounded-lg px-3 py-2 text-sm font-medium text-white bg-white/10 border border-white/20 hover:bg-white/20 transition-all duration-200">
                         View
                       </button> */}
-                    </div>
+                    {/* </div> */}
                   </div>
                 </div>
               </Link>

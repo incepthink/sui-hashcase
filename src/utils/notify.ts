@@ -1,4 +1,4 @@
-import { toast, Flip, ToastOptions } from "react-toastify";
+import { toast, Flip, ToastOptions, Id } from "react-toastify";
 
 const notify = (message: string, type?: string) => {
   toast(message, {
@@ -12,14 +12,26 @@ export const notifyPromise = (message: string, type?: string) => {
     position: "top-center",
     type: (type as ToastOptions["type"]) || "default",
   });
-  return id;
+  
+  // Return an object with the id and a cancel function
+  return {
+    id,
+    cancel: () => {
+      toast.dismiss(id);
+    }
+  };
 };
 
 export const notifyResolve = (
-  id: string | number,
+  notificationController: { id: Id; cancel: () => void } | Id,
   message: string,
   type: string
 ) => {
+  // Handle both old direct ID usage and new controller object
+  const id = typeof notificationController === 'object' 
+    ? notificationController.id 
+    : notificationController;
+    
   toast.update(id, {
     render: message,
     type: type as ToastOptions["type"],

@@ -6,6 +6,7 @@ import { Wallet, User, LogOut, ChevronDown } from "lucide-react";
 import React, { useEffect, useState, useRef } from "react";
 import { useCurrentAccount, useDisconnectWallet } from "@mysten/dapp-kit";
 import { useZkLogin, useEnokiFlow } from "@mysten/enoki/react";
+import { useRouter } from "next/navigation";
 
 const ConnectButton: React.FC = () => {
   const {
@@ -19,6 +20,8 @@ const ConnectButton: React.FC = () => {
     disconnectAllWallets,
     setUserHasInteracted,
   } = useGlobalAppStore();
+
+  const router = useRouter();
 
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [activeWalletType, setActiveWalletType] = useState<
@@ -140,7 +143,7 @@ const ConnectButton: React.FC = () => {
     setDropdownOpen(false);
     // Add your profile navigation logic here
     console.log("Navigate to profile");
-    // Example: router.push('/profile');
+    router.push("/profile");
   };
 
   const handleCompleteDisconnect = async () => {
