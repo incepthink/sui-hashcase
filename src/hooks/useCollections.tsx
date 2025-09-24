@@ -30,7 +30,7 @@ interface CollectionsResponse {
 // Fetch function for collections
 const fetchCollections = async (page: number): Promise<CollectionsResponse> => {
   try {
-    const res = await axiosInstance.get(`/platform/collections-sui`);
+    const res = await axiosInstance.get(`/platform/collections`);
     console.log("Collections API response:", res.data);
     return res.data;
   } catch (error) {

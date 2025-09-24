@@ -33,9 +33,8 @@ const CollectionsPage: React.FC = () => {
   const [page, setPage] = useState(1);
   const router = useRouter();
 
-  const { data, isLoading, isError, error } = useCollections();
-  console.log("COLLECTIONS", data);
-
+  const { data: dataold, isLoading, isError, error } = useCollections();
+  const data = dataold?.collections ? [...dataold.collections].reverse() : [];
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-[#00041f] to-[#030828] flex items-center justify-center">
@@ -102,8 +101,8 @@ const CollectionsPage: React.FC = () => {
   }
 
   // Handle different possible data structures
-  const collections = data.suiCollections || data.collections || data || [];
-  const totalPages = data.totalPages || data.total_pages || 1;
+  const collections = data || [];
+  const totalPages = dataold?.totalPages || dataold?.total_pages || 1;
 
   console.log("Processed collections:", collections);
   console.log("Total pages:", totalPages);
@@ -157,7 +156,8 @@ const CollectionsPage: React.FC = () => {
         {/* Collections Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {collections.map((collection: any) => {
-            if (collection.chain_name !== "sui") return;
+            if (collection.id === 219 || collection.id === 216) return;
+
             // Handle different possible data structures
             let contractAddress =
               collection.contract?.contract_address ||
@@ -189,17 +189,32 @@ const CollectionsPage: React.FC = () => {
               ? "https://client-uploads.nyc3.digitaloceanspaces.com/images/3b1daaad-c7dc-4884-a78b-739a3ce3dfaa/2025-08-28T12-25-58-895Z-38bc0eae.png"
               : backgroundImageHeroSection;
 
+            // Determine if this is a SUI chain collection
+            const isBaseChain = chainType.toLowerCase() === "base";
+            const linkUrl = isBaseChain
+              ? `https://hashcase.co/loyalties/${collectionId}`
+              : `/loyalties/${collectionId}`;
+
+            const LinkComponent = isBaseChain ? "a" : Link;
+            const linkProps = isBaseChain
+              ? {
+                  href: linkUrl,
+                  target: "_blank",
+                  rel: "noopener noreferrer",
+                  className: "block group h-full",
+                }
+              : {
+                  href: linkUrl,
+                  className: "block group h-full",
+                };
+
             return (
-              <Link
-                key={collectionId}
-                href={`/loyalties/${collectionId}`}
-                className="block group"
-              >
-                <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 overflow-hidden shadow-lg transition-all duration-300 h-full flex flex-col">
+              <LinkComponent key={collectionId} {...linkProps}>
+                <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 overflow-hidden shadow-lg transition-all duration-300 h-full flex flex-col relative">
                   {/* Image Section */}
                   <div className="relative w-full aspect-square overflow-hidden flex-shrink-0">
                     <Image
-                      src={collectionImage}
+                      src={collection.image_uri}
                       alt={collectionName}
                       fill
                       className="object-cover transition-transform duration-300 group-hover:scale-110"
@@ -212,6 +227,31 @@ const CollectionsPage: React.FC = () => {
                         {chainType}
                       </span>
                     </div>
+
+                    {/* External Link Icon for SUI chains - only visible on hover */}
+                    {isBaseChain && (
+                      <div className="absolute top-0 right-0 w-12 h-12 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        {/* Enhanced gradient background with darker corner and lighter center */}
+                        <div className="absolute inset-0 bg-gradient-to-bl from-white/30 via-white/15 via-white/8 to-transparent rounded-bl-2xl" />
+                        {/* External link icon */}
+                        <div className="absolute top-3 right-3">
+                          <svg
+                            className="w-4 h-4 md:w-5 md:h-5 drop-shadow-sm"
+                            fill="none"
+                            stroke="#77B7FF"
+                            viewBox="0 0 24 24"
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                            />
+                          </svg>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Content Section */}
@@ -237,27 +277,13 @@ const CollectionsPage: React.FC = () => {
                       </div>
                     )}
 
-                    {/* Action Buttons */}
-                    {/* <div className="flex gap-2">
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          router.push(`/loyalties/${collectionId}`);
-                        }}
-                        className="flex-1 text-center rounded-lg px-3 py-2 text-sm font-medium text-white bg-[#4DA2FF]/20 border border-[#4DA2FF]/50 hover:bg-[#4DA2FF] hover:text-black transition-all duration-200"
-                        aria-label={`View loyalties for ${collectionName}`}
-                      >
-                        Loyalties
-                      </button> */}
-                    {/* <button className="flex-1 text-center rounded-lg px-3 py-2 text-sm font-medium text-white bg-white/10 border border-white/20 hover:bg-white/20 transition-all duration-200">
-                        View
-                      </button> */}
-                    {/* </div> */}
+                    {/* Action Buttons - This will stick to bottom */}
+                    <div className="flex gap-2 mt-auto">
+                      {/* Your button code here if needed */}
+                    </div>
                   </div>
                 </div>
-              </Link>
+              </LinkComponent>
             );
           })}
         </div>
