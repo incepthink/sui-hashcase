@@ -219,7 +219,9 @@ const App: React.FC = () => {
     });
 
   const fetchNfts = async () => {
-    const { data } = await axiosInstance.get("/user/nfts");
+    const { data } = await axiosInstance.get(
+      "/user/nfts?userAddress=" + userAddress
+    );
     console.log("RETURNED", data);
     setFetchedNfts(data.nfts);
   };
@@ -317,7 +319,9 @@ const App: React.FC = () => {
   }, [userAddressFromUrl]);
 
   const getDatabase = async () => {
-    const response = await axiosInstance.get("/user");
+    const response = await axiosInstance.get(
+      "/user?userAddress=" + userAddress
+    );
     console.log(response.data);
 
     const user = response.data.user;

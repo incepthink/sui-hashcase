@@ -79,9 +79,9 @@ export const Hero = () => {
                 <span className="text-transparent bg-clip-text bg-blue-500">
                   Superfans!
                 </span>
-                <div className="absolute -top-2 -right-2 w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center">
+                {/* <div className="absolute -top-2 -right-2 w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center">
                   <Star className="w-3 h-3 text-black" />
-                </div>
+                </div> */}
               </span>
             </h1>
 
