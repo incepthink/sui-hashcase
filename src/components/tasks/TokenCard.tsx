@@ -13,9 +13,9 @@ const TokenCard: React.FC<TokenCardProps> = ({ token, onClick }) => {
   const handleCardClick = () => {
     // Open BaseScan link in new tab
     window.open(
-      `https://suiscan.xyz/mainnet/coin/${token.wallet_address}::${
-        token.symbol
-      }::${token.symbol.toUpperCase()}`,
+      `https://suiscan.xyz/mainnet/coin/${
+        token.wallet_address
+      }::${token.symbol.toLowerCase()}::${token.symbol.toUpperCase()}`,
       "_blank"
     );
   };
