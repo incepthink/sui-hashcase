@@ -84,7 +84,16 @@ export const useQuests = ({
           response = await axiosInstance.get(`/platform/quest/completion/owner/${collection.owner_id}/user/${userId}`);
           console.log("QUEST WITH COMPLETIONS", response.data);
           
-          return (response.data.quests || []).map((quest: any) => {
+          return (response.data.quests || []).filter((quest: any) => {
+    // Filter out quest 6 when collection is 214
+    if (collection.id === 214 && quest.id === 6) {
+      return false;
+    }
+    if (collection.id === 215 && quest.id == 3) {
+      return false
+    }
+    return true;
+  }).map((quest: any) => {
             const tasks = (quest.tasksWithCompletion || []).map((task: any) => ({
               id: task.id,
               quest_id: task.quest_id,

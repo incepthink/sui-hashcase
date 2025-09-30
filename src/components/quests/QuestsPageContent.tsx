@@ -132,6 +132,7 @@ const QuestsPageContent = () => {
     isLoading: isCollectionLoading,
     isError: isCollectionError,
   } = useCollectionById(cid);
+  console.log("Cololections", collection);
 
   /**
    * Determine required chain type based on collection
