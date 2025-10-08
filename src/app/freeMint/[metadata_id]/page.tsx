@@ -766,7 +766,7 @@ export default function NFTPage() {
     if (!nftData) return;
 
     // Check if user is connected
-    if (!currentAccount?.address) {
+    if (!userWalletAddress) {
       notify("Please connect your wallet first", "error");
       return;
     }
@@ -814,13 +814,13 @@ export default function NFTPage() {
       }
 
       console.log("Minting NFT with data:", {
-        userAddress: currentAccount.address,
+        userAddress: userWalletAddress,
         collection_id: nftData.collection_id,
         name: nftData?.title || "HashCase NFT",
         description: nftData?.description || "A unique HashCase NFT",
         image_url: nftData?.image_url || "https://via.placeholder.com/300",
         attributes: attributesArray,
-        recipient: currentAccount.address,
+        recipient: userWalletAddress,
       });
 
       // Use the platform minting endpoint that doesn't require authentication
@@ -832,16 +832,13 @@ export default function NFTPage() {
           description: nftData?.description,
           image_url: nftData?.image_url,
           attributes: attributesArray,
-          recipient: currentAccount.address,
+          recipient: userWalletAddress,
           metadata_id: nftData.id,
         }
       );
 
       // ONLY set localStorage AFTER successful minting
-      const mintKey = getMintAttemptKey(
-        params.metadata_id!,
-        currentAccount.address
-      );
+      const mintKey = getMintAttemptKey(params.metadata_id!, userWalletAddress);
       localStorage.setItem(mintKey, "true");
       setHasMintAttempted(true);
 
@@ -863,10 +860,10 @@ export default function NFTPage() {
 
       // No need to clear localStorage since we didn't set it yet
       let errorMessage = "Error minting NFT";
-      if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
-      } else if (error.message) {
-        errorMessage = error.message;
+      if (error.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      } else if (error.error) {
+        errorMessage = error.error;
       }
 
       notifyResolve(notifyId, errorMessage, "error");
@@ -1164,7 +1161,7 @@ export default function NFTPage() {
             </div>
           </div>
         </div>
-        <hr className="my-8 bg-gradient-to-r from-transparent via-white to-transparent opacity-20" />
+        {/* <hr className="my-8 bg-gradient-to-r from-transparent via-white to-transparent opacity-20" />
         <div className="flex items-center justify-center mb-6">
           <div className="bg-[#1A1D35] rounded-lg p-4 w-full text-center text-white md:text-2xl text-lg font-semibold">
             <p>
@@ -1209,7 +1206,7 @@ export default function NFTPage() {
               </div>
             </div>
           </div>
-        </div>
+        </div> */}
       </div>
       <UnlockableNft isOpen={isModalOpen} closeModal={closeModal} />
       {showSuccessModal && (

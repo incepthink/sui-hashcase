@@ -50,17 +50,17 @@ export default function NftCard({
         </div>
       ) : null}
 
-      {/* Image */}
-      <div className="relative aspect-square">
+      {/* Image - Fixed height */}
+      <div className="relative w-full h-80 flex-shrink-0">
         <Image
           src={imageUrl || "https://via.placeholder.com/300"}
           alt={title}
-          className={"w-full h-full object-cover " + (imageClassName || "")}
-          width={200}
-          height={200}
+          className={"object-cover " + (imageClassName || "")}
+          fill
+          sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1280px) 33vw, 20vw"
         />
         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent p-4">
-          <h3 className="text-xl font-bold text-white drop-shadow-lg">
+          <h3 className="text-xl font-bold text-white drop-shadow-lg line-clamp-2">
             {title}
           </h3>
         </div>
@@ -69,12 +69,12 @@ export default function NftCard({
       {/* Content */}
       <div
         className={
-          "p-4 flex flex-col justify-between grow min-h-[150px] " +
+          "p-4 flex flex-col justify-between flex-grow " +
           (contentClassName || "")
         }
       >
         {description ? (
-          <p className="text-sm text-white/70 line-clamp-2 mb-4 leading-relaxed">
+          <p className="text-sm text-white/70 line-clamp-3 mb-4 leading-relaxed">
             {description}
           </p>
         ) : (

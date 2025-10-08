@@ -432,7 +432,7 @@ const App: React.FC = () => {
 
           <div className="mt-4 flex items-center gap-3">
             <ConnectButton />
-            <button
+            {/* <button
               onClick={() => setShowShareModal(true)}
               className="flex items-center text-white text-sm font-medium hover:underline"
             >
@@ -450,7 +450,7 @@ const App: React.FC = () => {
                   d="M8.684 13.342A3 3 0 109 12c0-.482-.114-.938-.316-1.342m0 2.684l6.632 3.316m-6.632-6l6.632-3.316"
                 />
               </svg>
-            </button>
+            </button> */}
           </div>
         </div>
       )}
@@ -463,7 +463,7 @@ const App: React.FC = () => {
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-6 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                className={`w-24 px-6 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
                   activeTab === tab
                     ? "bg-white text-black shadow-sm"
                     : "text-white/70 hover:text-white hover:bg-white/5"
