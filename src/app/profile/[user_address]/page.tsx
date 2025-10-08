@@ -482,7 +482,7 @@ const App: React.FC = () => {
             <span className="px-2 py-1 rounded-full bg-white/5 border border-white/10 text-white/70">
               {userAddress || "Not connected"}
             </span>
-            {currentAccount?.address &&
+            {/* {currentAccount?.address &&
               userAddressFromUrl &&
               currentAccount.address !== userAddressFromUrl && (
                 <span className="ml-2 flex justify-center mt-2 text-xs text-blue-400">
@@ -490,7 +490,7 @@ const App: React.FC = () => {
                   {currentAccount.address.slice(0, 6)}...
                   {currentAccount.address.slice(-4)})
                 </span>
-              )}
+              )} */}
           </p>
 
           {/* Toolbar */}
