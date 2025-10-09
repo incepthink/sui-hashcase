@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import { useGlobalAppStore } from "@/store/globalAppStore";
 import { useLoyalty } from "@/hooks/useLoyalty"; // Import the new hook
 import { useAddLoyalty } from "@/hooks/useAddLoyalty"; // Import the new hook
+import ConnectButton from "@/components/ConnectButton";
 
 interface User {
   id: number;
@@ -224,6 +225,14 @@ const LoyaltyCodesTable = ({
   const isCurrentlyLoading =
     loyaltyLoading || addLoyaltyLoading || isPageLoading;
 
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const isWalletConnected = mounted && hasWalletForChain("sui");
+
   return (
     <div className="bg-gradient-to-b from-[#00041f] to-[#030828] flex flex-col items-center justify-start p-4 sm:p-6 md:p-8 text-white pb-16 md:pb-16">
       {/* Page Loading Spinner */}
@@ -272,12 +281,19 @@ const LoyaltyCodesTable = ({
       )} */}
 
       {/* Off-Chain Points */}
-      <h1 className="text-2xl sm:text-3xl md:text-4xl font-semibold mb-4 sm:mb-6 bg-clip-text text-transparent text-white/90 drop-shadow-lg text-center px-2">
-        {`${collection.name} Points: ${offChainPointsState}`}
-      </h1>
+
+      {isWalletConnected ? (
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-semibold mb-4 sm:mb-8 bg-clip-text text-transparent text-white/90 drop-shadow-lg text-center px-2">
+          {collection.name} Points: {offChainPointsState}
+        </h1>
+      ) : (
+        <div className=" mb-8">
+          <ConnectButton mid={true} />
+        </div>
+      )}
 
       {/* Streak Display */}
-      <div className="flex items-center gap-2 bg-white/10 px-3 sm:px-4 py-2 sm:py-2 rounded-md shadow-md mb-4 sm:mb-6">
+      <div className="flex items-center gap-2 bg-white/10 px-3 sm:px-4 py-2 sm:py-2 rounded-md shadow-md mb-4 sm:mb-8">
         <Flame className="text-red-600 w-6 h-6 sm:w-8 sm:h-8 flex-shrink-0" />
         <span className="text-base sm:text-xl font-semibold whitespace-nowrap">{`Streak: ${currentStreak} days`}</span>
       </div>

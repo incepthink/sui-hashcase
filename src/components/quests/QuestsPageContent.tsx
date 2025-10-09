@@ -91,7 +91,7 @@ interface Quest {
 
 // ===== MAIN COMPONENT =====
 
-const QuestsPageContent = () => {
+const QuestsPageContent = ({ collectionId }: any) => {
   // ===== ROUTER & NAVIGATION =====
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -124,7 +124,7 @@ const QuestsPageContent = () => {
   // ===== COMPUTED VALUES =====
 
   // Use fallback collection_id if not present (SUI default: 215)
-  const cid = searchParams.get("collection_id") || "215";
+  const cid = collectionId || "215";
 
   // Get collection data
   const {
@@ -389,9 +389,9 @@ const QuestsPageContent = () => {
   // Show wallet connection required screen if not connected
   if (!isWalletConnected) {
     return (
-      <div className={`min-h-screen bg-[#000421]`}>
-        <Navigation onBack={handleBack} />
-        <div className="pt-20 sm:pt-20 md:pt-32 pb-6 px-4 sm:px-6 lg:px-8">
+      <div className={` bg-[#000421] pb-10`}>
+        {/* <Navigation onBack={handleBack} /> */}
+        <div className="pt-2 pb-6 px-4 sm:px-6 lg:px-8">
           <div className="max-w-4xl mx-auto">
             <div className="text-center py-12">
               <div className="text-4xl sm:text-6xl mb-4">🔒</div>
@@ -450,17 +450,17 @@ const QuestsPageContent = () => {
   // ===== MAIN RENDER =====
 
   return (
-    <div className={`min-h-screen bg-[#000421]`}>
-      <Navigation onBack={handleBack} />
+    <div className={`py-10 bg-[#000421] pb-16`}>
+      {/* <Navigation onBack={handleBack} /> */}
 
       {/* Main Content */}
-      <div className="pt-20 sm:pt-20 md:pt-32 pb-6 px-4 sm:px-6 lg:px-8">
+      <div className=" px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto">
           {/* NFT Display Section - Using Dynamic Metadata */}
-          <NFTDisplay
+          {/* <NFTDisplay
             collection={collection}
             backgroundImage={backgroundImageHeroSection}
-          />
+          /> */}
 
           {/* Quest Section */}
           <QuestHeader
@@ -476,7 +476,7 @@ const QuestsPageContent = () => {
             quests={quests}
             isWalletConnected={isWalletConnected}
             requiredChainType={requiredChainType}
-            collectionId={cid}
+            collection={collection}
           />
 
           {/* ========== COMMENTED OUT CLAIM NFT BUTTON ========== */}

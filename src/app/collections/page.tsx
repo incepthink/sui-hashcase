@@ -193,7 +193,7 @@ const CollectionsPage: React.FC = () => {
             const isBaseChain = chainType.toLowerCase() === "base";
             const linkUrl = isBaseChain
               ? `https://hashcase.co/loyalties/${collectionId}`
-              : `/loyalties/${collectionId}`;
+              : `/collections/${collectionName}/${collectionId}`;
 
             const LinkComponent = isBaseChain ? "a" : Link;
             const linkProps = isBaseChain

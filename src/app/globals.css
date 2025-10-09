@@ -18,3 +18,7 @@
     @apply transition-all duration-200 ease-out transform;
   }
 }
+
+body {
+  background-color: #00041f;
+}

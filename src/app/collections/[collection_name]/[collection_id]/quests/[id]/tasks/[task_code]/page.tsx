@@ -285,8 +285,8 @@ const TaskDetailPage = () => {
   // Early return for authentication
   if (!userId || !isWalletConnected || !isValidUserId) {
     return (
-      <div className="min-h-screen bg-[#000421]">
-        <Navigation onBack={handleBack} />
+      <div className="py-10 pb-16  bg-[#000421]">
+        {/* <Navigation onBack={handleBack} /> */}
         <div className="pt-20 sm:pt-20 md:pt-32 pb-6 px-4 sm:px-6 lg:px-8">
           <div className="max-w-4xl mx-auto">
             <div className="text-center py-12">
@@ -368,10 +368,10 @@ const TaskDetailPage = () => {
   const isMintingDisabled = nftClaiming.isMinting;
 
   return (
-    <div className="min-h-screen bg-[#000421]">
-      <Navigation onBack={handleBack} />
+    <div className="py-10 bg-[#000421] pb-16 ">
+      {/* <Navigation onBack={handleBack} /> */}
 
-      <div className="pt-20 sm:pt-20 md:pt-32 pb-6 px-4 sm:px-6 lg:px-8">
+      <div className=" px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto">
           {/* Page Title */}
           <div className="text-center mb-8">

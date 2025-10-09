@@ -18,8 +18,8 @@ export const QuestHeader: React.FC<QuestHeaderProps> = ({
 }) => {
   return (
     <div className="text-center mb-6">
-      <h1 className="text-xl sm:text-2xl font-bold text-white mb-2">
-        Available Quests
+      <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2">
+        Quests
         {/* {requiredChainType && (
           <span className="text-sm font-normal text-gray-400 block mt-1">
             Requires {requiredChainType === "evm" ? "EVM" : "Sui"} wallet

@@ -8,7 +8,11 @@ import { useCurrentAccount, useDisconnectWallet } from "@mysten/dapp-kit";
 import { useZkLogin, useEnokiFlow } from "@mysten/enoki/react";
 import { useRouter } from "next/navigation";
 
-const ConnectButton: React.FC = () => {
+type ConnectButtonProps = {
+  mid?: boolean; // optional, default = false
+};
+
+const ConnectButton: React.FC<ConnectButtonProps> = ({ mid = false }: any) => {
   const {
     openModal,
     setOpenModal,
@@ -263,7 +267,9 @@ const ConnectButton: React.FC = () => {
       <button
         onClick={handleModal}
         disabled={isInitializing}
-        className="flex justify-center items-center gap-x-2 sm:gap-x-3 md:gap-x-5 px-3 sm:px-4 md:px-6 py-1.5 sm:py-2 md:py-2.5 border-b-2 text-white font-medium sm:font-semibold rounded-2xl w-max ml-4 sm:ml-6 md:ml-10 text-xs sm:text-sm md:text-base disabled:opacity-50 disabled:cursor-not-allowed hover:bg-white/10 transition-colors"
+        className={`flex justify-center items-center gap-x-2 sm:gap-x-3 md:gap-x-5 px-3 sm:px-4 md:px-6 py-1.5 sm:py-2 md:py-2.5 border-b-2 text-white font-medium sm:font-semibold rounded-2xl w-max ${
+          !mid && "ml-4 sm:ml-6 md:ml-10"
+        } text-xs sm:text-sm md:text-base disabled:opacity-50 disabled:cursor-not-allowed hover:bg-white/10 transition-colors`}
       >
         <span className="hidden sm:inline">Connect</span>
         <span className="sm:hidden">Connect</span>
@@ -277,7 +283,9 @@ const ConnectButton: React.FC = () => {
     <button
       onClick={handleModal}
       disabled={isInitializing}
-      className="flex justify-center items-center gap-x-2 sm:gap-x-3 md:gap-x-5 px-3 sm:px-4 md:px-6 py-1.5 sm:py-2 md:py-2.5 border-b-2 text-white font-medium sm:font-semibold rounded-2xl w-max ml-4 sm:ml-6 md:ml-10 text-xs sm:text-sm md:text-base disabled:opacity-50 disabled:cursor-not-allowed hover:bg-white/10 transition-colors"
+      className={`flex justify-center items-center gap-x-2 sm:gap-x-3 md:gap-x-5 px-3 sm:px-4 md:px-6 py-1.5 sm:py-2 md:py-2.5 border-b-2 text-white font-medium sm:font-semibold rounded-2xl w-max ${
+        !mid && "ml-4 sm:ml-6 md:ml-10"
+      } text-xs sm:text-sm md:text-base disabled:opacity-50 disabled:cursor-not-allowed hover:bg-white/10 transition-colors`}
     >
       <span className="hidden sm:inline">Connect</span>
       <span className="sm:hidden">Connect</span>
