@@ -300,7 +300,7 @@ const LoyaltyCodesTable = ({
 
       {/* Loyalty Codes */}
       <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold mb-4 sm:mb-6 text-blue-300 drop-shadow-md text-center px-2">
-        Loyalty Codes
+        Points
       </h1>
 
       {/* Mobile Card View */}

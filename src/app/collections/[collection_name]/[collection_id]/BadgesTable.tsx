@@ -84,7 +84,7 @@ const BadgesTable = ({ owner_id }: { owner_id: number }) => {
 
   if (!badges || badges.length === 0) {
     return (
-      <div className="bg-gradient-to-b from-[#00041f] to-[#030828] text-center py-10 pb-16  px-4">
+      <div className="bg-gradient-to-b from-[#00041f] to-[#030828] text-center py-10 pb-16  px-4 h-[50vh]">
         <div className="text-white">No badges in this Collection</div>
       </div>
     );

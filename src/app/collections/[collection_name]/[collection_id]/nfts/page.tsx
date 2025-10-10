@@ -91,7 +91,7 @@ const NFTMetadataPage = () => {
               return (
                 <Link
                   key={nft.id}
-                  href={`/collections/${params.collection_name}/${params.collection_id}/nfts/freeMint/${nft.id}`}
+                  href={`/collections/${params.collection_name}/${params.collection_id}/nfts/freemint/${nft.id}`}
                 >
                   <div className="group bg-gradient-to-br from-[#0a0f3b] to-[#050a2e] shadow-xl rounded-xl overflow-hidden transform transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:from-[#141a52] hover:to-[#0a0f3b] cursor-pointer border border-gray-700/30">
                     {/* Image Container */}

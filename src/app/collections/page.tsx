@@ -192,7 +192,7 @@ const CollectionsPage: React.FC = () => {
             // Determine if this is a SUI chain collection
             const isBaseChain = chainType.toLowerCase() === "base";
             const linkUrl = isBaseChain
-              ? `https://hashcase.co/loyalties/${collectionId}`
+              ? `https://hashcase.co/collections/${collectionName}/${collectionId}`
               : `/collections/${collectionName}/${collectionId}`;
 
             const LinkComponent = isBaseChain ? "a" : Link;
@@ -223,8 +223,30 @@ const CollectionsPage: React.FC = () => {
 
                     {/* Collection Badge */}
                     <div className="absolute top-3 left-3">
-                      <span className="px-2 py-1 bg-[#4DA2FF] text-black text-xs font-semibold rounded-full">
-                        {chainType}
+                      <span className="px-2 py-1 bg-[#4DA2FF] text-black text-xs md:text-sm font-semibold rounded-full flex items-center gap-1">
+                        {chainType === "sui" ? (
+                          <>
+                            {" "}
+                            <div className="w-4 h-4 rounded-full overflow-hidden">
+                              <img
+                                src="/suilogo.jpeg"
+                                className="w-full h-full object-cover"
+                              />
+                            </div>{" "}
+                            {chainType}{" "}
+                          </>
+                        ) : (
+                          <>
+                            {" "}
+                            <div className="w-4 h-4 rounded-full overflow-hidden">
+                              <img
+                                src="/baselogo.png"
+                                className="w-full h-full object-cover"
+                              />
+                            </div>{" "}
+                            {chainType}{" "}
+                          </>
+                        )}
                       </span>
                     </div>
 

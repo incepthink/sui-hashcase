@@ -1,4 +1,4 @@
-// sui-hashcase/src/app/freeMint/[metadata_id]/page.tsx
+// sui-hashcase/src/app/freemint/[metadata_id]/page.tsx
 
 "use client";
 
@@ -196,6 +196,7 @@ export default function NFTPage() {
   }, []);
 
   const isWalletConnected = mounted && hasWalletForChain("sui");
+  console.log("isWalletCOnnected", isWalletConnected);
 
   // Navigation functions for randomly selecting NFTs - ultra fast performance with enhanced security
   const navigateToRandomNFT = React.useCallback(() => {
