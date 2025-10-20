@@ -1,6 +1,6 @@
 import React from "react";
 import Link from "next/link";
-import { SetGroup } from "@/app/collections/[collection_name]/[collection_id]/nfts/page";
+import { SetGroup } from "@/utils/modelTypes";
 import { ImageCarousel } from "./ImageCarousel";
 
 interface SetCardProps {
@@ -23,7 +23,9 @@ export const SetCard: React.FC<SetCardProps> = ({
 
   return (
     <Link
-      href={`/collections/${collectionName}/${collectionId}/nfts/randomizedmint/${setGroup.id}`}
+      href={`/collections/${collectionName}/${collectionId}/nfts/${
+        setGroup.isRandomized ? "randomizedmint" : "upgradablemint"
+      }/${setGroup.id}`}
     >
       <div className="group bg-gradient-to-br from-[#0a0f3b] to-[#050a2e] shadow-xl rounded-xl overflow-hidden transform transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:from-[#141a52] hover:to-[#0a0f3b] cursor-pointer border border-gray-700/30 h-full">
         {/* Image Carousel */}

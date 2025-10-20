@@ -1,6 +1,6 @@
 import React from "react";
 import Link from "next/link";
-import { NFTMetadata } from "@/app/collections/[collection_name]/[collection_id]/nfts/page";
+import { NFTMetadata } from "@/utils/modelTypes";
 import { MapPin } from "lucide-react";
 
 interface NFTCardProps {

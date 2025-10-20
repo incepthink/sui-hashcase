@@ -7,8 +7,9 @@ import { useParams, useRouter } from "next/navigation";
 import ArrowW from "@/assets/images/arrowW.svg";
 import { SetCard } from "@/components/ui/SetCard";
 import { NFTCard } from "@/components/ui/NFTCard";
+import { isSetGroup } from "@/utils/modelTypes";
 
-export interface NFTMetadata {
+interface NFTMetadata {
   id: number;
   title: string;
   description: string;
@@ -24,7 +25,7 @@ export interface NFTMetadata {
   location?: boolean;
 }
 
-export interface SetGroup {
+interface SetGroup {
   id: number;
   name: string;
   collection_id: number;
@@ -35,12 +36,7 @@ export interface SetGroup {
   set_nfts: NFTMetadata[];
 }
 
-export type MetadataItem = NFTMetadata | SetGroup;
-
-// Type guard - NOT exported, just defined
-const isSetGroup = (item: MetadataItem): item is SetGroup => {
-  return "set_nfts" in item;
-};
+type MetadataItem = NFTMetadata | SetGroup;
 
 const NFTMetadataPage = () => {
   const [metadata, setMetadata] = useState<MetadataItem[]>([]);

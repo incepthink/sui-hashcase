@@ -117,6 +117,40 @@ type EmittedNFTInfo = {
   token_number: string;
 };
 
+export interface NFTMetadata {
+  id: number;
+  title: string;
+  description: string;
+  animation_url: string;
+  image_url: string;
+  collection_id: number;
+  token_uri: string;
+  attributes: string;
+  createdAt: string;
+  updatedAt: string;
+  is_active: boolean;
+  set_id?: number | null;
+  location?: boolean;
+}
+
+export interface SetGroup {
+  id: number;
+  name: string;
+  collection_id: number;
+  isRandomized: boolean;
+  isUpgradable: boolean;
+  createdAt: string;
+  updatedAt: string;
+  set_nfts: NFTMetadata[];
+}
+
+export type MetadataItem = NFTMetadata | SetGroup;
+
+export const isSetGroup = (item: MetadataItem): item is SetGroup => {
+  return "set_nfts" in item;
+};
+
+
 export type {
   ItemAttributes,
   Item,
