@@ -37,8 +37,8 @@ export interface SetGroup {
 
 export type MetadataItem = NFTMetadata | SetGroup;
 
-// Type guard to check if item is a set group
-export const isSetGroup = (item: MetadataItem): item is SetGroup => {
+// Type guard - NOT exported, just defined
+const isSetGroup = (item: MetadataItem): item is SetGroup => {
   return "set_nfts" in item;
 };
 
