@@ -9,7 +9,7 @@ const notify = (message: string, type?: string) => {
 
 export const notifyPromise = (message: string, type?: string) => {
   const id = toast.loading(message, {
-    position: "top-center",
+    position: "top-right",
     type: (type as ToastOptions["type"]) || "default",
   });
   
@@ -35,7 +35,7 @@ export const notifyResolve = (
   toast.update(id, {
     render: message,
     type: type as ToastOptions["type"],
-    position: "top-center",
+    position: "top-right",
     isLoading: false,
     autoClose: 2000,
     closeButton: true,
