@@ -82,11 +82,13 @@ export default function CollectionLayout({ children }: CollectionLayoutProps) {
   }
 
   return (
-    <div className="min-h-screen bg-[#00041f]">
+    <div className="min-h-screen bg-[#00041f] max-w-[1920px]">
       {/* Collection Banner */}
-      <div className="w-full h-[45vh] max-w-[1920px] bg-[#00041f] relative">
+      <div className="w-full sm:h-[45vh] h-[35vh] max-w-[1920px] bg-[#00041f] relative">
         <img
-          src="/banner.jpg"
+          src={
+            collection.banner_image ? collection.banner_image : "/banner.jpg"
+          }
           alt="banner"
           className="w-full h-full object-cover"
           style={{
@@ -96,7 +98,7 @@ export default function CollectionLayout({ children }: CollectionLayoutProps) {
               "linear-gradient(to bottom, black 70%, transparent 100%)",
           }}
         />
-        <div className="w-full max-w-7xl absolute -mb-5 bottom-0 left-0 right-0 mx-auto flex items-center gap-8">
+        <div className="w-full max-w-7xl absolute -mb-5 bottom-0 left-0 right-0 mx-auto flex items-center gap-8 sm:px-4 px-2">
           <div className="h-24 w-24 rounded-lg overflow-hidden">
             <img
               src={collection.image_uri}
@@ -109,7 +111,7 @@ export default function CollectionLayout({ children }: CollectionLayoutProps) {
       </div>
 
       {/* Tabs Navigation */}
-      <div className="bg-[#00041f] mx-auto max-w-7xl mt-16 border-b border-gray-800">
+      <div className="bg-[#00041f] mx-auto max-w-7xl mt-16 border-b border-gray-800 sm:px-4 px-2">
         <div className="flex gap-12 pl-1">
           {tabs.map((tab) => {
             // Check if pathname contains the tab segment for nested routes
