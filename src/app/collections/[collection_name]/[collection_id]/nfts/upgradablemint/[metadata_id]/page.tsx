@@ -198,27 +198,9 @@ export default function UpgradableMintPage() {
               <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
 
               {/* Level Badge */}
-              <div
-                className={`absolute top-4 left-4 backdrop-blur-sm text-white px-4 py-2 rounded-full font-bold border shadow-lg ${
-                  currentNFT.minted
-                    ? "bg-blue-500/90 border-blue-400/50"
-                    : "bg-green-500/90 border-green-400/50"
-                }`}
-              >
+              <div className="absolute top-4 left-4 bg-black/70 backdrop-blur-sm text-white px-4 py-2 rounded-full text-sm font-medium border border-white/10">
                 Level {currentNFTIndex + 1} {currentNFT.minted && "✓"}
               </div>
-
-              {/* Next Level Preview (if not last) */}
-              {currentNFTIndex < metadataSet.metadata.length - 1 && (
-                <div className="absolute bottom-4 right-4 bg-black/70 backdrop-blur-sm text-white px-3 py-2 rounded-lg text-xs border border-white/10 flex items-center gap-2">
-                  <span>Next:</span>
-                  <img
-                    src={metadataSet.metadata[currentNFTIndex + 1].image_url}
-                    alt="Next level"
-                    className="w-8 h-8 rounded object-cover"
-                  />
-                </div>
-              )}
             </div>
           </div>
 
@@ -251,18 +233,16 @@ export default function UpgradableMintPage() {
             {/* All Levels List */}
             <div className="space-y-3">
               <h2 className="text-xl font-semibold text-white/90">
-                All Levels ({metadataSet.metadata.length})
+                Available NFTs ({metadataSet.metadata.length})
               </h2>
               <div className="space-y-2 max-h-80 overflow-y-auto pr-2 custom-scrollbar">
                 {metadataSet.metadata.map((item, index) => (
                   <div
                     key={item.id}
-                    className={`rounded-xl p-4 border transition-all duration-200 ${
+                    className={`bg-gradient-to-r from-blue-900/30 to-purple-900/30 backdrop-blur-sm rounded-xl p-4 transition-all duration-200 ${
                       index === currentNFTIndex
-                        ? "bg-gradient-to-r from-green-900/40 to-blue-900/40 border-green-500/40"
-                        : item.minted
-                        ? "bg-gradient-to-r from-green-900/20 to-blue-900/20 border-green-500/20"
-                        : "bg-gradient-to-r from-blue-900/20 to-purple-900/20 border-blue-500/20"
+                        ? "border-2 border-purple-500/60 shadow-lg shadow-purple-500/20"
+                        : "border border-blue-500/20 hover:border-blue-500/40"
                     }`}
                   >
                     <div className="flex items-start gap-3">
@@ -273,22 +253,15 @@ export default function UpgradableMintPage() {
                       />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          <span className="text-xs font-bold text-gray-400">
+                          <span className="text-xs font-medium text-gray-400">
                             Level {index + 1}
                           </span>
                           {item.minted && (
-                            <span className="text-green-400 text-xs">
-                              ✓ Unlocked
-                            </span>
+                            <span className="text-green-400 text-xs">✓</span>
                           )}
-                          {index === currentNFTIndex && !item.minted && (
-                            <span className="text-green-400 text-xs font-bold">
+                          {index === currentNFTIndex && (
+                            <span className="text-purple-400 text-xs font-semibold">
                               → Current
-                            </span>
-                          )}
-                          {!item.minted && index > currentNFTIndex && (
-                            <span className="text-gray-500 text-xs">
-                              🔒 Locked
                             </span>
                           )}
                         </div>
@@ -314,10 +287,27 @@ export default function UpgradableMintPage() {
                   className={`w-full font-bold text-lg px-8 py-4 rounded-xl transition-all duration-200 transform border-2 flex items-center justify-center gap-3 ${
                     allMinted || currentNFT.minted
                       ? "bg-gray-600 text-gray-400 cursor-not-allowed border-gray-500"
-                      : "bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white hover:scale-105 shadow-lg hover:shadow-xl border-white/10"
+                      : "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white hover:scale-105 shadow-lg hover:shadow-xl border-white/10"
                   }`}
                 >
-                  {currentNFTIndex === 0
+                  <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M13 10V3L4 14h7v7l9-11h-7z"
+                    />
+                  </svg>
+                  {allMinted
+                    ? "Max Level Reached"
+                    : currentNFT.minted
+                    ? "Level Already Minted"
+                    : currentNFTIndex === 0
                     ? "Mint Level 1"
                     : `Upgrade to Level ${currentNFTIndex + 1}`}
                   <svg
@@ -339,8 +329,9 @@ export default function UpgradableMintPage() {
               )}
               <p className="text-center text-gray-400 text-sm mt-3">
                 {isWalletConnected &&
-                  allMinted &&
-                  "🎉 You've reached the max level!"}
+                  (allMinted
+                    ? "🎉 You've reached the max level!"
+                    : `Mint to unlock Level ${currentNFTIndex + 1}`)}
               </p>
             </div>
           </div>
