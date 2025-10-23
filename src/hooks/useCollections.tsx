@@ -201,4 +201,32 @@ export const useCollectionSearch = (searchTerm: string) => {
   };
 };
 
+export const getCollectionById = async (
+  collectionId: number | string
+): Promise<{ collection: Collection | null }> => {
+  try {
+    const res = await axiosInstance.get(`/platform/collections`);
+    const collectionsData: CollectionsResponse = res.data;
+
+    const collections =
+      collectionsData.suiCollections ||
+      collectionsData.collections ||
+      collectionsData ||
+      [];
+
+    const collection =
+      collections.find(
+        (col: Collection) =>
+          col.id === Number(collectionId) ||
+          col.id === collectionId ||
+          col.contract_address === collectionId
+      ) || null;
+
+    return { collection };
+  } catch (error) {
+    console.error(`Error fetching collection ${collectionId}:`, error);
+    return { collection: null };
+  }
+};
+
 export type { Collection, CollectionsResponse };

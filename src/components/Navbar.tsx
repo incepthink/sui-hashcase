@@ -17,7 +17,6 @@ import {
 import { Menu as MenuIcon, Close as CloseIcon } from "@mui/icons-material";
 import { useCurrentAccount } from "@mysten/dapp-kit";
 import { useZkLogin } from "@mysten/enoki/react";
-import { useAccount } from "wagmi";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
@@ -31,36 +30,70 @@ export const Navbar = () => {
   const router = useRouter();
 
   // Global store
-  const { connectedWallets, getWalletForChain } = useGlobalAppStore();
+  const { connectedWallets, getWalletForChain, user } = useGlobalAppStore();
 
-  // Individual wallet hooks
+  // Sui wallet hooks
   const currentAccount = useCurrentAccount(); // Sui wallet
   const { address: zkAddress } = useZkLogin(); // Sui zkLogin
-  const { address: evmAddress } = useAccount(); // EVM wallet
 
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [displayAddress, setDisplayAddress] = useState<string | null>(null);
 
   const open = Boolean(anchorEl);
 
-  // Determine which address to use for profile navigation
   const getProfileAddress = (): string | null => {
     // Priority: Sui wallet -> zkLogin -> EVM wallet
-    return currentAccount?.address || zkAddress || evmAddress || null;
+    return currentAccount?.address || zkAddress || null;
+  };
+
+  // Check if wallet is connected
+  const isWalletConnected = (): boolean => {
+    // Check Sui wallet connection through global store
+    const suiWallet = getWalletForChain?.("sui");
+    const isSuiConnected = Boolean(suiWallet?.address);
+
+    // Connected if either Sui wallet or zkLogin is active
+    if (isSuiConnected && currentAccount?.address) {
+      return true;
+    }
+
+    if (zkAddress) {
+      return true;
+    }
+
+    return false;
+  };
+
+  // Determine which address to use for display
+  const getDisplayAddress = (): string | null => {
+    // Check Sui wallet connection through global store
+    const suiWallet = getWalletForChain?.("sui");
+    const isSuiConnected = Boolean(suiWallet?.address);
+
+    // Priority: Sui wallet -> zkLogin
+    // Only return address if the respective wallet is connected
+    if (isSuiConnected && currentAccount?.address) {
+      return currentAccount.address;
+    }
+
+    // zkLogin typically has its own connection state
+    if (zkAddress) {
+      return zkAddress;
+    }
+
+    return null;
   };
 
   // Update display address when wallets change
   useEffect(() => {
-    const profileAddress = getProfileAddress();
+    const address = getDisplayAddress();
 
-    if (profileAddress) {
-      setDisplayAddress(
-        profileAddress.slice(0, 6) + "..." + profileAddress.slice(-4)
-      );
+    if (address) {
+      setDisplayAddress(address.slice(0, 6) + "..." + address.slice(-4));
     } else {
       setDisplayAddress(null);
     }
-  }, [currentAccount?.address, zkAddress, evmAddress]);
+  }, [currentAccount?.address, zkAddress, connectedWallets]);
 
   const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -71,13 +104,22 @@ export const Navbar = () => {
   };
 
   const handleProfileClick = () => {
+    // Check if wallet is connected
+    if (!isWalletConnected()) {
+      toast.error("Please connect your wallet to view your profile");
+      return;
+    }
+
     const profileAddress = getProfileAddress();
 
+    // If user exists with id, redirect to /profile/user.id
     if (profileAddress) {
       router.push(`/profile/${profileAddress}`);
       handleClose();
     } else {
-      toast.error("Please connect your wallet to view your profile");
+      toast.error(
+        "User profile not found. Please try reconnecting your wallet."
+      );
     }
   };
 

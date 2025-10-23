@@ -13,7 +13,7 @@ interface UserData {
 interface ProfileModalProps {
   userData: UserData;
   onClose: () => void;
-  onUpdate: () => void;
+  onUpdate: (updatedData: UserData) => void;
 }
 
 const UpdateProfileModal = ({
@@ -167,7 +167,7 @@ const UpdateProfileModal = ({
       const res = await axiosInstance.post("/user", updatedFormData);
       console.log(res);
 
-      onUpdate();
+      onUpdate(updatedFormData);
       onClose();
     } catch (err) {
       setError("Failed to update profile. Please try again.");

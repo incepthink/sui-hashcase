@@ -521,6 +521,7 @@ const App: React.FC = () => {
             searchQuery={searchQuery}
             density={density}
             isOwnProfile={isOwnProfile()}
+            address={userAddress}
           />
         )}
 

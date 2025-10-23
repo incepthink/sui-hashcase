@@ -1,9 +1,10 @@
 "use client";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import NftCard from "@/components/NftCard";
 import backgroundImageHeroSection from "@/assets/images/high_rise.jpg";
+import { getCollectionById } from "@/hooks/useCollections";
 
 interface FetchedNFT {
   id: number;
@@ -27,6 +28,7 @@ interface NFTsTabProps {
   searchQuery: string;
   density: "comfortable" | "compact";
   isOwnProfile: boolean;
+  address: string;
 }
 
 const NFTsTab: React.FC<NFTsTabProps> = ({
@@ -34,11 +36,48 @@ const NFTsTab: React.FC<NFTsTabProps> = ({
   searchQuery,
   density,
   isOwnProfile,
+  address,
 }) => {
   const router = useRouter();
+  const [collectionMap, setCollectionMap] = useState<Map<number, string>>(
+    new Map()
+  );
+
+  useEffect(() => {
+    const fetchCollectionNames = async () => {
+      if (!fetchedNfts || fetchedNfts.length === 0) return;
+
+      // Get unique collection IDs
+      const uniqueCollectionIds = Array.from(
+        new Set(fetchedNfts.map((nft) => nft.collection_id))
+      );
+
+      // Create map of collection_id -> collection_name
+      const tempMap = new Map<number, string>();
+
+      for (const collectionId of uniqueCollectionIds) {
+        try {
+          const collectionData = await getCollectionById(collectionId);
+          if (collectionData?.collection?.name) {
+            tempMap.set(collectionId, collectionData.collection.name);
+          }
+        } catch (error) {
+          console.error(`Failed to fetch collection ${collectionId}:`, error);
+        }
+      }
+
+      setCollectionMap(tempMap);
+    };
+
+    fetchCollectionNames();
+  }, [fetchedNfts]);
 
   const handleNFTClick = (nft: FetchedNFT) => {
-    router.push(`/loyalties/${nft.collection_id}`);
+    router.push(`/profile/${address}/nft/${nft.metadata_id}`);
+  };
+
+  const getCollectionName = (collectionId: number): string => {
+    return collectionMap.get(collectionId) || `collection-${collectionId}`;
   };
 
   return (
@@ -58,7 +97,7 @@ const NFTsTab: React.FC<NFTsTabProps> = ({
             .map((nft: FetchedNFT) => (
               <NftCard
                 key={nft.id}
-                href={`/loyalties/${nft.collection_id}`}
+                href={`/profile/${address}/nft/${nft.metadata_id}`}
                 imageUrl={nft.image_uri}
                 title={nft.name}
                 description={nft.description}
