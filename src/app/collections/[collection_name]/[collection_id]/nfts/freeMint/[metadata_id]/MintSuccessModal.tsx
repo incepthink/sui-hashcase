@@ -19,11 +19,15 @@ interface Metadata {
 interface MintSuccessModalProps {
   onClose: () => void;
   nftData: Metadata;
+  userAddress: string;
+  metadataId: number;
 }
 
 const MintSuccessModal: React.FC<MintSuccessModalProps> = ({
   onClose,
   nftData,
+  userAddress,
+  metadataId,
 }) => {
   const params = useParams();
   const [isOpening, setIsOpening] = useState<boolean>(true);
@@ -39,7 +43,7 @@ const MintSuccessModal: React.FC<MintSuccessModalProps> = ({
     return () => clearTimeout(timer);
   }, []);
 
-  const nftUrl = `https://sui.hashcase.co/collections/${params.collection_name}/${params.collection_id}/nfts/freemint/${params.metadata_id}`;
+  const nftUrl = `https://sui.hashcase.co/profile/${userAddress}/nft/${metadataId}`;
 
   // Tweet content
   const tweetText = `🚀 Just minted my NFT "${nftData.title}"! Check it out at ${nftUrl} #NFTCommunity #Web3`;

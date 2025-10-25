@@ -5,11 +5,15 @@ import { Metadata } from "@/utils/modelTypes";
 interface MintSuccessModalProps {
   onClose: () => void;
   nftData: Metadata;
+  userAddress: string;
+  metadataId: number;
 }
 
 const MintSuccessModal: React.FC<MintSuccessModalProps> = ({
   onClose,
   nftData,
+  userAddress,
+  metadataId,
 }) => {
   const [isOpening, setIsOpening] = useState<boolean>(true);
   const [showContents, setShowContents] = useState<boolean>(false);
@@ -24,8 +28,10 @@ const MintSuccessModal: React.FC<MintSuccessModalProps> = ({
     return () => clearTimeout(timer);
   }, []);
 
+  const nftUrl = `https://sui.hashcase.co/profile/${userAddress}/nft/${metadataId}`;
+
   // Tweet content
-  const tweetText = `🚀 Just minted my NFT "${nftData.title}"! Check it out at ${nftData.image_url} #NFTCommunity #Web3`;
+  const tweetText = `🚀 Just minted my NFT "${nftData.title}"! Check it out at ${nftUrl} #NFTCommunity #Web3`;
 
   const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(
     tweetText

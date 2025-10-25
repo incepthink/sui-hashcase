@@ -343,6 +343,8 @@ export default function UpgradableMintPage() {
         <MintSuccessModal
           onClose={() => setShowSuccessModal(false)}
           nftData={selectedMetadata}
+          userAddress={(userWalletAddress || currentAccount?.address)!}
+          metadataId={selectedMetadata.id}
         />
       )}
 

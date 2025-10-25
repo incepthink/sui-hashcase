@@ -85,9 +85,15 @@ export default function NFTPage() {
   const currentAccount = useCurrentAccount();
   const { mutateAsync: signAndExecuteTransaction } =
     useSignAndExecuteTransaction();
-  const { userWalletAddress, hasWalletForChain } = useGlobalAppStore();
+  const { userWalletAddress, hasWalletForChain, user } = useGlobalAppStore();
 
   const [mounted, setMounted] = useState(false);
+
+  const metadataId = (
+    Array.isArray(params.metadata_id)
+      ? params.metadata_id[0]
+      : params.metadata_id
+  ) as string;
 
   useEffect(() => {
     setMounted(true);
@@ -298,26 +304,29 @@ export default function NFTPage() {
     );
 
     try {
-      const metadataId = (
-        Array.isArray(params.metadata_id)
-          ? params.metadata_id[0]
-          : params.metadata_id
-      ) as string;
-
       const mintKey = getMintAttemptKey(metadataId, currentAccount.address);
       localStorage.setItem(mintKey, "true");
 
-      const requestBody = {
-        recipient_address: currentAccount.address,
+      const nftForm = {
+        collection_id: nftData?.collection_id,
+        name: nftData?.title,
+        description: nftData?.description,
+        image_url: nftData?.image_url,
+        attributes: nftData?.attributes || "",
+        recipient: userWalletAddress,
         metadata_id: parseInt(metadataId),
-        transaction_type: "nft_mint",
       };
 
-      console.log("🚀 Minting NFT with request:", requestBody);
+      console.log("🚀 Minting NFT with request:", nftForm);
 
       const response = await axiosInstance.post(
-        "/platform/transaction/gasless-mint",
-        requestBody
+        "/platform/sui/mint-nft",
+        nftForm,
+        {
+          params: {
+            user_address: userWalletAddress || currentAccount.address,
+          },
+        }
       );
 
       console.log("✅ Mint successful:", response.data);
@@ -585,6 +594,8 @@ export default function NFTPage() {
 
       {showSuccessModal && (
         <MintSuccessModal
+          userAddress={userWalletAddress || currentAccount?.address!}
+          metadataId={Number(metadataId)}
           onClose={() => setShowSuccessModal(false)}
           nftData={nftData}
         />

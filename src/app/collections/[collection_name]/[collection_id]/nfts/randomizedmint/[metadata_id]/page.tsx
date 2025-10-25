@@ -385,6 +385,8 @@ export default function NFTSetPage() {
         <MintSuccessModal
           onClose={() => setShowSuccessModal(false)}
           nftData={selectedMetadata}
+          userAddress={(userWalletAddress || currentAccount?.address)!}
+          metadataId={selectedMetadata.id}
         />
       )}
 
