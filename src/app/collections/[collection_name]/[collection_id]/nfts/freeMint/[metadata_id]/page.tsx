@@ -49,6 +49,7 @@ interface Metadata {
   latitude?: string;
   longitude?: string;
   is_active?: boolean;
+  unlockable_content?: string | null;
 }
 
 type Coordinates = {
@@ -78,7 +79,6 @@ export default function NFTPage() {
   const [isMetadataActive, setIsMetadataActive] = useState(true);
   const [hasMintAttempted, setHasMintAttempted] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const { address } = useZkLogin();
   const { sponsorSignAndExecute } = useSponsorSignAndExecute();
@@ -235,7 +235,10 @@ export default function NFTPage() {
             longitude: position.coords.longitude,
           });
         },
-        (error: GeolocationPositionError) => reject(error),
+        (error: GeolocationPositionError) => {
+          console.error("Geolocation error:", error);
+          reject(error);
+        },
         {
           enableHighAccuracy: true,
           timeout: 10000,
@@ -247,90 +250,95 @@ export default function NFTPage() {
 
   const handleRefreshLocation = async () => {
     try {
-      setLoading(true);
+      notify("Checking location permission...", "info");
       const coords = await getCurrentPosition();
       console.log("📍 Refreshed location:", coords);
       setLocation(coords);
-
-      // Pass coords directly to avoid stale state
+      setLocationFetched(true);
+      notify("Location updated!", "success");
       await fetchNFTData(coords);
-    } catch (error) {
-      console.error("Failed to refresh location:", error);
-      notify("Failed to get location. Please try again.", "error");
-      setLoading(false);
+    } catch (error: any) {
+      console.error("Location refresh failed:", error);
+      if (error.code === 1) {
+        notify(
+          "Please enable location permissions in your browser settings",
+          "error"
+        );
+      } else {
+        notify("Failed to get location. Please try again.", "error");
+      }
     }
   };
 
   const handleGaslessMintAndTransfer = async () => {
-    if (!nftData || !userWalletAddress) {
+    if (!currentAccount?.address) {
       notify("Please connect your wallet first", "error");
       return;
     }
 
-    const notifyId = notifyPromise(
-      "Minting NFT... this might take some time...",
-      "info"
-    );
+    if (!isMetadataActive) {
+      notify("Minting has been disabled by the owner", "error");
+      return;
+    }
+
+    if (hasMintAttempted) {
+      notify("You have already minted this NFT", "info");
+      return;
+    }
+
+    if (!canMintAgain) {
+      notify("You have already minted this NFT", "info");
+      return;
+    }
+
     setMinting(true);
+    const toastId = notifyPromise(
+      "Processing your mint...",
+      "Please wait while we mint your NFT"
+    );
 
     try {
-      let attributesArray = [];
-      if (nftData.attributes) {
-        try {
-          if (typeof nftData.attributes === "string") {
-            try {
-              attributesArray = JSON.parse(nftData.attributes);
-            } catch {
-              const pairs = nftData.attributes
-                .split(",")
-                .map((pair) => pair.trim());
-              attributesArray = pairs.map((pair) => {
-                const [key, value] = pair.split(":").map((s) => s.trim());
-                return { trait_type: key || "Property", value: value || pair };
-              });
-            }
-          } else if (Array.isArray(nftData.attributes)) {
-            attributesArray = nftData.attributes;
-          }
-        } catch (error) {
-          console.warn("Error parsing attributes:", error);
-        }
-      }
+      const metadataId = (
+        Array.isArray(params.metadata_id)
+          ? params.metadata_id[0]
+          : params.metadata_id
+      ) as string;
 
-      await axiosInstance.post(
-        "/platform/sui/mint-nft",
-        {
-          collection_id: nftData.collection_id,
-          name: nftData.title || nftData.name,
-          description: nftData.description,
-          image_url: nftData.image_url,
-          attributes: attributesArray,
-          recipient: userWalletAddress,
-          metadata_id: nftData.id,
-        },
-        {
-          params: {
-            user_address: userWalletAddress || currentAccount?.address,
-          },
-        }
+      const mintKey = getMintAttemptKey(metadataId, currentAccount.address);
+      localStorage.setItem(mintKey, "true");
+
+      const requestBody = {
+        recipient_address: currentAccount.address,
+        metadata_id: parseInt(metadataId),
+        transaction_type: "nft_mint",
+      };
+
+      console.log("🚀 Minting NFT with request:", requestBody);
+
+      const response = await axiosInstance.post(
+        "/platform/transaction/gasless-mint",
+        requestBody
       );
 
-      const mintKey = getMintAttemptKey(params.metadata_id!, userWalletAddress);
-      localStorage.setItem(mintKey, "true");
+      console.log("✅ Mint successful:", response.data);
+      notifyResolve(toastId, "NFT minted successfully!", "success");
       setHasMintAttempted(true);
       setCanMintAgain(false);
-
-      notifyResolve(
-        notifyId,
-        "NFT Minted Successfully! Check Your Wallet",
-        "success"
-      );
       setShowSuccessModal(true);
     } catch (error: any) {
-      console.error("Minting error:", error);
+      console.error("❌ Mint failed:", error);
+      const metadataId = (
+        Array.isArray(params.metadata_id)
+          ? params.metadata_id[0]
+          : params.metadata_id
+      ) as string;
+
+      const mintKey = getMintAttemptKey(metadataId, currentAccount.address);
+      localStorage.removeItem(mintKey);
+
       const errorMessage =
-        error.response?.data?.error || error.error || "Error minting NFT";
-      notifyResolve(notifyId, errorMessage, "error");
+        error?.response?.data?.error || "Failed to mint NFT. Please try again.";
+      notifyResolve(toastId, errorMessage, "error");
     } finally {
       setMinting(false);
     }
@@ -340,8 +348,8 @@ export default function NFTPage() {
     if (!isMetadataActive) {
       return {
         disabled: true,
-        text: "Disabled by Owner",
-        className: "bg-red-500 text-white cursor-not-allowed opacity-50",
+        text: "Minting Disabled",
+        className: "bg-red-500 text-white cursor-not-allowed opacity-75",
         icon: <Ban className="w-4 h-4" />,
       };
     }
@@ -554,6 +562,10 @@ export default function NFTPage() {
                 </div>
               )}
 
+              {nftData.unlockable_content && (
+                <UnlockableNft isMinted={!canMintAgain || hasMintAttempted} />
+              )}
+
               {isWalletConnected ? (
                 <button
                   onClick={handleGaslessMintAndTransfer}
@@ -570,10 +582,7 @@ export default function NFTPage() {
           </div>
         </div>
       </div>
-      <UnlockableNft
-        isOpen={isModalOpen}
-        closeModal={() => setIsModalOpen(false)}
-      />
+
       {showSuccessModal && (
         <MintSuccessModal
           onClose={() => setShowSuccessModal(false)}

@@ -1,50 +1,20 @@
 import React from "react";
-
-import { X, Lock } from "lucide-react";
-import toast from "react-hot-toast";
+import { Lock } from "lucide-react";
 
 interface UnlockableNft {
-  isOpen: boolean;
-  closeModal: () => void;
+  isMinted?: boolean;
 }
 
-const UnlockableNft: React.FC<UnlockableNft> = ({ isOpen, closeModal }) => {
-  if (!isOpen) return null;
-
-  const handleReveal = () => {
-    toast.error("Mint the NFT to view unlockable content");
-    closeModal();
-  };
-
+const UnlockableNft: React.FC<UnlockableNft> = ({ isMinted = false }) => {
   return (
-    <div
-      className="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-50"
-      onClick={closeModal}
-    >
-      <div
-        className="bg-gradient-to-br from-blue-400 to-purple-500 p-8 rounded-2xl shadow-2xl text-white relative w-[450px] space-y-6"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Close Button */}
-        <button
-          onClick={closeModal}
-          className="absolute top-4 right-4 text-white/80 hover:text-white transition-colors duration-300"
-        >
-          <X size={24} />
-        </button>
-
-        <div>Mint the NFT to view unlockable content.</div>
-
-        {/* Buttons */}
-        <div className="flex flex-col gap-4">
-          <button
-            onClick={handleReveal}
-            className="flex items-center justify-center gap-2 w-full px-6 py-3 bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 hover:bg-white/20 transition-all duration-300 text-white font-semibold"
-          >
-            <Lock size={20} />
-            View Unlockable Content
-          </button>
-        </div>
+    <div className="w-full p-4 bg-gradient-to-br from-blue-400/20 to-purple-500/20 border border-blue-400/30 rounded-lg">
+      <div className="flex items-center gap-3">
+        <Lock className="w-5 h-5 text-blue-300 flex-shrink-0" />
+        <p className="text-blue-200 text-sm font-medium">
+          {isMinted
+            ? "Visit the NFT page from your profile to view unlockable content!"
+            : "This NFT contains unlockable content!"}
+        </p>
       </div>
     </div>
   );

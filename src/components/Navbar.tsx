@@ -111,6 +111,7 @@ export const Navbar = () => {
     }
 
     const profileAddress = getProfileAddress();
+    console.log("PROFILEADRERS", profileAddress);
 
     // If user exists with id, redirect to /profile/user.id
     if (profileAddress) {
