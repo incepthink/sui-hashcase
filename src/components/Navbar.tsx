@@ -42,22 +42,22 @@ export const Navbar = () => {
   const open = Boolean(anchorEl);
 
   const getProfileAddress = (): string | null => {
-    // Priority: Sui wallet -> zkLogin -> EVM wallet
-    return currentAccount?.address || zkAddress || null;
+    // FIXED: Priority: zkLogin -> Sui wallet
+    return zkAddress || currentAccount?.address || null;
   };
 
   // Check if wallet is connected
   const isWalletConnected = (): boolean => {
+    // FIXED: Check zkLogin first
+    if (zkAddress) {
+      return true;
+    }
+
     // Check Sui wallet connection through global store
     const suiWallet = getWalletForChain?.("sui");
     const isSuiConnected = Boolean(suiWallet?.address);
 
-    // Connected if either Sui wallet or zkLogin is active
     if (isSuiConnected && currentAccount?.address) {
-      return true;
-    }
-
-    if (zkAddress) {
       return true;
     }
 
@@ -66,19 +66,17 @@ export const Navbar = () => {
 
   // Determine which address to use for display
   const getDisplayAddress = (): string | null => {
+    // FIXED: Priority: zkLogin -> Sui wallet
+    if (zkAddress) {
+      return zkAddress;
+    }
+
     // Check Sui wallet connection through global store
     const suiWallet = getWalletForChain?.("sui");
     const isSuiConnected = Boolean(suiWallet?.address);
 
-    // Priority: Sui wallet -> zkLogin
-    // Only return address if the respective wallet is connected
     if (isSuiConnected && currentAccount?.address) {
       return currentAccount.address;
-    }
-
-    // zkLogin typically has its own connection state
-    if (zkAddress) {
-      return zkAddress;
     }
 
     return null;
