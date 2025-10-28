@@ -18,18 +18,20 @@ export const Hero = () => {
   const { isUserVerified } = useGlobalAppStore();
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
 
-  const user_address = currentAccount?.address || zkAddress;
+  // Prioritize zkLogin address when available
+  const user_address = zkAddress || currentAccount?.address;
   const isWalletConnected = !!(user_address && isUserVerified);
 
   useEffect(() => {
-    if (isUserVerified && currentAccount?.address) {
+    // Prioritize zkLogin address over wallet address
+    if (isUserVerified && zkAddress) {
+      setWalletAddress(zkAddress.slice(0, 10) + "..." + zkAddress.slice(-8));
+    } else if (isUserVerified && currentAccount?.address) {
       setWalletAddress(
         currentAccount.address.slice(0, 10) +
           "..." +
           currentAccount.address.slice(-8)
       );
-    } else if (isUserVerified && zkAddress) {
-      setWalletAddress(zkAddress.slice(0, 10) + "..." + zkAddress.slice(-8));
     } else {
       setWalletAddress(null);
     }

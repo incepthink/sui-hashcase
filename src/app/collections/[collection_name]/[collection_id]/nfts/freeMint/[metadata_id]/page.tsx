@@ -99,7 +99,8 @@ export default function NFTPage() {
     setMounted(true);
   }, []);
 
-  const isWalletConnected = mounted && hasWalletForChain("sui");
+  // ONLY FIX: Check for zkLogin OR regular wallet
+  const isWalletConnected = mounted && (!!address || hasWalletForChain("sui"));
 
   // Get location ONCE on mount
   useEffect(() => {
@@ -129,17 +130,15 @@ export default function NFTPage() {
     }
   }, [params.metadata_id, locationFetched]);
 
-  // Check localStorage for mint attempts
+  // Check localStorage for mint attempts - ONLY FIX: Use zkLogin address if available
   useEffect(() => {
-    if (params.metadata_id && currentAccount?.address) {
-      const mintKey = getMintAttemptKey(
-        params.metadata_id,
-        currentAccount.address
-      );
+    const walletAddr = address || currentAccount?.address;
+    if (params.metadata_id && walletAddr) {
+      const mintKey = getMintAttemptKey(params.metadata_id, walletAddr);
       const previouslyAttempted = localStorage.getItem(mintKey) === "true";
       setHasMintAttempted(previouslyAttempted);
     }
-  }, [params.metadata_id, currentAccount?.address]);
+  }, [params.metadata_id, currentAccount?.address, address]);
 
   const getMintAttemptKey = (
     metadataId: string | string[],
@@ -277,7 +276,9 @@ export default function NFTPage() {
   };
 
   const handleGaslessMintAndTransfer = async () => {
-    if (!currentAccount?.address) {
+    // ONLY FIX: Check zkLogin address OR currentAccount
+    const walletAddr = address || currentAccount?.address;
+    if (!walletAddr) {
       notify("Please connect your wallet first", "error");
       return;
     }
@@ -304,7 +305,7 @@ export default function NFTPage() {
     );
 
     try {
-      const mintKey = getMintAttemptKey(metadataId, currentAccount.address);
+      const mintKey = getMintAttemptKey(metadataId, walletAddr);
       localStorage.setItem(mintKey, "true");
 
       const nftForm = {
@@ -319,12 +320,14 @@ export default function NFTPage() {
 
       console.log("🚀 Minting NFT with request:", nftForm);
 
+      // ONLY FIX: Use zkLogin address OR currentAccount address
       const response = await axiosInstance.post(
         "/platform/sui/mint-nft",
         nftForm,
         {
           params: {
-            user_address: userWalletAddress || currentAccount.address,
+            user_address:
+              address || userWalletAddress || currentAccount?.address,
           },
         }
       );
@@ -342,7 +345,7 @@ export default function NFTPage() {
           : params.metadata_id
       ) as string;
 
-      const mintKey = getMintAttemptKey(metadataId, currentAccount.address);
+      const mintKey = getMintAttemptKey(metadataId, walletAddr);
       localStorage.removeItem(mintKey);
 
       const errorMessage =
@@ -594,7 +597,7 @@ export default function NFTPage() {
 
       {showSuccessModal && (
         <MintSuccessModal
-          userAddress={userWalletAddress || currentAccount?.address!}
+          userAddress={address || userWalletAddress || currentAccount?.address!}
           metadataId={Number(metadataId)}
           onClose={() => setShowSuccessModal(false)}
           nftData={nftData}
