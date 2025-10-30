@@ -30,7 +30,8 @@ export const Navbar = () => {
   const router = useRouter();
 
   // Global store
-  const { connectedWallets, getWalletForChain, user } = useGlobalAppStore();
+  const { connectedWallets, getWalletForChain, user, isUserVerified } =
+    useGlobalAppStore();
 
   // Sui wallet hooks
   const currentAccount = useCurrentAccount(); // Sui wallet
@@ -41,41 +42,38 @@ export const Navbar = () => {
 
   const open = Boolean(anchorEl);
 
+  // Get the ACTUAL wallet from global store (same as ConnectButton does)
+  const suiWallet = getWalletForChain("sui");
+
   const getProfileAddress = (): string | null => {
-    // FIXED: Priority: zkLogin -> Sui wallet
+    // FIXED: Get address from global store (where it actually exists!)
+    if (suiWallet?.address) {
+      return suiWallet.address;
+    }
+
+    // Fallback to hooks (but these are undefined in your case)
     return zkAddress || currentAccount?.address || null;
   };
 
-  // Check if wallet is connected
+  // Check if wallet is connected - USE GLOBAL STORE
   const isWalletConnected = (): boolean => {
-    // FIXED: Check zkLogin first
-    if (zkAddress) {
-      return true;
-    }
-
-    // Check Sui wallet connection through global store
-    const suiWallet = getWalletForChain?.("sui");
-    const isSuiConnected = Boolean(suiWallet?.address);
-
-    if (isSuiConnected && currentAccount?.address) {
-      return true;
-    }
-
-    return false;
+    // Check if user is verified AND has wallet in store (SAME AS CONNECT BUTTON!)
+    return isUserVerified && Boolean(suiWallet?.address);
   };
 
   // Determine which address to use for display
   const getDisplayAddress = (): string | null => {
-    // FIXED: Priority: zkLogin -> Sui wallet
+    // Use global store wallet (same as ConnectButton)
+    if (isUserVerified && suiWallet?.address) {
+      return suiWallet.address;
+    }
+
+    // Fallback to hooks
     if (zkAddress) {
       return zkAddress;
     }
 
-    // Check Sui wallet connection through global store
-    const suiWallet = getWalletForChain?.("sui");
-    const isSuiConnected = Boolean(suiWallet?.address);
-
-    if (isSuiConnected && currentAccount?.address) {
+    if (currentAccount?.address) {
       return currentAccount.address;
     }
 
@@ -91,7 +89,13 @@ export const Navbar = () => {
     } else {
       setDisplayAddress(null);
     }
-  }, [currentAccount?.address, zkAddress, connectedWallets]);
+  }, [
+    currentAccount?.address,
+    zkAddress,
+    connectedWallets,
+    suiWallet,
+    isUserVerified,
+  ]);
 
   const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -102,14 +106,19 @@ export const Navbar = () => {
   };
 
   const handleProfileClick = () => {
+    const profileAddress = getProfileAddress();
+    console.log("PROFILE ADDRESS:", profileAddress);
+    console.log("IS WALLET CONNECTED:", isWalletConnected());
+    console.log("CURRENT ACCOUNT:", currentAccount?.address);
+    console.log("ZK ADDRESS:", zkAddress);
+    console.log("SUI WALLET FROM STORE:", suiWallet);
+    console.log("IS USER VERIFIED:", isUserVerified);
+
     // Check if wallet is connected
     if (!isWalletConnected()) {
       toast.error("Please connect your wallet to view your profile");
       return;
     }
-
-    const profileAddress = getProfileAddress();
-    console.log("PROFILEADRERS", profileAddress);
 
     // If user exists with id, redirect to /profile/user.id
     if (profileAddress) {
