@@ -1,7 +1,7 @@
 "use client";
 
 import axiosInstance from "@/utils/axios";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import ArrowW from "@/assets/images/arrowW.svg";
@@ -67,6 +67,12 @@ const NFTMetadataPage = () => {
     fetchMetadata();
   }, [params.collection_id]);
 
+  // Reverse order for rendering without mutating state
+  const reversedMetadata = useMemo(
+    () => metadata.slice().reverse(),
+    [metadata]
+  );
+
   if (loading) {
     return (
       <div className="py-10 bg-gradient-to-b from-[#00041f] to-[#030828] flex items-center justify-center min-h-screen">
@@ -91,13 +97,13 @@ const NFTMetadataPage = () => {
 
       {/* NFT Grid Container */}
       <div className="max-w-7xl mx-auto">
-        {metadata.length === 0 ? (
+        {reversedMetadata.length === 0 ? (
           <div className="text-center text-gray-300 py-12">
             <p className="text-lg">No NFTs found in this collection.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
-            {metadata.map((item) => {
+            {reversedMetadata.map((item) => {
               if (isSetGroup(item)) {
                 return (
                   <SetCard
@@ -110,7 +116,7 @@ const NFTMetadataPage = () => {
               } else {
                 return (
                   <NFTCard
-                    key={item.id}
+                    key={`nft-${item.id}`}
                     nft={item}
                     collectionName={params.collection_name as string}
                     collectionId={params.collection_id as string}
