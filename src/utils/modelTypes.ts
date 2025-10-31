@@ -65,6 +65,7 @@ type Metadata = {
   latitude: number | null;
   longitude: number | null;
   set_id: number;
+  probability?: string | null
   createdAt: string;
   updatedAt: string;
 };
