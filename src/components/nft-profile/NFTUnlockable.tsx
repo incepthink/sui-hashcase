@@ -19,6 +19,7 @@ export default function NFTUnlockable({ content, isOwner }: NFTUnlockableProps) 
       ) : (
         <>
           <h3 className="font-semibold text-orange-200 mb-2 flex items-center gap-2">
+          {/* Checking */}
             <span>🔐</span> Mint the NFT to view Unlockable Content
           </h3>
           <p className="text-sm text-orange-100 blur-sm select-none">{dummyText}</p>
