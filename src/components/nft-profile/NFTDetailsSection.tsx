@@ -8,6 +8,7 @@ import NFTUnlockable from "./NFTUnlockable";
 import NFTOwnerInfo from "./NFTOwnerInfo";
 import NFTContractInfo from "./NFTContractInfo";
 import NFTAdditionalDetails from "./NFTAdditionalDetails";
+import { useGlobalAppStore } from "@/store/globalAppStore";
 
 interface NFTDetailsSectionProps {
   metadata: Metadata;
@@ -18,6 +19,12 @@ export default function NFTDetailsSection({
   metadata,
   ownerAddress,
 }: NFTDetailsSectionProps) {
+  const { connectedWallets } = useGlobalAppStore();
+  
+  const connectedUserAddress = connectedWallets?.sui?.address || connectedWallets?.evm?.address;
+  const isOwner = !!(connectedUserAddress && ownerAddress && 
+    connectedUserAddress.toLowerCase() === ownerAddress.toLowerCase());
+
   return (
     <div className="space-y-6">
       <NFTHeader metadata={metadata} />
@@ -45,7 +52,7 @@ export default function NFTDetailsSection({
       )}
 
       {metadata.unlockable_content && (
-        <NFTUnlockable content={metadata.unlockable_content} />
+        <NFTUnlockable content={metadata.unlockable_content} isOwner={isOwner} />
       )}
 
       {/* {metadata.collection?.contract && (
