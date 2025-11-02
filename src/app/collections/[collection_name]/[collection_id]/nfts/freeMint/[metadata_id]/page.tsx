@@ -20,7 +20,7 @@ import {
 
 import axiosInstance from "@/utils/axios";
 import UnlockableNft from "./UnlockableNft";
-import MintSuccessModal from "./MintSuccessModal";
+import { MintSuccessModal, LoadingSpinner } from "@/components/common";
 import { useGlobalAppStore } from "@/store/globalAppStore";
 
 import {

@@ -16,11 +16,9 @@ import {
 } from "@/utils/modelTypes";
 import { selectRandomMetadata } from "@/utils/probabilityUtils";
 
+import { LoadingSpinner, MintButton, MintSuccessModal, NFTImageDisplay } from "@/components/common";
 import ImageCarousel from "@/components/randomizedmint/ImageCarousel";
 import NFTSetDetails from "@/components/randomizedmint/NFTSetDetails";
-import MintButton from "@/components/randomizedmint/MintButton";
-import MintSuccessModal from "./MintSuccessModal";
-import LoadingSpinner from "@/components/randomizedmint/LoadingSpinner";
 
 const workSans = Work_Sans({ subsets: ["latin"] });
 
@@ -121,7 +119,12 @@ export default function NFTSetPage() {
             <NFTSetDetails metadataSet={metadataSet} />
 
             <div className="">
-              <MintButton isConnected={isWalletConnected} onMint={handleMint} />
+              <MintButton 
+                isConnected={isWalletConnected} 
+                onMint={handleMint}
+                label="Mint Random NFT"
+                helperText="Get a random NFT from this Set"
+              />
             </div>
           </div>
         </div>
