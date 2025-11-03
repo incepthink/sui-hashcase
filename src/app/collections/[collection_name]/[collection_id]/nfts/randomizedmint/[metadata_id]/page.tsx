@@ -16,9 +16,10 @@ import {
 } from "@/utils/modelTypes";
 import { selectRandomMetadata } from "@/utils/probabilityUtils";
 
-import { LoadingSpinner, MintButton, MintSuccessModal, NFTImageDisplay } from "@/components/common";
+import { LoadingSpinner, MintButton, MintSuccessModal, NFTImageDisplay, DualMintButton } from "@/components/common";
 import ImageCarousel from "@/components/randomizedmint/ImageCarousel";
 import NFTSetDetails from "@/components/randomizedmint/NFTSetDetails";
+import { usePaidMint } from "@/app/hooks/usePaidMint";
 
 const workSans = Work_Sans({ subsets: ["latin"] });
 
@@ -35,6 +36,10 @@ export default function NFTSetPage() {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [mounted, setMounted] = useState(false);
+  const [freeMinting, setFreeMinting] = useState(false);
+  const [paidMinting, setPaidMinting] = useState(false);
+
+  const { mintPaidNFT } = usePaidMint();
 
   const isWalletConnected = mounted && hasWalletForChain("sui");
   const walletAddress = userWalletAddress || currentAccount?.address;
@@ -68,6 +73,7 @@ export default function NFTSetPage() {
   const handleMint = async () => {
     if (!metadataSet || !isWalletConnected || !walletAddress) return;
 
+    setFreeMinting(true);
     const notifyId = notifyPromise("Minting NFT...", "info");
 
     try {
@@ -96,6 +102,41 @@ export default function NFTSetPage() {
       const errorMessage = error.response?.data?.error || "Error minting NFT";
       notifyResolve(notifyId, errorMessage, "error");
       console.error("Error minting NFT:", error);
+    } finally {
+      setFreeMinting(false);
+    }
+  };
+
+  const handlePaidMint = async () => {
+    if (!metadataSet || !isWalletConnected || !walletAddress) {
+      return;
+    }
+
+    setPaidMinting(true);
+
+    try {
+      // Use probability-based selection for paid mint
+      const nftData = selectRandomMetadata(metadataSet.metadata);
+      setSelectedMetadata(nftData);
+
+      const nftForm = {
+        collection_id: String(nftData.collection_id),
+        title: nftData.title,
+        description: nftData.description,
+        image_url: nftData.image_url,
+        attributes: nftData.attributes || "",
+      };
+
+      console.log("💰 Processing paid randomized mint");
+      const result = await mintPaidNFT(nftForm, walletAddress);
+
+      if (result.success) {
+        setShowSuccessModal(true);
+      }
+    } catch (error: any) {
+      console.error("❌ Paid mint failed:", error);
+    } finally {
+      setPaidMinting(false);
     }
   };
 
@@ -119,10 +160,16 @@ export default function NFTSetPage() {
             <NFTSetDetails metadataSet={metadataSet} />
 
             <div className="">
-              <MintButton 
-                isConnected={isWalletConnected} 
-                onMint={handleMint}
-                label="Mint Random NFT"
+              <DualMintButton
+                isConnected={isWalletConnected}
+                onFreeMint={handleMint}
+                onPaidMint={handlePaidMint}
+                freeLoading={freeMinting}
+                paidLoading={paidMinting}
+                freeDisabled={!isWalletConnected}
+                paidDisabled={!isWalletConnected}
+                freeLabel="Free Randomized Mint"
+                paidLabel="Paid Randomized Mint"
                 helperText="Get a random NFT from this Set"
               />
             </div>
