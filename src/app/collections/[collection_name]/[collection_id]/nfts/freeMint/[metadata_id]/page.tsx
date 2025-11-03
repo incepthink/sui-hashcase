@@ -20,8 +20,9 @@ import {
 
 import axiosInstance from "@/utils/axios";
 import UnlockableNft from "./UnlockableNft";
-import { MintSuccessModal, LoadingSpinner } from "@/components/common";
+import { MintSuccessModal, LoadingSpinner, DualMintButton } from "@/components/common";
 import { useGlobalAppStore } from "@/store/globalAppStore";
+import { usePaidMint } from "@/app/hooks/usePaidMint";
 
 import {
   Globe,
@@ -79,6 +80,7 @@ export default function NFTPage() {
   const [isMetadataActive, setIsMetadataActive] = useState(true);
   const [hasMintAttempted, setHasMintAttempted] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [paidMinting, setPaidMinting] = useState(false);
 
   const { address } = useZkLogin();
   const { sponsorSignAndExecute } = useSponsorSignAndExecute();
@@ -86,6 +88,7 @@ export default function NFTPage() {
   const { mutateAsync: signAndExecuteTransaction } =
     useSignAndExecuteTransaction();
   const { userWalletAddress, hasWalletForChain, user } = useGlobalAppStore();
+  const { mintPaidNFT } = usePaidMint();
 
   const [mounted, setMounted] = useState(false);
 
@@ -356,6 +359,49 @@ export default function NFTPage() {
     }
   };
 
+  const handlePaidMint = async () => {
+    // Check if wallet is connected
+    const walletAddr = address || currentAccount?.address;
+    if (!walletAddr) {
+      notify("Please connect your wallet first", "error");
+      return;
+    }
+
+    if (!nftData) {
+      notify("NFT data not loaded", "error");
+      return;
+    }
+
+    if (!isMetadataActive) {
+      notify("Minting has been disabled by the owner", "error");
+      return;
+    }
+
+    setPaidMinting(true);
+
+    try {
+      const nftForm = {
+        collection_id: String(nftData.collection_address || nftData.collection_id),
+        title: nftData.title,
+        description: nftData.description,
+        image_url: nftData.image_url,
+        attributes: nftData.attributes || "",
+      };
+
+      console.log("💰 Processing paid freemint");
+      const result = await mintPaidNFT(nftForm, walletAddr);
+
+      if (result.success) {
+        setShowSuccessModal(true);
+      }
+    } catch (error: any) {
+      console.error("❌ Paid mint failed:", error);
+      notify("Failed to process paid mint", "error");
+    } finally {
+      setPaidMinting(false);
+    }
+  };
+
   const getMintButtonState = () => {
     if (!isMetadataActive) {
       return {
@@ -579,16 +625,25 @@ export default function NFTPage() {
               )}
 
               {isWalletConnected ? (
-                <button
-                  onClick={handleGaslessMintAndTransfer}
-                  disabled={buttonState.disabled}
-                  className={`md:px-8 md:py-4 px-6 py-3 rounded-full md:text-xl text-sm flex items-center gap-x-3 shadow-lg transition-all ${buttonState.className}`}
-                >
-                  {buttonState.icon}
-                  {buttonState.text}
-                </button>
+                <DualMintButton
+                  isConnected={isWalletConnected}
+                  onFreeMint={handleGaslessMintAndTransfer}
+                  onPaidMint={handlePaidMint}
+                  freeLoading={minting}
+                  paidLoading={paidMinting}
+                  freeDisabled={buttonState.disabled}
+                  paidDisabled={!isMetadataActive}
+                  freeLabel="Free Mint"
+                  paidLabel="Paid Mint"
+                  helperText="Choose between free or paid minting"
+                />
               ) : (
-                <ConnectButton mid={true} />
+                <DualMintButton
+                  isConnected={false}
+                  onFreeMint={handleGaslessMintAndTransfer}
+                  onPaidMint={handlePaidMint}
+                  helperText="Choose between free or paid minting"
+                />
               )}
             </div>
           </div>

@@ -13,7 +13,8 @@ import ConnectButton from "@/components/ConnectButton";
 import { useGlobalAppStore } from "@/store/globalAppStore";
 import { useCurrentAccount } from "@mysten/dapp-kit";
 import { notifyPromise, notifyResolve } from "@/utils/notify";
-import { MintSuccessModal, LoadingSpinner } from "@/components/common";
+import { MintSuccessModal, LoadingSpinner, DualMintButton } from "@/components/common";
+import { usePaidMint } from "@/app/hooks/usePaidMint";
 
 const workSans = Work_Sans({ subsets: ["latin"] });
 
@@ -39,9 +40,12 @@ export default function UpgradableMintPage() {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [mounted, setMounted] = useState(false);
+  const [freeMinting, setFreeMinting] = useState(false);
+  const [paidMinting, setPaidMinting] = useState(false);
 
   const currentAccount = useCurrentAccount();
   const { userWalletAddress, hasWalletForChain } = useGlobalAppStore();
+  const { mintPaidNFT } = usePaidMint();
 
   useEffect(() => {
     setMounted(true);
@@ -91,6 +95,7 @@ export default function UpgradableMintPage() {
   const createUpgradableMintNft = async () => {
     if (!metadataSet || !isWalletConnected) return;
 
+    setFreeMinting(true);
     const notifyId = notifyPromise("Minting NFT...", "info");
 
     try {
@@ -98,6 +103,7 @@ export default function UpgradableMintPage() {
 
       if (nftData.minted) {
         notifyResolve(notifyId, "This level is already minted!", "warning");
+        setFreeMinting(false);
         return;
       }
 
@@ -151,6 +157,59 @@ export default function UpgradableMintPage() {
         "error"
       );
       console.error("Error minting NFT:", error);
+    } finally {
+      setFreeMinting(false);
+    }
+  };
+
+  const handlePaidMint = async () => {
+    if (!metadataSet || !isWalletConnected) return;
+
+    setPaidMinting(true);
+
+    try {
+      const nftData = metadataSet.metadata[currentNFTIndex];
+
+      if (nftData.minted) {
+        return;
+      }
+
+      setSelectedMetadata(nftData);
+
+      const nftForm = {
+        collection_id: String(nftData.collection_id),
+        title: nftData.title,
+        description: nftData.description,
+        image_url: nftData.image_url,
+        attributes: nftData.attributes || "",
+      };
+
+      console.log("💰 Processing paid upgradable mint");
+      const result = await mintPaidNFT(nftForm, userWalletAddress || currentAccount?.address || "");
+
+      if (result.success) {
+        // Update the minted status locally
+        setMetadataSet((prev) => {
+          if (!prev) return prev;
+          const updatedMetadata = [...prev.metadata];
+          updatedMetadata[currentNFTIndex] = {
+            ...updatedMetadata[currentNFTIndex],
+            minted: true,
+          };
+          return { ...prev, metadata: updatedMetadata };
+        });
+
+        // Move to next level if not at the end
+        if (currentNFTIndex < metadataSet.metadata.length - 1) {
+          setCurrentNFTIndex((prev) => prev + 1);
+        }
+
+        setShowSuccessModal(true);
+      }
+    } catch (error: any) {
+      console.error("❌ Paid mint failed:", error);
+    } finally {
+      setPaidMinting(false);
     }
   };
 
@@ -267,59 +326,19 @@ export default function UpgradableMintPage() {
 
             {/* Mint/Upgrade Button */}
             <div className="pt-4">
-              {isWalletConnected ? (
-                <button
-                  onClick={createUpgradableMintNft}
-                  disabled={allMinted || currentNFT.minted}
-                  className={`w-full font-bold text-lg px-8 py-4 rounded-xl transition-all duration-200 transform border-2 flex items-center justify-center gap-3 ${
-                    allMinted || currentNFT.minted
-                      ? "bg-gray-600 text-gray-400 cursor-not-allowed border-gray-500"
-                      : "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white hover:scale-105 shadow-lg hover:shadow-xl border-white/10"
-                  }`}
-                >
-                  <svg
-                    className="w-6 h-6"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M13 10V3L4 14h7v7l9-11h-7z"
-                    />
-                  </svg>
-                  {allMinted
-                    ? "Max Level Reached"
-                    : currentNFT.minted
-                    ? "Level Already Minted"
-                    : currentNFTIndex === 0
-                    ? "Mint Level 1"
-                    : `Upgrade to Level ${currentNFTIndex + 1}`}
-                  <svg
-                    className="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M14 5l7 7m0 0l-7 7m7-7H3"
-                    />
-                  </svg>
-                </button>
-              ) : (
-                <ConnectButton mid={true} />
-              )}
-              <p className="text-center text-gray-400 text-sm mt-3">
-                {isWalletConnected &&
-                  (allMinted
-                    ? "🎉 You've reached the max level!"
-                    : `Mint to unlock Level ${currentNFTIndex + 1}`)}
-              </p>
+              <DualMintButton
+                isConnected={isWalletConnected}
+                onFreeMint={createUpgradableMintNft}
+                onPaidMint={handlePaidMint}
+                freeLoading={freeMinting}
+                paidLoading={paidMinting}
+                freeDisabled={allMinted || currentNFT.minted}
+                paidDisabled={allMinted || currentNFT.minted}
+                freeLabel={currentNFTIndex === 0 ? "Free Level 1" : `Free Level ${currentNFTIndex + 1}`}
+                paidLabel={currentNFTIndex === 0 ? "Paid Level 1" : `Paid Level ${currentNFTIndex + 1}`}
+                helperText={allMinted ? "🎉 Max Level Reached!" : `Mint to unlock Level ${currentNFTIndex + 1}`}
+                showHelper={true}
+              />
             </div>
           </div>
         </div>
