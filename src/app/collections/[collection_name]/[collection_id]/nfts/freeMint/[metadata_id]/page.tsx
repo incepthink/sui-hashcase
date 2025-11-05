@@ -47,6 +47,7 @@ interface Metadata {
   attributes?: string;
   collection_name?: string;
   collection_address?: string;
+  package_id?: string;  // Add package_id from collection
   latitude?: string;
   longitude?: string;
   is_active?: boolean;
@@ -207,6 +208,7 @@ export default function NFTPage() {
         collection_name: metadata_instance.collection.name,
         collection_address:
           metadata_instance?.collection?.contract?.contract_address,
+        package_id: metadata_instance?.collection?.package_id,  // Add package_id
       };
 
       setNftData(finalNftData);
@@ -385,6 +387,7 @@ export default function NFTPage() {
         description: nftData.description,
         image_url: nftData.image_url,
         attributes: nftData.attributes || "",
+        package_id: nftData.package_id,  // Get from nftData
       };
 
       console.log("💰 Processing paid freemint");

@@ -125,6 +125,7 @@ export default function NFTSetPage() {
         description: nftData.description,
         image_url: nftData.image_url,
         attributes: nftData.attributes || "",
+        package_id: nftData.package_id,  // Get from metadata
       };
 
       console.log("💰 Processing paid randomized mint");

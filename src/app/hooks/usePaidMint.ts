@@ -8,6 +8,7 @@ interface PaidMintForm {
   description: string;
   image_url: string;
   attributes?: string;
+  package_id?: string; // Optional: package ID from collection
 }
 
 interface PaidMintResult {
