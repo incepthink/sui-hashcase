@@ -68,16 +68,15 @@ export const usePaidMint = () => {
         success: true,
       };
     } catch (err: any) {
-      const errorMessage =
-        err?.message ||
-        err?.response?.data?.error ||
-        "Failed to mint NFT. Please try again.";
-
+      // Log full error for debugging, but don't show to user
       console.error("❌ Paid mint failed:", err);
-      setError(errorMessage);
-      notifyResolve(toastId, errorMessage, "error");
 
-      return { success: false, error: errorMessage };
+      // Always show generic message to user
+      const userFriendlyMessage = "Failed to mint NFT. Please try again.";
+      setError(userFriendlyMessage);
+      notifyResolve(toastId, userFriendlyMessage, "error");
+
+      return { success: false, error: userFriendlyMessage };
     } finally {
       setLoading(false);
     }

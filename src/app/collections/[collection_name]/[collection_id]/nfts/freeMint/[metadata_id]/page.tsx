@@ -351,9 +351,8 @@ export default function NFTPage() {
       const mintKey = getMintAttemptKey(metadataId, walletAddr);
       localStorage.removeItem(mintKey);
 
-      const errorMessage =
-        error?.response?.data?.error || "Failed to mint NFT. Please try again.";
-      notifyResolve(toastId, errorMessage, "error");
+      // Always show generic message to user, never expose error details
+      notifyResolve(toastId, "Failed to mint NFT. Please try again.", "error");
     } finally {
       setMinting(false);
     }

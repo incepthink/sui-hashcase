@@ -99,9 +99,9 @@ export default function NFTSetPage() {
       notifyResolve(notifyId, "NFT Minted Successfully!", "success");
       setShowSuccessModal(true);
     } catch (error: any) {
-      const errorMessage = error.response?.data?.error || "Error minting NFT";
-      notifyResolve(notifyId, errorMessage, "error");
+      // Log full error for debugging, but don't show technical details to user
       console.error("Error minting NFT:", error);
+      notifyResolve(notifyId, "Failed to mint NFT. Please try again.", "error");
     } finally {
       setFreeMinting(false);
     }

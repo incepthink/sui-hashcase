@@ -133,7 +133,7 @@ export default function NFTPage() {
       const nftForm = {
         collection_id:
           nftData.collection_address ||
-          "0xf5781a9473653703338da4a8ab7de5225110f8da0ae43bf5221c25da628ac5c7", // Replace with the actual Collection object ID
+          "0xf5781a9473653703338da4a8ab7de5225110f8da0ae43bf5221c25da628ac5c7", // Replace with the actual package ID
         title: nftData.title,
         description: nftData.description,
         image_url: nftData.image_url,

@@ -151,12 +151,13 @@ export default function UpgradableMintPage() {
 
       setShowSuccessModal(true);
     } catch (error: any) {
+      // Log full error for debugging, but don't show technical details to user
+      console.error("Error minting NFT:", error);
       notifyResolve(
         notifyId,
-        error.response?.data?.error || "Failed to mint NFT",
+        "Failed to mint NFT. Please try again.",
         "error"
       );
-      console.error("Error minting NFT:", error);
     } finally {
       setFreeMinting(false);
     }
