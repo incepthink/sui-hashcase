@@ -138,7 +138,7 @@ const freeMintNftHelper = async (nftForm: NftForm): Promise<Transaction> => {
 //   });
 
 //   // we are supposed to return the transaction in this function that return it.
-//   // await signAndExecute({ transaction: tx });
+//   await signAndExecute({ transaction: tx });
 // };
 
 const dynamicMintNftHelper = async (nftForm: any) => {
@@ -146,16 +146,16 @@ const dynamicMintNftHelper = async (nftForm: any) => {
   const [payment] = tx.splitCoins(tx.gas, [tx.pure.u64("1000")]);
   const imageUrlBytes = Array.from(new TextEncoder().encode(nftForm.image_url));
 
-  // console.log(nftForm);
+  console.log(nftForm);
 
   const attributesArray = nftForm.attributes
     .split(",")
     .map((attr: string) => attr.trim())
     .filter((attr: string) => attr);
 
-  // console.log(attributesArray);
+  console.log(attributesArray);
 
-  //const coin = coinWithBalance({ balance: 100 });
+  // const coin = coinWithBalance({ balance: 100 });
   tx.moveCall({
     target: `${MY_PACKAGE_ID}::hashcase_module::dynamic_price_mint_nft`,
     arguments: [

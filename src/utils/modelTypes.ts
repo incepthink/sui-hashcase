@@ -66,7 +66,7 @@ type Metadata = {
   longitude: number | null;
   set_id: number;
   probability?: string | null;
-  package_id?: string;  // Add package_id from collection
+  package_id?: string;
   createdAt: string;
   updatedAt: string;
 };

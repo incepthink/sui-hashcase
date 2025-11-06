@@ -60,7 +60,14 @@ export const usePaidMint = () => {
       console.log("💰 Processing paid mint with form:", finalForm);
 
       // Call the Sui transaction function
-      await fixedPriceMintNFT(finalForm, userAddress);
+      const result = await fixedPriceMintNFT(finalForm, userAddress);
+
+      console.log("📋 Transaction result:", result);
+
+      // Check if transaction actually succeeded
+      if (!result || !result.success) {
+        throw new Error("Transaction failed");
+      }
 
       console.log("✅ Paid mint successful");
       notifyResolve(toastId, "NFT minted successfully!", "success");

@@ -76,16 +76,30 @@ export const useNftTransactions = () => {
   const fixedPriceMintNFT = async (nftForm: MintingForm, address: string) => {
     if (!nftForm.collection_id || !address) {
       toast.error("Please fill in all fields.");
-      return;
+      return null;
+    }
+
+    const adminCapId = process.env.ADMIN_CAP_ID;
+    if (!adminCapId) {
+      console.error("❌ [ADMIN MINT] AdminCap ID not configured");
+      toast.error("Admin capability not configured.");
+      return null;
     }
 
     setIsLoading(true);
 
-    let txResult;
     try {
+      console.log("🚀 [ADMIN MINT] Step 1: Creating transaction");
+      
+      // Step 1: Create transaction
       const tx = new Transaction();
-      // instead of 100 put the real price of NFT
+      
+      // Step 2: Split gas to create payment coin
+      console.log("🚀 [ADMIN MINT] Step 2: Splitting coins (100 MIST)");
       const [payment] = tx.splitCoins(tx.gas, [tx.pure.u64(100)]);
+      
+      // Step 3: Prepare data
+      console.log("🚀 [ADMIN MINT] Step 3: Preparing data");
       const imageUrlBytes = Array.from(
         new TextEncoder().encode(nftForm.image_url)
       );
@@ -93,42 +107,41 @@ export const useNftTransactions = () => {
         .split(",")
         .map((attr) => attr.trim())
         .filter(Boolean);
-
+      
+      // Step 4: Call admin Move function
+      console.log("🚀 [ADMIN MINT] Step 4: Adding admin Move call");
       tx.moveCall({
-        target: `${packageId}::hashcase_module::fixed_price_mint_nft`, // Updated to use new package ID
+        target: `${packageId}::hashcase_module::admin_fixed_price_mint_nft`,
         arguments: [
-          tx.object(nftForm.collection_id),
-          payment,
-          tx.pure.string(nftForm.title),
-          tx.pure.string(nftForm.description),
-          tx.pure.vector("u8", imageUrlBytes),
-          tx.pure.vector("string", attributesArray),
+          tx.object(adminCapId),           // AdminCap object
+          tx.object(nftForm.collection_id), // Collection
+          payment,                          // Payment coin (100 MIST)
+          tx.pure.string(nftForm.title),   // Title
+          tx.pure.string(nftForm.description), // Description
+          tx.pure.vector("u8", imageUrlBytes), // Image bytes
+          tx.pure.vector("string", attributesArray), // Attributes
+          tx.pure.address(address),        // Recipient (user address)
         ],
       });
-
-      tx.transferObjects([payment], tx.pure.address(address));
-
-      txResult = await signAndExecuteTransaction({
+      
+      // Step 5: Send to wallet
+      console.log("🚀 [ADMIN MINT] Step 5: Sending to wallet");
+      const txResult = await signAndExecuteTransaction({
         transaction: tx as any,
-        chain: "sui:testnet",
+        chain: "sui:mainnet",
       });
 
-      // Wait before fetching transaction details
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      if (!txResult?.digest) {
+        throw new Error("No transaction digest returned");
+      }
 
-      // Fetch transaction details
-      const digest = txResult?.digest || "";
-      await suiClient.waitForTransaction({ digest, timeout: 5_000 });
-
-      const txDetails = await suiClient.getTransactionBlock({
-        digest,
-        options: { showEvents: true },
-      });
-
-      console.log("Transaction Details:", txDetails);
+      console.log("✅ [ADMIN MINT] Step 6: Transaction confirmed, digest:", txResult.digest);
+      
       toast.success("NFT Minted Successfully!");
-    } catch (error) {
-      console.error("Error executing transaction:", error);
+      return { success: true, digest: txResult.digest };
+      
+    } catch (error: any) {
+      console.error("❌ [ADMIN MINT] Error:", error?.message || error);
       toast.error("Failed to mint NFT.");
       return null;
     } finally {
@@ -151,7 +164,7 @@ export const useNftTransactions = () => {
 
       txResult = await signAndExecuteTransaction({
         transaction: tx as any,
-        chain: "sui:testnet",
+        chain: "sui:mainnet",
       });
 
       // Wait before fetching transaction details
@@ -210,7 +223,7 @@ export const useNftTransactions = () => {
 
       txResult = await signAndExecuteTransaction({
         transaction: tx as any,
-        chain: "sui:testnet",
+        chain: "sui:mainnet",
       });
 
       // Wait before fetching transaction details
@@ -272,7 +285,7 @@ export const useNftTransactions = () => {
 
       const txResult = await signAndExecuteTransaction({
         transaction: tx as any,
-        chain: "sui:testnet",
+        chain: "sui:mainnet",
       });
 
       await new Promise((resolve) => setTimeout(resolve, 1000));
