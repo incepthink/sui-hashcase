@@ -92,8 +92,8 @@ export const useNftTransactions = () => {
     setIsLoading(true);
 
     try {
-      // Create transaction that the user will sign/pay for
       const tx = new Transaction();
+      tx.setSender(address);
 
       // Determine price (in u64). Default to 100 if not provided.
       const price = priceAmount ? String(priceAmount) : "100";
@@ -112,10 +112,10 @@ export const useNftTransactions = () => {
 
       // Call the public fixed price mint function in the package specified by metadata
       tx.moveCall({
-        target: `${nftForm.package_id}::hashcase_module::fixed_price_mint_nft`,
+        target: `${nftForm.package_id}::hashcase_module::admin_fixed_price_mint_nft`,
         arguments: [
           tx.object(nftForm.collection_id), // collection object
-          payment, // payment coin
+          payment, // payment coin coming from the user's gas
           tx.pure.string(nftForm.title),
           tx.pure.string(nftForm.description),
           tx.pure.vector("u8", imageUrlBytes),
@@ -124,7 +124,7 @@ export const useNftTransactions = () => {
         ],
       });
 
-      // Send to wallet for signing and execution
+      // Send to the user's wallet for signing and execution
       const txResult = await signAndExecuteTransaction({
         transaction: tx as any,
         chain: "sui:mainnet",
@@ -137,10 +137,10 @@ export const useNftTransactions = () => {
       // Wait a short while then fetch transaction details
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      const digest = txResult?.digest || "";
-      await (suiClient as any).waitForTransaction({ digest, timeout: 5_000 });
+      const digest = txResult.digest;
+      await suiClient.waitForTransaction({ digest, timeout: 5_000 });
 
-      const txDetails = await (suiClient as any).getTransactionBlock({
+      const txDetails = await suiClient.getTransactionBlock({
         digest,
         options: { showEvents: true },
       });
