@@ -47,7 +47,7 @@ interface Metadata {
   attributes?: string;
   collection_name?: string;
   collection_address?: string;
-  package_id?: string;  // Add package_id from collection
+  package_id?: string;
   latitude?: string;
   longitude?: string;
   is_active?: boolean;
@@ -387,11 +387,20 @@ export default function NFTPage() {
         description: nftData.description,
         image_url: nftData.image_url,
         attributes: nftData.attributes || "",
-        package_id: nftData.package_id,  // Get from nftData
+        package_id: nftData.package_id,
       };
 
       console.log("💰 Processing paid freemint");
-      const result = await mintPaidNFT(nftForm, walletAddr);
+      // Resolve package id from instance or parent collection
+  const packageId = nftForm.package_id || (nftData as any)?.collection?.package_id;
+      if (!packageId) {
+        notify("Contract package id missing. Contact the owner or admin.", "error");
+        setPaidMinting(false);
+        return;
+      }
+
+      const paidForm = { ...nftForm, package_id: packageId } as any;
+      const result = await mintPaidNFT(paidForm, walletAddr);
 
       if (result.success) {
         setShowSuccessModal(true);

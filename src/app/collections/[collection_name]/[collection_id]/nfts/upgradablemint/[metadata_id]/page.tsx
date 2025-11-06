@@ -67,6 +67,15 @@ export default function UpgradableMintPage() {
         );
 
         const setData = metadata_set.data.metadataSet;
+
+        const collectionPackageId = (setData as any)?.Collection?.package_id;
+        if (collectionPackageId) {
+          setData.metadata = setData.metadata.map((m: any) => ({
+            ...m,
+            package_id: m.package_id || collectionPackageId,
+          }));
+        }
+
         setMetadataSet(setData);
 
         // Find the first non-minted NFT (current level)
@@ -187,7 +196,23 @@ export default function UpgradableMintPage() {
       };
 
       console.log("💰 Processing paid upgradable mint");
-      const result = await mintPaidNFT(nftForm, userWalletAddress || currentAccount?.address || "");
+
+      // Ensure package_id is present (either on the instance or the parent Collection)
+      const packageId = nftForm.package_id || (metadataSet as any)?.Collection?.package_id;
+      if (!packageId) {
+        notifyResolve(notifyPromise("Paid mint blocked", "error"), "Contract package id missing. Contact the owner or admin.", "error");
+        console.error("❌ Paid mint aborted: package_id missing for metadata", nftData);
+        setPaidMinting(false);
+        return;
+      }
+
+      // Build a strongly-typed paid form using the resolved package id
+      const paidForm = {
+        ...nftForm,
+        package_id: packageId,
+      } as any;
+
+      const result = await mintPaidNFT(paidForm, userWalletAddress || currentAccount?.address || "");
 
       if (result.success) {
         // Update the minted status locally

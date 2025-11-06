@@ -8,7 +8,7 @@ import { useCurrentAccount } from "@mysten/dapp-kit";
 import { Work_Sans } from "next/font/google";
 
 import axiosInstance from "@/utils/axios";
-import { notifyPromise, notifyResolve } from "@/utils/notify";
+import notify, { notifyPromise, notifyResolve } from "@/utils/notify";
 import { useGlobalAppStore } from "@/store/globalAppStore";
 import {
   Metadata,
@@ -129,7 +129,18 @@ export default function NFTSetPage() {
       };
 
       console.log("💰 Processing paid randomized mint");
-      const result = await mintPaidNFT(nftForm, walletAddress);
+
+      // Resolve package id from the instance or parent collection
+      const packageId = nftForm.package_id || (metadataSet as any)?.Collection?.package_id || (nftData as any)?.collection?.package_id;
+      if (!packageId) {
+        console.error("❌ Paid mint aborted: package_id missing for metadata", nftData);
+        notify("Contract package id missing. Contact the owner or admin.", "error");
+        setPaidMinting(false);
+        return;
+      }
+
+      const paidForm = { ...nftForm, package_id: packageId } as any;
+      const result = await mintPaidNFT(paidForm, walletAddress);
 
       if (result.success) {
         setShowSuccessModal(true);

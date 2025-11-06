@@ -8,7 +8,8 @@ interface PaidMintForm {
   description: string;
   image_url: string;
   attributes?: string;
-  package_id?: string; // Optional: package ID from collection
+  // package_id is required for paid minting (must come from NFT metadata)
+  package_id: string;
 }
 
 interface PaidMintResult {
@@ -41,6 +42,15 @@ export const usePaidMint = () => {
       return { success: false, error: errorMsg };
     }
 
+    // Ensure package_id is present on the metadata/form. Paid mint requires it.
+    if (!nftForm.package_id) {
+      const errorMsg = "Contract package id (package_id) is required for paid minting.";
+      setError(errorMsg);
+      notify(errorMsg, "error");
+      console.error("❌ [PAID MINT] package_id missing on nftForm", nftForm);
+      return { success: false, error: errorMsg };
+    }
+
     setLoading(true);
     setError(null);
     const toastId = notifyPromise("Processing paid mint...", "info");
@@ -55,6 +65,7 @@ export const usePaidMint = () => {
         description: nftForm.description,
         image_url: nftForm.image_url,
         attributes: nftForm.attributes || "",
+        package_id: nftForm.package_id,
       };
 
       console.log("💰 Processing paid mint with form:", finalForm);

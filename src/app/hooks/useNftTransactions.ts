@@ -4,11 +4,12 @@ import { Transaction } from "@mysten/sui/transactions";
 import { useSuiClient, useSignAndExecuteTransaction } from "@mysten/dapp-kit";
 
 import { toast } from "react-hot-toast";
-import { 
-  freeMintNftHelper, 
-  dynamicMintNftHelper, 
-  claimNftHelper 
+import {
+  freeMintNftHelper,
+  dynamicMintNftHelper,
+  claimNftHelper,
 } from "@/utils/contractHelperFunctions";
+// removed SuiClient usage - public mints will be user-signed
 
 interface MintingForm {
   title: string;
@@ -16,6 +17,8 @@ interface MintingForm {
   image_url: string;
   collection_id: string;
   attributes: string;
+  // optional package id coming from the metadata
+  package_id?: string;
 }
 
 export const useNftTransactions = () => {
@@ -25,11 +28,6 @@ export const useNftTransactions = () => {
   const suiClient = useSuiClient();
   const { mutateAsync: signAndExecuteTransaction } =
     useSignAndExecuteTransaction();
-
-  //we get the packageId used to call the transactions
-  const packageId =
-    process.env.NEXT_PUBLIC_CONTRACT_PACKAGE_ID ||
-    "0x48534ac3dd3df77cb4d6e17e05d2bd7961d5352e10fb01561184828d2aa3248e";
 
   const freeMintNft = async (nftForm: MintingForm) => {
     if (!nftForm.collection_id) {
@@ -73,33 +71,37 @@ export const useNftTransactions = () => {
     }
   };
 
-  const fixedPriceMintNFT = async (nftForm: MintingForm, address: string) => {
+  const fixedPriceMintNFT = async (
+    nftForm: MintingForm,
+    address: string,
+    priceAmount?: number
+  ) => {
     if (!nftForm.collection_id || !address) {
       toast.error("Please fill in all fields.");
       return null;
     }
 
-    const adminCapId = process.env.ADMIN_CAP_ID;
-    if (!adminCapId) {
-      console.error("❌ [ADMIN MINT] AdminCap ID not configured");
-      toast.error("Admin capability not configured.");
+    if (!nftForm.package_id) {
+      console.error("❌ [PAID MINT] package_id is required for paid minting");
+      toast.error(
+        "Contract package id (package_id) is required for paid minting."
+      );
       return null;
     }
 
     setIsLoading(true);
 
     try {
-      console.log("🚀 [ADMIN MINT] Step 1: Creating transaction");
-      
-      // Step 1: Create transaction
+      // Create transaction that the user will sign/pay for
       const tx = new Transaction();
-      
-      // Step 2: Split gas to create payment coin
-      console.log("🚀 [ADMIN MINT] Step 2: Splitting coins (100 MIST)");
-      const [payment] = tx.splitCoins(tx.gas, [tx.pure.u64(100)]);
-      
-      // Step 3: Prepare data
-      console.log("🚀 [ADMIN MINT] Step 3: Preparing data");
+
+      // Determine price (in u64). Default to 100 if not provided.
+      const price = priceAmount ? String(priceAmount) : "100";
+
+      // Create payment from gas (user will pay)
+      const [payment] = tx.splitCoins(tx.gas, [tx.pure.u64(price)]);
+
+      // Prepare data
       const imageUrlBytes = Array.from(
         new TextEncoder().encode(nftForm.image_url)
       );
@@ -107,25 +109,22 @@ export const useNftTransactions = () => {
         .split(",")
         .map((attr) => attr.trim())
         .filter(Boolean);
-      
-      // Step 4: Call admin Move function
-      console.log("🚀 [ADMIN MINT] Step 4: Adding admin Move call");
+
+      // Call the public fixed price mint function in the package specified by metadata
       tx.moveCall({
-        target: `${packageId}::hashcase_module::admin_fixed_price_mint_nft`,
+        target: `${nftForm.package_id}::hashcase_module::fixed_price_mint_nft`,
         arguments: [
-          tx.object(adminCapId),           // AdminCap object
-          tx.object(nftForm.collection_id), // Collection
-          payment,                          // Payment coin (100 MIST)
-          tx.pure.string(nftForm.title),   // Title
-          tx.pure.string(nftForm.description), // Description
-          tx.pure.vector("u8", imageUrlBytes), // Image bytes
-          tx.pure.vector("string", attributesArray), // Attributes
-          tx.pure.address(address),        // Recipient (user address)
+          tx.object(nftForm.collection_id), // collection object
+          payment, // payment coin
+          tx.pure.string(nftForm.title),
+          tx.pure.string(nftForm.description),
+          tx.pure.vector("u8", imageUrlBytes),
+          tx.pure.vector("string", attributesArray),
+          tx.pure.u64(price),
         ],
       });
-      
-      // Step 5: Send to wallet
-      console.log("🚀 [ADMIN MINT] Step 5: Sending to wallet");
+
+      // Send to wallet for signing and execution
       const txResult = await signAndExecuteTransaction({
         transaction: tx as any,
         chain: "sui:mainnet",
@@ -135,13 +134,22 @@ export const useNftTransactions = () => {
         throw new Error("No transaction digest returned");
       }
 
-      console.log("✅ [ADMIN MINT] Step 6: Transaction confirmed, digest:", txResult.digest);
-      
+      // Wait a short while then fetch transaction details
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      const digest = txResult?.digest || "";
+      await (suiClient as any).waitForTransaction({ digest, timeout: 5_000 });
+
+      const txDetails = await (suiClient as any).getTransactionBlock({
+        digest,
+        options: { showEvents: true },
+      });
+
+      console.log("Transaction Details:", txDetails);
       toast.success("NFT Minted Successfully!");
-      return { success: true, digest: txResult.digest };
-      
+      return txDetails;
     } catch (error: any) {
-      console.error("❌ [ADMIN MINT] Error:", error?.message || error);
+      console.error("❌ [PAID MINT] Error:", error?.message || error);
       toast.error("Failed to mint NFT.");
       return null;
     } finally {
@@ -203,9 +211,15 @@ export const useNftTransactions = () => {
     try {
       const tx = new Transaction();
 
-      // Use the same package ID as the profile page
-      const PACKAGE_ID = process.env.NEXT_PUBLIC_CONTRACT_PACKAGE_ID ||
-        "0x072920bb06baea0717fbeda59950b97a1205f0196d6ad33878d3120710fafe84";
+      // Require package id explicitly — don't fall back to env/hard-coded value
+      const PACKAGE_ID = updateForm?.packageId || updateForm?.package_id;
+      if (!PACKAGE_ID) {
+        console.error("❌ [UPDATE METADATA] package_id required on updateForm");
+        toast.error(
+          "Contract package id (package_id) is required to update metadata."
+        );
+        return null;
+      }
 
       // For now, we'll use a simpler approach without tickets
       // You can implement the ticket system later
@@ -216,8 +230,18 @@ export const useNftTransactions = () => {
           tx.object(updateForm.nftId),
           tx.pure.string(updateForm.name || "Updated Name"),
           tx.pure.string(updateForm.description || "Updated Description"),
-          tx.pure.vector("u8", Array.from(new TextEncoder().encode(updateForm.imageUrl || ""))),
-          tx.pure.vector("string", updateForm.attributes ? updateForm.attributes.split(",").map((attr: string) => attr.trim()) : []),
+          tx.pure.vector(
+            "u8",
+            Array.from(new TextEncoder().encode(updateForm.imageUrl || ""))
+          ),
+          tx.pure.vector(
+            "string",
+            updateForm.attributes
+              ? updateForm.attributes
+                  .split(",")
+                  .map((attr: string) => attr.trim())
+              : []
+          ),
         ],
       });
 
@@ -269,8 +293,18 @@ export const useNftTransactions = () => {
         .map((attr: string) => attr.trim())
         .filter(Boolean);
 
+      // Require package id on the ticket data; don't fallback to env/hard-coded values
+      const ticketPackageId = ticketData?.package_id;
+      if (!ticketPackageId) {
+        console.error("❌ [CREATE TICKET] package_id required on ticketData");
+        toast.error(
+          "Contract package id (package_id) is required to create update ticket."
+        );
+        return null;
+      }
+
       tx.moveCall({
-        target: `${packageId}::hashcase_module::create_update_ticket`,
+        target: `${ticketPackageId}::hashcase_module::create_update_ticket`,
         arguments: [
           tx.object(ticketData.adminCapId),
           tx.pure.id(ticketData.nftId),
