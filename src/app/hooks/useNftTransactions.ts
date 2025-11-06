@@ -9,6 +9,7 @@ import {
   dynamicMintNftHelper,
   claimNftHelper,
 } from "@/utils/contractHelperFunctions";
+import { SuiClient } from "@mysten/sui/client";
 // removed SuiClient usage - public mints will be user-signed
 
 interface MintingForm {
@@ -90,16 +91,59 @@ export const useNftTransactions = () => {
     }
 
     setIsLoading(true);
+    const client = new SuiClient({
+      url: process.env.SUI_CLIENT_LINK || "https://fullnode.mainnet.sui.io:443",
+    });
 
+    const adminCapId =
+      process.env.ADMIN_CAP_ID ||
+      "0x6b3e6a4467778b2d340b4a5fcd2ce7dfa8ed1e7eac04ba462276e2505142fe35";
     try {
       const tx = new Transaction();
       tx.setSender(address);
 
-      // Determine price (in u64). Default to 100 if not provided.
-      const price = priceAmount ? String(priceAmount) : "100";
+      const referenceGasPrice = await client.getReferenceGasPrice();
+      if (!referenceGasPrice) {
+        throw new Error("Failed to get reference gas price");
+      }
+      tx.setGasPrice(referenceGasPrice);
 
-      // Create payment from gas (user will pay)
-      const [payment] = tx.splitCoins(tx.gas, [tx.pure.u64(price)]);
+      const gasCoins = await client.getCoins({
+        owner: address,
+        coinType: "0x2::sui::SUI",
+      });
+      if (!gasCoins.data || gasCoins.data.length === 0) {
+        throw new Error("Admin has no SUI gas coins");
+      }
+      const gasCoin =
+        gasCoins.data.find(
+          (coin) => BigInt(coin.balance) >= BigInt(50000000)
+        ) || gasCoins.data[0];
+      tx.setGasPayment([
+        {
+          objectId: gasCoin.coinObjectId,
+          version: gasCoin.version,
+          digest: gasCoin.digest,
+        },
+      ]);
+
+      // Get payment coin
+      const paymentCoins = await client.getCoins({
+        owner: address,
+        coinType: "0x2::sui::SUI",
+      });
+
+      if (!paymentCoins.data || paymentCoins.data.length === 0) {
+        throw new Error("Admin has no SUI coins for payment");
+      }
+
+      const paymentCoin =
+        paymentCoins.data.find(
+          (coin) => BigInt(coin.balance) >= BigInt(priceAmount || 100)
+        ) || paymentCoins.data[0];
+      if (BigInt(paymentCoin.balance) < BigInt(priceAmount || 100)) {
+        throw new Error("Insufficient payment coins");
+      }
 
       // Prepare data
       const imageUrlBytes = Array.from(
@@ -111,16 +155,30 @@ export const useNftTransactions = () => {
         .filter(Boolean);
 
       // Call the public fixed price mint function in the package specified by metadata
+      // tx.moveCall({
+      //   target: `${nftForm.package_id}::hashcase_module::admin_fixed_price_mint_nft`,
+      //   arguments: [
+      //     tx.object(nftForm.collection_id), // collection object
+      //     payment, // payment coin coming from the user's gas
+      //     tx.pure.string(nftForm.title),
+      //     tx.pure.string(nftForm.description),
+      //     tx.pure.vector("u8", imageUrlBytes),
+      //     tx.pure.vector("string", attributesArray),
+      //     tx.pure.u64(price),
+      //   ],
+      // });
+
       tx.moveCall({
         target: `${nftForm.package_id}::hashcase_module::admin_fixed_price_mint_nft`,
         arguments: [
-          tx.object(nftForm.collection_id), // collection object
-          payment, // payment coin coming from the user's gas
+          tx.object(adminCapId), // AdminCap (correct object)
+          // tx.object(address),
+          tx.object(nftForm.collection_id), // Collection
+          tx.object(paymentCoin.coinObjectId), // Payment coin
           tx.pure.string(nftForm.title),
           tx.pure.string(nftForm.description),
           tx.pure.vector("u8", imageUrlBytes),
           tx.pure.vector("string", attributesArray),
-          tx.pure.u64(price),
         ],
       });
 

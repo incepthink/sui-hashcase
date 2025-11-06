@@ -76,7 +76,7 @@ export const usePaidMint = () => {
       console.log("📋 Transaction result:", result);
 
       // Check if transaction actually succeeded
-      if (!result || !result.success) {
+      if (!result) {
         throw new Error("Transaction failed");
       }
 
