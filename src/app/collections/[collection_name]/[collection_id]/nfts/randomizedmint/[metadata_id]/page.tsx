@@ -16,7 +16,13 @@ import {
 } from "@/utils/modelTypes";
 import { selectRandomMetadata } from "@/utils/probabilityUtils";
 
-import { LoadingSpinner, MintButton, MintSuccessModal, NFTImageDisplay, DualMintButton } from "@/components/common";
+import {
+  LoadingSpinner,
+  MintButton,
+  MintSuccessModal,
+  NFTImageDisplay,
+  DualMintButton,
+} from "@/components/common";
 import ImageCarousel from "@/components/randomizedmint/ImageCarousel";
 import NFTSetDetails from "@/components/randomizedmint/NFTSetDetails";
 import { usePaidMint } from "@/app/hooks/usePaidMint";
@@ -116,6 +122,8 @@ export default function NFTSetPage() {
 
     try {
       // Use probability-based selection for paid mint
+      console.log(metadataSet);
+
       const nftData = selectRandomMetadata(metadataSet.metadata);
       setSelectedMetadata(nftData);
 
@@ -125,16 +133,25 @@ export default function NFTSetPage() {
         description: nftData.description,
         image_url: nftData.image_url,
         attributes: nftData.attributes || "",
-        package_id: nftData.package_id,  // Get from metadata
+        package_id: nftData.package_id, // Get from metadata
       };
 
       console.log("💰 Processing paid randomized mint");
 
       // Resolve package id from the instance or parent collection
-      const packageId = nftForm.package_id || (metadataSet as any)?.Collection?.package_id || (nftData as any)?.collection?.package_id;
+      const packageId =
+        nftForm.package_id ||
+        (metadataSet as any)?.Collection?.package_id ||
+        (nftData as any)?.collection?.package_id;
       if (!packageId) {
-        console.error("❌ Paid mint aborted: package_id missing for metadata", nftData);
-        notify("Contract package id missing. Contact the owner or admin.", "error");
+        console.error(
+          "❌ Paid mint aborted: package_id missing for metadata",
+          nftData
+        );
+        notify(
+          "Contract package id missing. Contact the owner or admin.",
+          "error"
+        );
         setPaidMinting(false);
         return;
       }

@@ -179,6 +179,7 @@ export const useNftTransactions = () => {
           tx.pure.string(nftForm.description),
           tx.pure.vector("u8", imageUrlBytes),
           tx.pure.vector("string", attributesArray),
+          tx.pure.address(address)
         ],
       });
 

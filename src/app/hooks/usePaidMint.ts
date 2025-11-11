@@ -68,7 +68,7 @@ export const usePaidMint = () => {
         package_id: nftForm.package_id,
       };
 
-      console.log("💰 Processing paid mint with form:", finalForm);
+      console.log("💰 Processing paid mint with form:", finalForm, userAddress);
 
       // Call the Sui transaction function
       const result = await fixedPriceMintNFT(finalForm, userAddress);

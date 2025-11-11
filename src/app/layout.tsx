@@ -15,7 +15,19 @@ const dmSans = DM_Sans({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Sui Hashcase",
-  description: "Mint a unique digital asset on the Sui blockchain",
+  description:
+    "HashCase infra uses real assets and gamification to achieve user retention.",
+  metadataBase: new URL("https://sui.hashcase.co/"),
+  openGraph: {
+    images: [
+      {
+        url: "/hashCase-metadata-image.jpeg",
+        width: 800,
+        height: 600,
+        alt: "HashCase image",
+      },
+    ],
+  },
   icons: {
     icon: [
       { url: "/favicon.ico" },
