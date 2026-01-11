@@ -10,6 +10,7 @@ import { Toaster } from "react-hot-toast";
 import WalletConnectionModal from "@/components/WalletConnectionModal";
 import Footer from "@/components/Footer";
 import RainbowkitProvider from "@/providers/RainbowkitProvider";
+import { GoogleAnalytics } from "@next/third-parties/google";
 
 const dmSans = DM_Sans({ subsets: ["latin"] });
 
@@ -54,6 +55,7 @@ export default function RootLayout({
             <ToastContainer />
           </TanstackProvider>
         </RainbowkitProvider>
+        <GoogleAnalytics gaId="G-XDQHSEFE49" />
       </body>
     </html>
   );
