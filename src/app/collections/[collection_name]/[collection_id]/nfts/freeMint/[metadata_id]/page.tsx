@@ -6,7 +6,7 @@ import ArrowB from "@/assets/images/arrowB.svg";
 import { Work_Sans } from "next/font/google";
 import notify, { notifyPromise, notifyResolve } from "@/utils/notify";
 
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import React from "react";
 
@@ -64,6 +64,7 @@ const workSans = Work_Sans({ subsets: ["latin"] });
 export default function NFTPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [nftData, setNftData] = useState<Metadata | null>(null);
 
   const [isLocked, setIsLocked] = useState(false);
@@ -102,6 +103,25 @@ export default function NFTPage() {
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Handle referral code from URL query params
+  useEffect(() => {
+    const code = searchParams.get("code");
+    if (!code || !user?.id || !nftData) return;
+
+    axiosInstance
+      .post("/user/referral/add", {
+        referred_user_id: user.id,
+        code,
+        owner_id: (nftData as any)?.collection?.owner_id,
+      })
+      .then(() => {
+        notify(`Successfully referred using code ${code}`, "success");
+      })
+      .catch((err) => {
+        console.error("Referral failed:", err);
+      });
+  }, [user?.id, searchParams, nftData]);
 
   // ONLY FIX: Check for zkLogin OR regular wallet
   const isWalletConnected = mounted && (!!address || hasWalletForChain("sui"));

@@ -24,7 +24,7 @@ import { HashcaseText } from "../assets";
 import ConnectButton from "./ConnectButton";
 import { useGlobalAppStore } from "@/store/globalAppStore";
 
-export const Navbar = () => {
+const Navbar = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const router = useRouter();
@@ -126,7 +126,7 @@ export const Navbar = () => {
       handleClose();
     } else {
       toast.error(
-        "User profile not found. Please try reconnecting your wallet."
+        "User profile not found. Please try reconnecting your wallet.",
       );
     }
   };
@@ -246,3 +246,5 @@ export const Navbar = () => {
     </AppBar>
   );
 };
+
+export default Navbar;

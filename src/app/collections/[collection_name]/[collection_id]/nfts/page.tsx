@@ -8,6 +8,7 @@ import ArrowW from "@/assets/images/arrowW.svg";
 import { SetCard } from "@/components/ui/SetCard";
 import { NFTCard } from "@/components/ui/NFTCard";
 import { isSetGroup } from "@/utils/modelTypes";
+import { useGlobalAppStore } from "@/store/globalAppStore";
 
 interface NFTMetadata {
   id: number;
@@ -41,8 +42,15 @@ type MetadataItem = NFTMetadata | SetGroup;
 const NFTMetadataPage = () => {
   const [metadata, setMetadata] = useState<MetadataItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [mounted, setMounted] = useState(false);
   const router = useRouter();
   const params = useParams();
+  const { hasWalletForChain, setOpenModal } = useGlobalAppStore();
+  const isWalletConnected = mounted && (hasWalletForChain("sui") || hasWalletForChain("evm"));
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     const fetchMetadata = async () => {
@@ -79,6 +87,32 @@ const NFTMetadataPage = () => {
         <div className="text-white text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-400 mx-auto mb-4"></div>
           <p className="text-lg">Loading metadata...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isWalletConnected) {
+    return (
+      <div className="bg-gradient-to-b from-[#00041f] to-[#030828] min-h-screen pb-10">
+        <div className="pt-2 pb-6 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-4xl mx-auto">
+            <div className="text-center py-12">
+              <div className="text-4xl sm:text-6xl mb-4">🔒</div>
+              <h3 className="text-xl sm:text-2xl font-bold text-white mb-4">
+                Login or Connect Wallet
+              </h3>
+              <p className="text-gray-400 text-sm sm:text-base mb-6">
+                Please connect your wallet to view mintable NFTs
+              </p>
+              <button
+                onClick={() => setOpenModal(true)}
+                className="bg-white text-black px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
+              >
+                Connect Wallet or Login
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     );

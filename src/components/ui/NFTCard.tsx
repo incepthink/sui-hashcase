@@ -1,7 +1,12 @@
+"use client";
+
 import React from "react";
 import Link from "next/link";
 import { NFTMetadata } from "@/utils/modelTypes";
-import { MapPin } from "lucide-react";
+import { MapPin, Share2 } from "lucide-react";
+import toast from "react-hot-toast";
+import axiosInstance from "@/utils/axios";
+import { useGlobalAppStore } from "@/store/globalAppStore";
 
 interface NFTCardProps {
   nft: NFTMetadata;
@@ -17,11 +22,32 @@ export const NFTCard: React.FC<NFTCardProps> = ({
   // Check if this is a location-based NFT
   const hasLocation = "location" in nft && nft.location === true;
 
+  const { user } = useGlobalAppStore();
+
+  const handleShare = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    let baseUrl = `${window.location.origin}/collections/${collectionName}/${collectionId}/nfts/freemint/${nft.id}`;
+    console.log(user);
+    try {
+      if (user?.id) {
+        const { data } = await axiosInstance.get("/user/referral/code", {
+          params: { user_id: user.id },
+        });
+        baseUrl += `?code=${data.referral_code.code}`;
+      }
+      await navigator.clipboard.writeText(baseUrl);
+      toast.success("Link copied to clipboard!");
+    } catch {
+      toast.error("Failed to copy link");
+    }
+  };
+
   return (
     <Link
       href={`/collections/${collectionName}/${collectionId}/nfts/freemint/${nft.id}`}
     >
-      <div className="group bg-gradient-to-br from-[#0a0f3b] to-[#050a2e] shadow-xl rounded-xl overflow-hidden transform transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:from-[#141a52] hover:to-[#0a0f3b] cursor-pointer border border-gray-700/30 h-full">
+      <div className="group relative bg-gradient-to-br from-[#0a0f3b] to-[#050a2e] shadow-xl rounded-xl overflow-hidden transform transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:from-[#141a52] hover:to-[#0a0f3b] cursor-pointer border border-gray-700/30 h-full">
         {/* Image Container */}
         <div className="relative overflow-hidden">
           <img
@@ -43,10 +69,19 @@ export const NFTCard: React.FC<NFTCardProps> = ({
 
         {/* Content */}
         <div className="p-4 sm:p-5">
-          {/* Title */}
-          <h2 className="text-lg sm:text-xl font-bold mb-2 text-white group-hover:text-blue-300 transition-colors duration-300 line-clamp-1">
-            {nft.title}
-          </h2>
+          {/* Title + Share */}
+          <div className="flex items-center justify-between mb-2 gap-2">
+            <h2 className="text-lg sm:text-xl font-bold text-white group-hover:text-blue-300 transition-colors duration-300 line-clamp-1">
+              {nft.title}
+            </h2>
+            <button
+              onClick={handleShare}
+              className="flex items-center gap-1 shrink-0 bg-green-500 hover:bg-green-600 text-white text-xs px-2.5 py-1 rounded-full font-medium transition-colors duration-200"
+              title="Copy share link"
+            >
+              Share <Share2 className="w-3 h-3" />
+            </button>
+          </div>
 
           {/* Location Badge */}
           {hasLocation && (

@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls -la /c/Users/shaik/Desktop/dev-work/sui-hashcase/src/app/collections/[collection_name]/[collection_id]/nfts/)",
+      "Bash(xargs grep -l \"on.chain\\\\|on_chain\\\\|onChain\")",
+      "Bash(find /c/Users/shaik/Desktop/dev-work/sui-hashcase/src/app/collections/[collection_name]/[collection_id]/nfts -type f -name \"page.tsx\")",
+      "Bash(grep -n \"navigator.clipboard\\\\|copy\\\\|share\" /c/Users/shaik/Desktop/dev-work/sui-hashcase/src/app/profile/[user_address]/page.tsx)",
+      "Bash(xargs grep -l \"react-toastify\\\\|react-hot-toast\")",
+      "Bash(head -50 /c/Users/shaik/Desktop/dev-work/sui-hashcase/src/app/collections/[collection_name]/[collection_id]/BadgesTable.tsx)"
+    ]
+  }
+}
