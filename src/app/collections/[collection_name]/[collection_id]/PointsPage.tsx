@@ -13,10 +13,6 @@ import HeroImage from "@/assets/images/sui-bg.png";
 
 import { useGlobalAppStore } from "@/store/globalAppStore";
 
-import LeaderboardTable from "./LeaderboardTable";
-import LoyaltyCodesTable from "./LoyaltyCodesTable";
-import QuestsTable from "./QuestsTable";
-
 const PointsPage = () => {
   const params = useParams();
   const currentAccount = useCurrentAccount();
@@ -32,8 +28,7 @@ const PointsPage = () => {
   const [points, setPoints] = useState<string>("");
   const [userTokenId, setUserTokenId] = useState<string | null>(null);
 
-  const { completeQuest, spendLoyaltyPoints } =
-    useLoyaltyPointsTransactions();
+  const { completeQuest, spendLoyaltyPoints } = useLoyaltyPointsTransactions();
 
   // Fetch token data
   // Add refetch capability to the query
@@ -56,7 +51,7 @@ const PointsPage = () => {
     },
     {
       enabled: !!currentAccount?.address,
-    }
+    },
   );
 
   // Process token data and set states
