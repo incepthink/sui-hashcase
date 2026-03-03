@@ -156,7 +156,7 @@ const LoyaltyCodesTable = ({
             user_id: user.id,
             owner_id: owner_id,
           },
-        }
+        },
       );
 
       const user_achievements = checkInResponse.data.user_achievements;
@@ -164,14 +164,14 @@ const LoyaltyCodesTable = ({
       setOffChainPointsState(user_achievements.total_loyalty_points);
 
       console.log(
-        `Daily check-in successful with ${getRequiredChainTypeLocal()} wallet`
+        `Daily check-in successful with ${getRequiredChainTypeLocal()} wallet`,
       );
     } catch (error: any) {
       console.log("Daily check-in failed:", error);
 
       if (error.response?.data?.message?.includes("wrong wallet")) {
         toast.error(
-          "Daily check-in failed: Incorrect wallet type connected for this collection."
+          "Daily check-in failed: Incorrect wallet type connected for this collection.",
         );
       }
     }
@@ -183,7 +183,7 @@ const LoyaltyCodesTable = ({
         "/user/achievements/get-points",
         {
           params: { owner_id },
-        }
+        },
       );
       const total = (response.data?.total_points ?? response.data?.points) || 0;
       setOffChainPointsState(total);
@@ -195,7 +195,7 @@ const LoyaltyCodesTable = ({
   // Wrapper function for handleAddLoyalty to maintain compatibility
   const handleLoyaltyRedeem = async (
     code: string,
-    value: number | undefined
+    value: number | undefined,
   ) => {
     await handleAddLoyalty(code, value, owner_id, loyaltyCodes);
   };
@@ -234,7 +234,7 @@ const LoyaltyCodesTable = ({
   const isWalletConnected = mounted && hasWalletForChain("sui");
 
   return (
-    <div className="bg-gradient-to-b from-[#00041f] to-[#030828] flex flex-col items-center justify-start p-4 sm:p-6 md:p-8 text-white pb-16 md:pb-16">
+    <div className=" flex flex-col items-center justify-start p-4 sm:p-6 md:p-8 text-white pb-16 md:pb-16">
       {/* Page Loading Spinner */}
       {isCurrentlyLoading && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
@@ -309,7 +309,7 @@ const LoyaltyCodesTable = ({
           const status = getLoyaltyCodeStatus(
             loyalty,
             hasWalletForChain,
-            getRequiredChainTypeLocal
+            getRequiredChainTypeLocal,
           );
 
           return (
@@ -351,8 +351,8 @@ const LoyaltyCodesTable = ({
                           hasTransactionError
                             ? "Code verification error - please refresh"
                             : !status.canRedeem
-                            ? `Connect ${getRequiredChainTypeLocal().toUpperCase()} wallet to redeem`
-                            : ""
+                              ? `Connect ${getRequiredChainTypeLocal().toUpperCase()} wallet to redeem`
+                              : ""
                         }
                       >
                         {loyalty.code}
@@ -444,7 +444,7 @@ const LoyaltyCodesTable = ({
               const status = getLoyaltyCodeStatus(
                 loyalty,
                 hasWalletForChain,
-                getRequiredChainTypeLocal
+                getRequiredChainTypeLocal,
               );
 
               return (
@@ -481,8 +481,8 @@ const LoyaltyCodesTable = ({
                           hasTransactionError
                             ? "Code verification error - please refresh"
                             : !status.canRedeem
-                            ? `Connect ${getRequiredChainTypeLocal().toUpperCase()} wallet to redeem`
-                            : ""
+                              ? `Connect ${getRequiredChainTypeLocal().toUpperCase()} wallet to redeem`
+                              : ""
                         }
                       >
                         {loyalty.code}

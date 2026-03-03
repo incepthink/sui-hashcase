@@ -42,7 +42,7 @@ const LeaderboardTable = ({ owner_id }: { owner_id: number }) => {
   const { user } = useGlobalAppStore();
 
   const [period, setPeriod] = useState<LeaderboardPeriod>(
-    LeaderboardPeriod.MONTHLY
+    LeaderboardPeriod.MONTHLY,
   );
 
   // All leaderboard data (fetched once)
@@ -238,7 +238,7 @@ const LeaderboardTable = ({ owner_id }: { owner_id: number }) => {
   };
 
   return (
-    <div className="flex flex-col justify-start items-center gap-4 sm:gap-6 w-full h-full bg-gradient-to-b from-[#00041f] to-[#030828] p-4 sm:p-6 md:p-8 shadow-lg">
+    <div className="flex flex-col justify-start items-center gap-4 sm:gap-6 w-full h-full p-4 sm:p-6 md:p-8 shadow-lg">
       {/* Header */}
       <div className="flex items-center justify-center w-full">
         <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-white/90 drop-shadow-md text-center">
@@ -387,8 +387,8 @@ const LeaderboardTable = ({ owner_id }: { owner_id: number }) => {
                       pageNum === currentPage
                         ? "bg-blue-600 text-white"
                         : pageNum === "..."
-                        ? "text-white/50 cursor-default"
-                        : "bg-white/10 text-white hover:bg-white/20"
+                          ? "text-white/50 cursor-default"
+                          : "bg-white/10 text-white hover:bg-white/20"
                     } disabled:cursor-not-allowed`}
                   >
                     {pageNum}
@@ -448,8 +448,8 @@ const LeaderboardTable = ({ owner_id }: { owner_id: number }) => {
                       pageNum === currentPage
                         ? "bg-blue-600 text-white"
                         : pageNum === "..."
-                        ? "text-white/50 cursor-default"
-                        : "bg-white/10 text-white hover:bg-white/20"
+                          ? "text-white/50 cursor-default"
+                          : "bg-white/10 text-white hover:bg-white/20"
                     } disabled:cursor-not-allowed`}
                   >
                     {pageNum}
@@ -497,8 +497,8 @@ const LeaderboardTable = ({ owner_id }: { owner_id: number }) => {
         {isLoading
           ? "Refreshing..."
           : isWalletConnected
-          ? "Refresh Leaderboard"
-          : "Connect Wallet to Refresh"}
+            ? "Refresh Leaderboard"
+            : "Connect Wallet to Refresh"}
       </button>
     </div>
   );

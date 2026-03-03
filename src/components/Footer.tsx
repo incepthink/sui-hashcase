@@ -8,7 +8,7 @@ const workSans = Work_Sans({ subsets: ["latin"] });
 
 const Footer = () => {
   return (
-    <footer className="bg-[#1A1D35] border-t border-white/10">
+    <footer className="bg-[#1A1D35] border-t border-white/10 absolute w-full bottom-0">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-6">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
           {/* Social Media Links */}

@@ -13,9 +13,11 @@ export default function LayoutChrome({
 
   return (
     <>
-      {!hideChrome && <Navbar />}
-      {children}
-      {!hideChrome && <Footer />}
+      <div className="min-h-screen relative pb-20">
+        {!hideChrome && <Navbar />}
+        {children}
+        {!hideChrome && <Footer />}
+      </div>
     </>
   );
 }

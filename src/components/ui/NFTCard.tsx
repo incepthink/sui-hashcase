@@ -12,12 +12,14 @@ interface NFTCardProps {
   nft: NFTMetadata;
   collectionName: string;
   collectionId: string;
+  basePath?: string;
 }
 
 export const NFTCard: React.FC<NFTCardProps> = ({
   nft,
   collectionName,
   collectionId,
+  basePath = "/collections",
 }) => {
   // Check if this is a location-based NFT
   const hasLocation = "location" in nft && nft.location === true;
@@ -27,7 +29,7 @@ export const NFTCard: React.FC<NFTCardProps> = ({
   const handleShare = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    let baseUrl = `${window.location.origin}/collections/${collectionName}/${collectionId}/nfts/freemint/${nft.id}`;
+    let baseUrl = `${window.location.origin}${basePath}/${collectionName}/${collectionId}/nfts/freemint/${nft.id}`;
     console.log(user);
     try {
       if (user?.id) {
@@ -45,7 +47,7 @@ export const NFTCard: React.FC<NFTCardProps> = ({
 
   return (
     <Link
-      href={`/collections/${collectionName}/${collectionId}/nfts/freemint/${nft.id}`}
+      href={`${basePath}/${collectionName}/${collectionId}/nfts/freemint/${nft.id}`}
     >
       <div className="group relative bg-gradient-to-br from-[#0a0f3b] to-[#050a2e] shadow-xl rounded-xl overflow-hidden transform transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:from-[#141a52] hover:to-[#0a0f3b] cursor-pointer border border-gray-700/30 h-full">
         {/* Image Container */}

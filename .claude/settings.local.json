@@ -6,7 +6,18 @@
       "Bash(find /c/Users/shaik/Desktop/dev-work/sui-hashcase/src/app/collections/[collection_name]/[collection_id]/nfts -type f -name \"page.tsx\")",
       "Bash(grep -n \"navigator.clipboard\\\\|copy\\\\|share\" /c/Users/shaik/Desktop/dev-work/sui-hashcase/src/app/profile/[user_address]/page.tsx)",
       "Bash(xargs grep -l \"react-toastify\\\\|react-hot-toast\")",
-      "Bash(head -50 /c/Users/shaik/Desktop/dev-work/sui-hashcase/src/app/collections/[collection_name]/[collection_id]/BadgesTable.tsx)"
+      "Bash(head -50 /c/Users/shaik/Desktop/dev-work/sui-hashcase/src/app/collections/[collection_name]/[collection_id]/BadgesTable.tsx)",
+      "Bash(xargs grep -l \"EnokiFlowProvider\")",
+      "Bash(find /c/Users/shaik/Desktop/dev-work/sui-hashcase/src/components -type f \\\\\\( -name \"*.tsx\" -o -name \"*.ts\" \\\\\\) -exec wc -l {} +)",
+      "Bash(find /c/Users/shaik/Desktop/dev-work/sui-hashcase/src/utils -type f \\\\\\( -name \"*.ts\" -o -name \"*.tsx\" \\\\\\) -exec wc -l {} +)",
+      "Bash(xargs -I {} wc -c {})",
+      "Bash(grep -E \"^import|^export\" /c/Users/shaik/Desktop/dev-work/sui-hashcase/src/app/collection/[collection_address]/page.tsx)",
+      "Bash(grep -h \"^import\" /c/Users/shaik/Desktop/dev-work/sui-hashcase/src/app/collections/[collection_name]/[collection_id]/page.tsx)",
+      "Bash(grep -h \"^import\" /c/Users/shaik/Desktop/dev-work/sui-hashcase/src/utils/*.ts)",
+      "Bash(wc -l /c/Users/shaik/Desktop/dev-work/sui-hashcase/src/store/globalAppStore.ts /c/Users/shaik/Desktop/dev-work/sui-hashcase/src/utils/*.ts)",
+      "Bash(grep -c \"^import\" /c/Users/shaik/Desktop/dev-work/sui-hashcase/src/app/collections/[collection_name]/[collection_id]/page.tsx)",
+      "Bash(grep -c \"^import\" /c/Users/shaik/Desktop/dev-work/sui-hashcase/src/app/collection/[collection_address]/page.tsx)",
+      "Bash(du -sh /c/Users/shaik/Desktop/dev-work/sui-hashcase/node_modules/@mysten/*)"
     ]
   }
 }

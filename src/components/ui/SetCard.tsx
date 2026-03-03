@@ -13,12 +13,14 @@ interface SetCardProps {
   setGroup: SetGroup;
   collectionName: string;
   collectionId: string;
+  basePath?: string;
 }
 
 export const SetCard: React.FC<SetCardProps> = ({
   setGroup,
   collectionName,
   collectionId,
+  basePath = "/collections",
 }) => {
   // Extract all images from set NFTs
   const images = setGroup.set_nfts.map((nft) => nft.image_url).filter(Boolean);
@@ -29,7 +31,7 @@ export const SetCard: React.FC<SetCardProps> = ({
     e.preventDefault();
     e.stopPropagation();
     const type = setGroup.isRandomized ? "randomizedmint" : "upgradablemint";
-    let baseUrl = `${window.location.origin}/collections/${collectionName}/${collectionId}/nfts/${type}/${setGroup.id}`;
+    let baseUrl = `${window.location.origin}${basePath}/${collectionName}/${collectionId}/nfts/${type}/${setGroup.id}`;
     try {
       if (user?.id) {
         const { data } = await axiosInstance.get("/user/referral/code", {
@@ -52,7 +54,7 @@ export const SetCard: React.FC<SetCardProps> = ({
 
   return (
     <Link
-      href={`/collections/${collectionName}/${collectionId}/nfts/${
+      href={`${basePath}/${collectionName}/${collectionId}/nfts/${
         setGroup.isRandomized ? "randomizedmint" : "upgradablemint"
       }/${setGroup.id}`}
     >

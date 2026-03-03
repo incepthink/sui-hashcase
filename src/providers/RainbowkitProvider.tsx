@@ -1,11 +1,8 @@
-// Minimal provider without styling
 "use client";
 import React, { ReactNode } from "react";
 import { getDefaultConfig } from "@rainbow-me/rainbowkit";
 import { WagmiProvider } from "wagmi";
 import { baseSepolia } from "wagmi/chains";
-import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
-// Remove this line: import '@rainbow-me/rainbowkit/styles.css';
 
 const config = getDefaultConfig({
   appName: "Your App",
@@ -14,8 +11,6 @@ const config = getDefaultConfig({
   ssr: true,
 });
 
-const queryClient = new QueryClient();
-
 export default function RainbowkitProvider({
   children,
 }: {
@@ -23,10 +18,7 @@ export default function RainbowkitProvider({
 }) {
   return (
     <WagmiProvider config={config}>
-      <QueryClientProvider client={queryClient}>
-        {/* Remove RainbowKitProvider entirely if you don't need their UI */}
-        {children}
-      </QueryClientProvider>
+      {children}
     </WagmiProvider>
   );
 }

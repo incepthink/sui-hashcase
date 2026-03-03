@@ -20,7 +20,11 @@ import {
 
 import axiosInstance from "@/utils/axios";
 import UnlockableNft from "./UnlockableNft";
-import { MintSuccessModal, LoadingSpinner, DualMintButton } from "@/components/common";
+import {
+  MintSuccessModal,
+  LoadingSpinner,
+  DualMintButton,
+} from "@/components/common";
 import { useGlobalAppStore } from "@/store/globalAppStore";
 import { usePaidMint } from "@/app/hooks/usePaidMint";
 
@@ -166,7 +170,7 @@ export default function NFTPage() {
 
   const getMintAttemptKey = (
     metadataId: string | string[],
-    walletAddress: string
+    walletAddress: string,
   ) => {
     const id = Array.isArray(metadataId) ? metadataId[0] : metadataId;
     return `mint_attempted_${id}_${walletAddress}`;
@@ -209,7 +213,7 @@ export default function NFTPage() {
         "/platform/metadata/geofenced-by-id",
         {
           params: requestParams,
-        }
+        },
       );
 
       const { metadata_instance, can_mint_again } = itemData.data;
@@ -228,7 +232,7 @@ export default function NFTPage() {
         collection_name: metadata_instance.collection.name,
         collection_address:
           metadata_instance?.collection?.contract?.contract_address,
-        package_id: metadata_instance?.collection?.package_id,  // Add package_id
+        package_id: metadata_instance?.collection?.package_id, // Add package_id
       };
 
       setNftData(finalNftData);
@@ -273,7 +277,7 @@ export default function NFTPage() {
           enableHighAccuracy: true,
           timeout: 10000,
           maximumAge: 0,
-        }
+        },
       );
     });
   }
@@ -292,7 +296,7 @@ export default function NFTPage() {
       if (error.code === 1) {
         notify(
           "Please enable location permissions in your browser settings",
-          "error"
+          "error",
         );
       } else {
         notify("Failed to get location. Please try again.", "error");
@@ -326,7 +330,7 @@ export default function NFTPage() {
     setMinting(true);
     const toastId = notifyPromise(
       "Processing your mint...",
-      "Please wait while we mint your NFT"
+      "Please wait while we mint your NFT",
     );
 
     try {
@@ -354,7 +358,7 @@ export default function NFTPage() {
             user_address:
               address || userWalletAddress || currentAccount?.address,
           },
-        }
+        },
       );
 
       console.log("✅ Mint successful:", response.data);
@@ -402,7 +406,9 @@ export default function NFTPage() {
 
     try {
       const nftForm = {
-        collection_id: String(nftData.collection_address || nftData.collection_id),
+        collection_id: String(
+          nftData.collection_address || nftData.collection_id,
+        ),
         title: nftData.title,
         description: nftData.description,
         image_url: nftData.image_url,
@@ -412,9 +418,13 @@ export default function NFTPage() {
 
       console.log("💰 Processing paid freemint");
       // Resolve package id from instance or parent collection
-  const packageId = nftForm.package_id || (nftData as any)?.collection?.package_id;
+      const packageId =
+        nftForm.package_id || (nftData as any)?.collection?.package_id;
       if (!packageId) {
-        notify("Contract package id missing. Contact the owner or admin.", "error");
+        notify(
+          "Contract package id missing. Contact the owner or admin.",
+          "error",
+        );
         setPaidMinting(false);
         return;
       }
@@ -602,7 +612,7 @@ export default function NFTPage() {
                 </div>
               )}
               <img
-                className="w-full h-full rounded-2xl shadow-2xl border border-white/10 object-cover"
+                className="w-full h-full rounded-2xl shadow-2xl border border-white/10 object-contain"
                 src={nftData.image_url}
                 alt="nft"
                 style={{ opacity: imageLoading ? 0 : 1 }}

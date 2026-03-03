@@ -2,6 +2,14 @@ import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  turbopack: {
+    rules: {
+      "*.svg": {
+        loaders: ["@svgr/webpack"],
+        as: "*.js",
+      },
+    },
+  },
   webpack(config) {
     //to fix issues with fs in client components
     config.resolve.fallback = {
