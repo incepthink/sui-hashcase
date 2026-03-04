@@ -4,6 +4,8 @@ import { AlertTriangle, Wallet } from "lucide-react";
 import { useAccount } from "wagmi";
 import { useGlobalAppStore } from "@/store/globalAppStore";
 import { useWalletAddress } from "@/hooks/useWalletAddress";
+import { useCurrentAccount } from "@mysten/dapp-kit";
+import { useZkLogin } from "@mysten/enoki/react";
 
 interface ChainMismatchInfoProps {
   requiredChain: "ethereum" | "sui";
