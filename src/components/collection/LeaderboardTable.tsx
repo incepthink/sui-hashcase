@@ -58,6 +58,7 @@ const LeaderboardTable = ({ owner_id }: { owner_id: number }) => {
 
   // Check if any Sui wallet is connected
   const isWalletConnected = !!(currentAccount?.address || zkAddress);
+  console.log(zkAddress, currentAccount?.address);
 
   // Calculate pagination values for frontend-only pagination
   const totalCount = allLeaderboardData.length;
