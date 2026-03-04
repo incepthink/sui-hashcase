@@ -56,9 +56,7 @@ export const QuestList: React.FC<QuestListProps> = ({
   const router = useRouter();
 
   const handleQuestClick = (questId: number) => {
-    router.push(
-      `/collections/${collection.name}/${collection.id}/quests/${questId}`
-    );
+    router.push(`/event/${collection.name}/${collection.id}/quests/${questId}`);
   };
 
   const getWalletConnectMessage = () => {

@@ -5,37 +5,22 @@ import ArrowB from "../assets/images/arrowB.svg";
 import suiBg from "../assets/images/sui-bg.png";
 import Link from "next/link";
 import { Sparkles, Star, Users, Zap, ArrowRight, Wallet } from "lucide-react";
-import { useCurrentAccount } from "@mysten/dapp-kit";
-import { useZkLogin } from "@mysten/enoki/react";
-import { useGlobalAppStore } from "@/store/globalAppStore";
+import { useWalletAddress } from "@/hooks/useWalletAddress";
 import { useState, useEffect } from "react";
 
 const workSans = Work_Sans({ subsets: ["latin"] });
 
 export const Hero = () => {
-  const currentAccount = useCurrentAccount();
-  const { address: zkAddress } = useZkLogin();
-  const { isUserVerified } = useGlobalAppStore();
+  const { address, isConnected: isWalletConnected } = useWalletAddress();
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
 
-  // Prioritize zkLogin address when available
-  const user_address = zkAddress || currentAccount?.address;
-  const isWalletConnected = !!(user_address && isUserVerified);
-
   useEffect(() => {
-    // Prioritize zkLogin address over wallet address
-    if (isUserVerified && zkAddress) {
-      setWalletAddress(zkAddress.slice(0, 10) + "..." + zkAddress.slice(-8));
-    } else if (isUserVerified && currentAccount?.address) {
-      setWalletAddress(
-        currentAccount.address.slice(0, 10) +
-          "..." +
-          currentAccount.address.slice(-8)
-      );
+    if (address) {
+      setWalletAddress(address.slice(0, 10) + "..." + address.slice(-8));
     } else {
       setWalletAddress(null);
     }
-  }, [zkAddress, currentAccount, isUserVerified]);
+  }, [address]);
 
   return (
     <>

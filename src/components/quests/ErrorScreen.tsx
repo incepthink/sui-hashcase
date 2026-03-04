@@ -14,8 +14,8 @@ export const ErrorScreen: React.FC<ErrorScreenProps> = ({
 }) => {
   return (
     <div
-      className={`min-h-screen ${
-        isNSCollection ? "bg-black" : "bg-[#000421]"
+      className={`pb-24 ${
+        isNSCollection ? "bg-black" : ""
       } flex items-center justify-center px-4`}
     >
       <div className="text-center">

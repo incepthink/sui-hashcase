@@ -113,7 +113,7 @@ const QuestsPageContent = ({ collectionId }: any) => {
   const [mounted, setMounted] = useState(false);
   const [showNftModal, setShowNftModal] = useState(false);
   const [mintedNftData, setMintedNftData] = useState<MintedNftData | null>(
-    null
+    null,
   );
 
   // Metadata states
@@ -211,7 +211,7 @@ const QuestsPageContent = ({ collectionId }: any) => {
       walletAddress,
       isNSCollection,
     }),
-    [showNftModal, mintedNftData, walletAddress, isNSCollection]
+    [showNftModal, mintedNftData, walletAddress, isNSCollection],
   );
 
   // ===== DATA FETCHING =====
@@ -262,7 +262,7 @@ const QuestsPageContent = ({ collectionId }: any) => {
             metadata_id: metadataId,
             user_address: walletAddress,
           },
-        }
+        },
       );
 
       const { metadata_instance, can_mint_again } = response.data;
@@ -317,7 +317,7 @@ const QuestsPageContent = ({ collectionId }: any) => {
       setShowNftModal(true);
       setCanMintAgain(false);
     },
-    [setCanMintAgain]
+    [setCanMintAgain],
   );
 
   // ===== EFFECTS =====
@@ -388,7 +388,7 @@ const QuestsPageContent = ({ collectionId }: any) => {
   // Show wallet connection required screen if not connected
   if (!isWalletConnected) {
     return (
-      <div className={` bg-[#000421] pb-10`}>
+      <div className={`  pb-10`}>
         {/* <Navigation onBack={handleBack} /> */}
         <div className="pt-2 pb-6 px-4 sm:px-6 lg:px-8">
           <div className="max-w-4xl mx-auto">
@@ -449,7 +449,7 @@ const QuestsPageContent = ({ collectionId }: any) => {
   // ===== MAIN RENDER =====
 
   return (
-    <div className={`py-10 bg-[#000421] pb-16`}>
+    <div className={`py-10  pb-16`}>
       {/* <Navigation onBack={handleBack} /> */}
 
       {/* Main Content */}

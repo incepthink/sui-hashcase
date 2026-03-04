@@ -2,15 +2,17 @@
 
 "use client";
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import toast from "react-hot-toast";
+import axiosInstance from "@/utils/axios";
+import notify from "@/utils/notify";
 
 import { useLoyaltyPointsTransactions } from "@/app/hooks/useLoyaltyPointsTransactions";
 import { useCurrentAccount, useSuiClientQuery } from "@mysten/dapp-kit";
-import { useZkLogin } from "@mysten/enoki/react";
 import { useAccount } from "wagmi";
 
 import { useGlobalAppStore } from "@/store/globalAppStore";
+import { useWalletAddress } from "@/hooks/useWalletAddress";
 import { useCollectionById } from "@/hooks/useCollections";
 
 import LeaderboardTable from "@/components/collection/LeaderboardTable";
@@ -21,12 +23,12 @@ export default function EventPointsPage() {
   useEffect(() => setMounted(true), []);
 
   const params = useParams();
+  const searchParams = useSearchParams();
   const currentAccount = useCurrentAccount();
-  const { address: zkAddress } = useZkLogin();
   const { address: evmAddress } = useAccount();
   const { user } = useGlobalAppStore();
+  const { isConnected: hasSuiWallet } = useWalletAddress();
 
-  const hasSuiWallet = !!(currentAccount?.address || zkAddress);
   const hasEvmWallet = !!evmAddress;
 
   const userTokenType =
@@ -47,6 +49,24 @@ export default function EventPointsPage() {
   } = useCollectionById(params.collection_id as string);
 
   const ownerId = collection?.owner_id;
+
+  useEffect(() => {
+    const code = searchParams.get("referral_code");
+    if (!code || !user?.id || !ownerId) return;
+
+    axiosInstance
+      .post("/user/achievements/set-referrer", {
+        user_id: user.id,
+        owner_id: ownerId,
+        code,
+      })
+      .then(() => {
+        notify("Successfully refferring Code", "success");
+      })
+      .catch((err) => {
+        console.error("Referral failed:", err);
+      });
+  }, [user?.id, ownerId, searchParams]);
 
   const handlePointsUpdate = (newPoints: number) => {
     setOffChainPointsState(newPoints);
@@ -71,7 +91,7 @@ export default function EventPointsPage() {
     },
     {
       enabled: !!currentAccount?.address,
-    }
+    },
   );
 
   useEffect(() => {
@@ -86,10 +106,10 @@ export default function EventPointsPage() {
   }, [fetchedTokenData]);
 
   useEffect(() => {
-    if ((zkAddress && !currentAccount?.address) || hasEvmWallet) {
+    if ((hasSuiWallet && !currentAccount?.address) || hasEvmWallet) {
       setOnChainPointsState(0);
     }
-  }, [zkAddress, currentAccount?.address, hasEvmWallet]);
+  }, [hasSuiWallet, currentAccount?.address, hasEvmWallet]);
 
   const handleSpendLoyaltyPoints = async () => {
     if (points && userTokenId) {
@@ -132,6 +152,7 @@ export default function EventPointsPage() {
           owner_id={ownerId}
           onPointsUpdate={handlePointsUpdate}
           collection={collection}
+          showStreak={false}
         />
       )}
       {ownerId && <LeaderboardTable owner_id={ownerId} />}

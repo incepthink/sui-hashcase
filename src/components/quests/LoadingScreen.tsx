@@ -12,8 +12,8 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
 }) => {
   return (
     <div
-      className={`min-h-screen ${
-        isNSCollection ? "bg-black" : "bg-[#000421]"
+      className={`pb-20 ${
+        isNSCollection ? "bg-black" : ""
       } flex items-center justify-center px-4`}
     >
       <div className="text-center">

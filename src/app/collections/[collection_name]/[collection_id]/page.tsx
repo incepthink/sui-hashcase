@@ -7,10 +7,10 @@ import toast from "react-hot-toast";
 
 import { useLoyaltyPointsTransactions } from "@/app/hooks/useLoyaltyPointsTransactions";
 import { useCurrentAccount, useSuiClientQuery } from "@mysten/dapp-kit";
-import { useZkLogin } from "@mysten/enoki/react";
 import { useAccount } from "wagmi";
 
 import { useGlobalAppStore } from "@/store/globalAppStore";
+import { useWalletAddress } from "@/hooks/useWalletAddress";
 import { useCollectionById } from "@/hooks/useCollections";
 
 import LeaderboardTable from "@/components/collection/LeaderboardTable";
@@ -22,12 +22,10 @@ export default function CollectionPointsPage() {
 
   const params = useParams();
   const currentAccount = useCurrentAccount();
-  const { address: zkAddress } = useZkLogin();
   const { address: evmAddress } = useAccount();
   const { user } = useGlobalAppStore();
+  const { isConnected: hasSuiWallet } = useWalletAddress();
 
-  // Check if any wallet is connected
-  const hasSuiWallet = !!(currentAccount?.address || zkAddress);
   const hasEvmWallet = !!evmAddress;
 
   const userTokenType =
@@ -93,10 +91,10 @@ export default function CollectionPointsPage() {
 
   // For zk login users and EVM users, set on-chain points to 0
   useEffect(() => {
-    if ((zkAddress && !currentAccount?.address) || hasEvmWallet) {
+    if ((hasSuiWallet && !currentAccount?.address) || hasEvmWallet) {
       setOnChainPointsState(0);
     }
-  }, [zkAddress, currentAccount?.address, hasEvmWallet]);
+  }, [hasSuiWallet, currentAccount?.address, hasEvmWallet]);
 
   const handleSpendLoyaltyPoints = async () => {
     if (points && userTokenId) {

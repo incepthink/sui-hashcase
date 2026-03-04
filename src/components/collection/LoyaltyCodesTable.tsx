@@ -29,12 +29,14 @@ interface LoyaltyCodesTableProps {
   owner_id: number;
   collection: Collection;
   onPointsUpdate?: (newPoints: number) => void;
+  showStreak?: boolean;
 }
 
 const LoyaltyCodesTable = ({
   owner_id,
   collection,
   onPointsUpdate,
+  showStreak = true,
 }: LoyaltyCodesTableProps) => {
   const {
     user,
@@ -282,7 +284,7 @@ const LoyaltyCodesTable = ({
 
       {/* Off-Chain Points */}
 
-      {isWalletConnected ? (
+      {/* {isWalletConnected ? (
         <h1 className="text-2xl sm:text-3xl md:text-4xl font-semibold mb-4 sm:mb-8 bg-clip-text text-transparent text-white/90 drop-shadow-lg text-center px-2">
           {collection.name} Points: {offChainPointsState}
         </h1>
@@ -290,16 +292,18 @@ const LoyaltyCodesTable = ({
         <div className=" mb-8">
           <ConnectButton mid={true} />
         </div>
-      )}
+      )} */}
 
       {/* Streak Display */}
-      <div className="flex items-center gap-2 bg-white/10 px-3 sm:px-4 py-2 sm:py-2 rounded-md shadow-md mb-4 sm:mb-8">
-        <Flame className="text-red-600 w-6 h-6 sm:w-8 sm:h-8 flex-shrink-0" />
-        <span className="text-base sm:text-xl font-semibold whitespace-nowrap">{`Streak: ${currentStreak} days`}</span>
-      </div>
+      {showStreak && (
+        <div className="flex items-center gap-2 bg-white/10 px-3 sm:px-4 py-2 sm:py-2 rounded-md shadow-md mb-4 sm:mb-8">
+          <Flame className="text-red-600 w-6 h-6 sm:w-8 sm:h-8 flex-shrink-0" />
+          <span className="text-base sm:text-xl font-semibold whitespace-nowrap">{`Streak: ${currentStreak} days`}</span>
+        </div>
+      )}
 
       {/* Loyalty Codes */}
-      <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold mb-4 sm:mb-6 text-blue-300 drop-shadow-md text-center px-2">
+      <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold mb-4 sm:mb-6 drop-shadow-md text-center px-2">
         Points
       </h1>
 

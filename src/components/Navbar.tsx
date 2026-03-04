@@ -139,6 +139,7 @@ const Navbar = () => {
   const navigationItems = [
     { label: "Home", path: "/" },
     { label: "Collections", path: "/collections" },
+    { label: "Events", path: "/event" },
     { label: "Profile", onClick: handleProfileClick },
   ];
 

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import axiosInstance from "@/utils/axios";
 import { Flame, Award, Trophy, ChevronRight } from "lucide-react";
 import toast from "react-hot-toast";
+import { useGlobalAppStore } from "@/store/globalAppStore";
 
 type Badge = {
   id: number;
@@ -25,6 +26,7 @@ const BadgesTable = ({ owner_id }: { owner_id: number }) => {
   const [totalBadges, setTotalBadges] = useState<number>(0);
   const [activeBadges, setActiveBadges] = useState<number>(0);
   const [seasonalBadges, setSeasonalBadges] = useState<number>(0);
+  const { user } = useGlobalAppStore();
 
   const fetchBadges = async () => {
     try {
@@ -39,10 +41,10 @@ const BadgesTable = ({ owner_id }: { owner_id: number }) => {
       setBadges(response.data.badges);
       setTotalBadges(response.data.badges.length);
       setActiveBadges(
-        response.data.badges.filter((b: Badge) => b.is_active).length
+        response.data.badges.filter((b: Badge) => b.is_active).length,
       );
       setSeasonalBadges(
-        response.data.badges.filter((b: Badge) => b.is_seasoned).length
+        response.data.badges.filter((b: Badge) => b.is_seasoned).length,
       );
     } catch (error) {
       console.error("Error fetching badges:", error);
@@ -61,8 +63,9 @@ const BadgesTable = ({ owner_id }: { owner_id: number }) => {
         {
           params: {
             owner_id,
+            user_id: user?.id,
           },
-        }
+        },
       );
 
       console.log(response);

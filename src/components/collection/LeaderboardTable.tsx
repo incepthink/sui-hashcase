@@ -1,13 +1,12 @@
 // sui leaderboard
 "use client";
 import { useEffect, useState } from "react";
-import { useCurrentAccount } from "@mysten/dapp-kit";
-import { useZkLogin } from "@mysten/enoki/react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import { LeaderboardPeriod } from "@/utils/enums";
 import axiosInstance from "@/utils/axios";
 import { useGlobalAppStore } from "@/store/globalAppStore";
+import { useWalletAddress } from "@/hooks/useWalletAddress";
 import toast from "react-hot-toast";
 
 type LeaderboardEntry = {
@@ -37,8 +36,7 @@ type LeaderboardResponse = {
 };
 
 const LeaderboardTable = ({ owner_id }: { owner_id: number }) => {
-  const currentAccount = useCurrentAccount();
-  const { address: zkAddress } = useZkLogin();
+  const { address: walletAddress, isConnected: isWalletConnected, type: walletType } = useWalletAddress();
   const { user } = useGlobalAppStore();
 
   const [period, setPeriod] = useState<LeaderboardPeriod>(
@@ -55,10 +53,6 @@ const LeaderboardTable = ({ owner_id }: { owner_id: number }) => {
   // Frontend pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(10);
-
-  // Check if any Sui wallet is connected
-  const isWalletConnected = !!(currentAccount?.address || zkAddress);
-  console.log(zkAddress, currentAccount?.address);
 
   // Calculate pagination values for frontend-only pagination
   const totalCount = allLeaderboardData.length;
@@ -188,22 +182,15 @@ const LeaderboardTable = ({ owner_id }: { owner_id: number }) => {
   };
 
   const getCurrentUserAddress = () => {
-    if (currentAccount?.address) {
-      return formatWalletAddress(currentAccount.address);
-    }
-    if (zkAddress) {
-      return formatWalletAddress(zkAddress);
+    if (walletAddress) {
+      return formatWalletAddress(walletAddress);
     }
     return "Unknown";
   };
 
   const getCurrentUserType = () => {
-    if (currentAccount?.address) {
-      return "Sui";
-    }
-    if (zkAddress) {
-      return "Google";
-    }
+    if (walletType === "zk-login") return "Google";
+    if (walletType) return "Sui";
     return "Unknown";
   };
 

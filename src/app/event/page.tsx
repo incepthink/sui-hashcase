@@ -11,6 +11,7 @@ import backgroundImageHeroSection from "@/assets/images/high_rise.jpg";
 import "./page.css";
 import { useRouter } from "next/navigation";
 import { useCollections } from "@/hooks/useCollections";
+import { useGlobalAppStore } from "@/store/globalAppStore";
 
 const HeaderSection = () => {
   return (
