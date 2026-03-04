@@ -62,7 +62,7 @@ export default function RewardsCart({
     setError(false);
     Promise.all([
       axiosInstance.get(`/platform/reward`, {
-        params: { target_owner_id: owner_id, user_id: userId },
+        params: { owner_id: owner_id, user_id: userId },
       }),
       axiosInstance.get(`/platform/user/achievements/loyalty-points`, {
         params: { user_id: userId, owner_id },
