@@ -46,6 +46,26 @@ export default function EventLayout({ children }: EventLayoutProps) {
     },
   ];
 
+  const renderDescriptionWithLinks = (text: string) => {
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    const parts = text.split(urlRegex);
+    return parts.map((part, i) =>
+      urlRegex.test(part) ? (
+        <a
+          key={i}
+          href={part}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-400 underline hover:text-blue-300"
+        >
+          {part}
+        </a>
+      ) : (
+        <span key={i}>{part}</span>
+      ),
+    );
+  };
+
   if (!mounted || isCollectionLoading) {
     return (
       <div className="w-full min-h-[90vh] flex flex-col items-center justify-center bg-gradient-to-br from-[#000212] via-[#03082a] to-[#0a0e3a] px-4 relative overflow-hidden">
@@ -117,7 +137,7 @@ export default function EventLayout({ children }: EventLayoutProps) {
 
       {/* ── Banner ── */}
       <div className="max-w-5xl mx-auto px-4 mb-8">
-        <div className="w-full aspect-video rounded-2xl overflow-hidden bg-[#1a1a2e]">
+        <div className="w-full h-[360px] rounded-2xl overflow-hidden bg-[#1a1a2e] relative">
           <img
             src={
               collection.banner_image || collection.image_uri || "/banner.jpg"
@@ -125,6 +145,15 @@ export default function EventLayout({ children }: EventLayoutProps) {
             alt={collection.name}
             className="w-full h-full object-cover"
           />
+          <div className="w-full h-full backdrop-blur-md absolute top-0">
+            <img
+              src={
+                collection.banner_image || collection.image_uri || "/banner.jpg"
+              }
+              alt={collection.name}
+              className="w-full h-full object-contain"
+            />
+          </div>
         </div>
       </div>
 
@@ -137,7 +166,9 @@ export default function EventLayout({ children }: EventLayoutProps) {
             {description ? (
               <>
                 <p className="text-gray-300 text-sm leading-relaxed">
-                  {showFullDesc ? description : descPreview}
+                  {showFullDesc
+                    ? renderDescriptionWithLinks(description)
+                    : renderDescriptionWithLinks(descPreview)}
                   {hasMore && !showFullDesc && "..."}
                 </p>
                 {hasMore && (
