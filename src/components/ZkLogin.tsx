@@ -100,6 +100,7 @@ const ZkLogin: React.FC<ZkLoginProps> = ({ setOpenModal }) => {
           },
         })
         .then((url) => {
+          localStorage.setItem("zklogin_redirect_url", window.location.href);
           window.location.href = url;
         });
     } catch (error) {
