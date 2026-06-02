@@ -263,11 +263,7 @@ export default function NFTPage() {
           "Backend service temporarily unavailable (502 Bad Gateway)"
         );
         showError(
-          "Backend service temporarily unavailable. Please try again later.",
-          {
-            duration: 5000,
-            position: "top-center",
-          }
+          "Backend service temporarily unavailable. Please try again later."
         );
       } else if (error.response?.status === 500) {
         console.log("Internal server error (500)");
@@ -275,11 +271,7 @@ export default function NFTPage() {
       } else {
         console.log("Network or other error:", error.message);
         showError(
-          "Failed to fetch NFTs. Please check your connection and try again.",
-          {
-            duration: 5000,
-            position: "top-center",
-          }
+          "Failed to fetch NFTs. Please check your connection and try again."
         );
       }
 
