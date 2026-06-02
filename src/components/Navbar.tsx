@@ -19,12 +19,13 @@ import { useCurrentAccount } from "@mysten/dapp-kit";
 import { useZkLogin } from "@mysten/enoki/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import toast from "react-hot-toast";
+import { useAppSnackbar } from "@/providers/SnackbarProvider";
 import { HashcaseText } from "../assets";
 import ConnectButton from "./ConnectButton";
 import { useGlobalAppStore } from "@/store/globalAppStore";
 
 const Navbar = () => {
+  const { showError } = useAppSnackbar();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const router = useRouter();
@@ -116,7 +117,7 @@ const Navbar = () => {
 
     // Check if wallet is connected
     if (!isWalletConnected()) {
-      toast.error("Please connect your wallet to view your profile");
+      showError("Please connect your wallet to view your profile");
       return;
     }
 
@@ -125,7 +126,7 @@ const Navbar = () => {
       router.push(`/profile/${profileAddress}`);
       handleClose();
     } else {
-      toast.error(
+      showError(
         "User profile not found. Please try reconnecting your wallet.",
       );
     }

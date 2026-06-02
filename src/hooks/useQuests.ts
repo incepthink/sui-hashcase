@@ -4,7 +4,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import axiosInstance from "@/utils/axios";
-import toast from "react-hot-toast";
+import { useAppSnackbar } from "@/providers/SnackbarProvider";
 
 interface RequirementRule {
   type: string;
@@ -53,14 +53,15 @@ interface UseQuestsProps {
   userId?: number | null; // Add userId prop
 }
 
-export const useQuests = ({ 
-  collection, 
-  walletAddress, 
-  isWalletConnected, 
-  mounted, 
+export const useQuests = ({
+  collection,
+  walletAddress,
+  isWalletConnected,
+  mounted,
   requiredChainType = 'sui',
-  userId 
+  userId
 }: UseQuestsProps) => {
+  const { showError } = useAppSnackbar();
   const [nftMinted, setNftMinted] = useState(false);
   const prevIsConnectedRef = useRef<boolean | null>(null);
 
@@ -195,7 +196,7 @@ export const useQuests = ({
         }
       } catch (err) {
         console.error("Error fetching quests:", err);
-        toast.error("Failed to load quests");
+        showError("Failed to load quests");
         throw err;
       }
     },
@@ -208,7 +209,7 @@ export const useQuests = ({
   useEffect(() => {
     if (error) {
       console.error("Quest query error:", error);
-      toast.error("Failed to load quests");
+      showError("Failed to load quests");
     }
   }, [error]);
 

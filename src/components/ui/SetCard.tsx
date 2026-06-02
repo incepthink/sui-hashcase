@@ -5,7 +5,7 @@ import Link from "next/link";
 import { SetGroup } from "@/utils/modelTypes";
 import { ImageCarousel } from "./ImageCarousel";
 import { Share2 } from "lucide-react";
-import toast from "react-hot-toast";
+import { useAppSnackbar } from "@/providers/SnackbarProvider";
 import axiosInstance from "@/utils/axios";
 import { useGlobalAppStore } from "@/store/globalAppStore";
 
@@ -22,6 +22,7 @@ export const SetCard: React.FC<SetCardProps> = ({
   collectionId,
   basePath = "/collections",
 }) => {
+  const { showSuccess, showError } = useAppSnackbar();
   // Extract all images from set NFTs
   const images = setGroup.set_nfts.map((nft) => nft.image_url).filter(Boolean);
 
@@ -42,9 +43,9 @@ export const SetCard: React.FC<SetCardProps> = ({
         }
       }
       await navigator.clipboard.writeText(baseUrl);
-      toast.success("Link copied to clipboard!");
+      showSuccess("Link copied to clipboard!");
     } catch {
-      toast.error("Failed to copy link");
+      showError("Failed to copy link");
     }
   };
 

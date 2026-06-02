@@ -6,7 +6,7 @@ import { TanstackProvider } from "@/components/TanstackProvider";
 import LayoutChrome from "@/components/LayoutChrome";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { Toaster } from "react-hot-toast";
+import { SnackbarProvider } from "@/providers/SnackbarProvider";
 import WalletConnectionModal from "@/components/WalletConnectionModal";
 import Footer from "@/components/Footer";
 import RainbowkitProvider from "@/providers/RainbowkitProvider";
@@ -49,10 +49,11 @@ export default function RootLayout({
       <body className={clsx(dmSans.className, "antialiased")}>
         <RainbowkitProvider>
           <TanstackProvider>
-            <Toaster />
-            <LayoutChrome>{children}</LayoutChrome>
-            <WalletConnectionModal />
-            <ToastContainer />
+            <SnackbarProvider>
+              <LayoutChrome>{children}</LayoutChrome>
+              <WalletConnectionModal />
+              <ToastContainer />
+            </SnackbarProvider>
           </TanstackProvider>
         </RainbowkitProvider>
         <GoogleAnalytics gaId="G-XDQHSEFE49" />

@@ -3,7 +3,7 @@
 
 import { useState } from "react";
 import axiosInstance from "@/utils/axios";
-import toast from "react-hot-toast";
+import { useAppSnackbar } from "@/providers/SnackbarProvider";
 import { useGlobalAppStore } from "@/store/globalAppStore";
 import { RequirementRule, TaskWithCompletion } from "@/hooks/useTasksByCode";
 
@@ -27,6 +27,7 @@ export const TaskDetailList: React.FC<TaskDetailListProps> = ({
   const [completingTasks, setCompletingTasks] = useState<Set<number>>(
     new Set()
   );
+  const { showSuccess, showError } = useAppSnackbar();
   const { setOpenModal, user } = useGlobalAppStore();
 
   const getTaskStatusIcon = (task: TaskWithCompletion): string => {
@@ -94,7 +95,7 @@ export const TaskDetailList: React.FC<TaskDetailListProps> = ({
 
   const handleCompleteTask = async (task: TaskWithCompletion) => {
     if (!isWalletConnected && !user?.id) {
-      toast.error("Please connect wallet or sign in to complete tasks");
+      showError("Please connect wallet or sign in to complete tasks");
       setOpenModal(true);
       return;
     }
@@ -124,7 +125,7 @@ export const TaskDetailList: React.FC<TaskDetailListProps> = ({
         payload
       );
 
-      toast.success("Task completed successfully!");
+      showSuccess("Task completed successfully!");
 
       // Call the callback to refetch task data
       if (onTaskComplete) {
@@ -158,7 +159,7 @@ export const TaskDetailList: React.FC<TaskDetailListProps> = ({
         err.response?.data?.message || "Failed to complete task";
 
       if (errorMessage.includes("already completed")) {
-        toast.error("Task has already been completed");
+        showError("Task has already been completed");
         if (onTaskComplete) {
           try {
             await onTaskComplete();
@@ -167,7 +168,7 @@ export const TaskDetailList: React.FC<TaskDetailListProps> = ({
           }
         }
       } else {
-        toast.error(errorMessage);
+        showError(errorMessage);
       }
 
       // Remove from completing state on error

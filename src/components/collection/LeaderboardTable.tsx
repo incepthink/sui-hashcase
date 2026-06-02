@@ -7,7 +7,7 @@ import { LeaderboardPeriod } from "@/utils/enums";
 import axiosInstance from "@/utils/axios";
 import { useGlobalAppStore } from "@/store/globalAppStore";
 import { useWalletAddress } from "@/hooks/useWalletAddress";
-import toast from "react-hot-toast";
+import { useAppSnackbar } from "@/providers/SnackbarProvider";
 
 type LeaderboardEntry = {
   user_id: number;
@@ -36,6 +36,7 @@ type LeaderboardResponse = {
 };
 
 const LeaderboardTable = ({ owner_id }: { owner_id: number }) => {
+  const { showSuccess, showError } = useAppSnackbar();
   const { address: walletAddress, isConnected: isWalletConnected, type: walletType } = useWalletAddress();
   const { user } = useGlobalAppStore();
 
@@ -65,7 +66,7 @@ const LeaderboardTable = ({ owner_id }: { owner_id: number }) => {
 
   const refreshLeaderboard = async () => {
     if (!isWalletConnected) {
-      toast.error("Please connect your wallet to refresh leaderboard");
+      showError("Please connect your wallet to refresh leaderboard");
       return;
     }
 
@@ -90,10 +91,10 @@ const LeaderboardTable = ({ owner_id }: { owner_id: number }) => {
       // Reset to page 1 after refresh
       setCurrentPage(1);
 
-      toast.success("Leaderboard updated with latest rankings!");
+      showSuccess("Leaderboard updated with latest rankings!");
     } catch (error: any) {
       console.error("Error refreshing leaderboard:", error);
-      toast.error("Failed to refresh leaderboard");
+      showError("Failed to refresh leaderboard");
     } finally {
       setIsLoading(false);
     }

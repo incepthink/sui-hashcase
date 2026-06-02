@@ -6,11 +6,12 @@ import { useZkLogin } from "@mysten/enoki/react";
 import axios, { AxiosResponse } from "axios";
 import { useSui } from "./useSui";
 import { SuiTransactionBlockResponseOptions } from "@mysten/sui/client";
-import { toast } from "react-hot-toast";
+import { useAppSnackbar } from "@/providers/SnackbarProvider";
 import axiosInstance from "@/utils/axios";
 
 export const useSponsorSignAndExecute = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const { showError } = useAppSnackbar();
   const enokiFlow = useEnokiFlow();
   const { address } = useZkLogin();
   const { suiClient } = useSui();
@@ -67,7 +68,7 @@ export const useSponsorSignAndExecute = () => {
       });
     } catch (err) {
       console.error(err);
-      toast.error("Failed to sponsor and execute transaction block");
+      showError("Failed to sponsor and execute transaction block");
     } finally {
       setIsLoading(false);
     }

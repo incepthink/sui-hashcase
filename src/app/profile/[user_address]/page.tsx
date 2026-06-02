@@ -15,7 +15,7 @@ import Image from "next/image";
 import NftCard from "@/components/NftCard";
 import NFTsTab from "@/components/tasks/NFTsTab";
 import TokensTab from "@/components/tasks/TokensTab";
-import { toast } from "react-hot-toast";
+import { useAppSnackbar } from "@/providers/SnackbarProvider";
 import backgroundImageHeroSection from "@/assets/images/high_rise.jpg";
 import { TokensApiResponse } from "@/components/tasks/tokenTypes";
 
@@ -52,6 +52,7 @@ interface FetchedNFT {
 type TabType = "NFTs" | "Tokens";
 
 const App: React.FC = () => {
+  const { showSuccess, showError } = useAppSnackbar();
   const [userData, setUserData] = useState({
     profile_image:
       "https://i.pinimg.com/564x/49/cc/10/49cc10386c922de5e2e3c0bb66956e65.jpg",
@@ -316,10 +317,10 @@ const App: React.FC = () => {
     const profileUrl = window.location.href;
     try {
       await navigator.clipboard.writeText(profileUrl);
-      toast.success("Profile link copied to clipboard!");
+      showSuccess("Profile link copied to clipboard!");
     } catch (error) {
       console.error("Failed to copy link:", error);
-      toast.error("Failed to copy link");
+      showError("Failed to copy link");
     }
   };
 

@@ -13,7 +13,7 @@ import { Hash, Download, Edit3, ArrowLeft } from "lucide-react";
 import { useNftTransactions } from "@/app/hooks/useNftTransactions";
 import axiosInstance from "@/utils/axios";
 import UnlockableNft from "./UnlockableNft";
-import toast from "react-hot-toast";
+import { useAppSnackbar } from "@/providers/SnackbarProvider";
 import {
   Collection,
   Metadata,
@@ -23,6 +23,7 @@ import {
 const workSans = Work_Sans({ subsets: ["latin"] });
 
 const NftPage = () => {
+  const { showSuccess, showError } = useAppSnackbar();
   const params = useParams();
   const router = useRouter();
   const currentAccount = useCurrentAccount();
@@ -48,7 +49,7 @@ const NftPage = () => {
 
   const handleClaimNft = async (collection_id: string) => {
     if (!currentAccount?.address) {
-      toast.error("Connect your wallet to claim");
+      showError("Connect your wallet to claim");
       return;
     }
     
@@ -70,10 +71,10 @@ const NftPage = () => {
         { params: { user_address: currentAccount.address } }
       );
       
-      toast.success("NFT claimed successfully!");
+      showSuccess("NFT claimed successfully!");
     } catch (error) {
       console.error("Claim error:", error);
-      toast.error("Failed to claim the NFT");
+      showError("Failed to claim the NFT");
     } finally {
       setIsLoading(false);
     }
@@ -81,7 +82,7 @@ const NftPage = () => {
 
   const handleUpdateMetadata = async (collection_id: string, nftId: string) => {
     if (!upgradeData) {
-      toast.error("No upgrade data available for this NFT");
+      showError("No upgrade data available for this NFT");
       return;
     }
     
@@ -97,10 +98,10 @@ const NftPage = () => {
       };
 
       await updateNftMetadata(updateForm);
-      toast.success("NFT metadata updated successfully!");
+      showSuccess("NFT metadata updated successfully!");
     } catch (error) {
       console.error("Update error:", error);
-      toast.error("Failed to update NFT metadata");
+      showError("Failed to update NFT metadata");
     } finally {
       setIsLoading(false);
     }

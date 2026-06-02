@@ -34,6 +34,9 @@ export const QuestHeader: React.FC<QuestHeaderProps> = ({
         completionPercentage={completionPercentage}
         isVisible={showProgress}
       />
+      <p className="text-violet-500 text-md my-1 ">
+        Complete Quests designed by the owner to earn amazing Rewards!
+      </p>
     </div>
   );
 };

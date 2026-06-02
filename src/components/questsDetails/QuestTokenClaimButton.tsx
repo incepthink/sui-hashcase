@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import axiosInstance from "@/utils/axios";
 import { useGlobalAppStore } from "@/store/globalAppStore";
-import toast from "react-hot-toast";
+import { useAppSnackbar } from "@/providers/SnackbarProvider";
 
 interface QuestTokenClaimButtonProps {
   tokenReward: {
@@ -30,6 +30,7 @@ export const QuestTokenClaimButton: React.FC<QuestTokenClaimButtonProps> = ({
   questId,
   disabled = false,
 }) => {
+  const { showSuccess, showError } = useAppSnackbar();
   const [isClaiming, setIsClaiming] = useState(false);
   const [hasClaimed, setHasClaimed] = useState(false);
   const { getWalletForChain } = useGlobalAppStore();
@@ -39,13 +40,13 @@ export const QuestTokenClaimButton: React.FC<QuestTokenClaimButtonProps> = ({
 
   const handleClaimTokens = async () => {
     if (!isWalletConnected) {
-      toast.error("Please connect your wallet first");
+      showError("Please connect your wallet first");
       return;
     }
 
     const walletInfo = getWalletForChain("sui");
     if (!walletInfo?.address) {
-      toast.error("Wallet address not found");
+      showError("Wallet address not found");
       return;
     }
 
@@ -60,7 +61,7 @@ export const QuestTokenClaimButton: React.FC<QuestTokenClaimButtonProps> = ({
       const response = await axiosInstance.post("/user/claim/erc20", claimData);
 
       if (response.data.success) {
-        toast.success(
+        showSuccess(
           `Successfully claimed ${Number(tokenAmount).toFixed(2)} ${
             tokenReward.symbol
           }!`
@@ -73,7 +74,7 @@ export const QuestTokenClaimButton: React.FC<QuestTokenClaimButtonProps> = ({
           console.log(`Blockchain transaction: ${blockchainTx.hash}`);
         }
       } else {
-        toast.error(response.data.message || "Failed to claim tokens");
+        showError(response.data.message || "Failed to claim tokens");
       }
     } catch (error: any) {
       console.error("Error claiming tokens:", error);
@@ -85,7 +86,7 @@ export const QuestTokenClaimButton: React.FC<QuestTokenClaimButtonProps> = ({
         errorMessage = error.message;
       }
 
-      toast.error(errorMessage);
+      showError(errorMessage);
     } finally {
       setIsClaiming(false);
     }

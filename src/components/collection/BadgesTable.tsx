@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import axiosInstance from "@/utils/axios";
 import { Flame, Award, Trophy, ChevronRight } from "lucide-react";
-import toast from "react-hot-toast";
+import { useAppSnackbar } from "@/providers/SnackbarProvider";
 import { useGlobalAppStore } from "@/store/globalAppStore";
 
 type Badge = {
@@ -21,6 +21,7 @@ type Badge = {
 };
 
 const BadgesTable = ({ owner_id }: { owner_id: number }) => {
+  const { showSuccess } = useAppSnackbar();
   const [badges, setBadges] = useState<Badge[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [totalBadges, setTotalBadges] = useState<number>(0);
@@ -69,7 +70,7 @@ const BadgesTable = ({ owner_id }: { owner_id: number }) => {
       );
 
       console.log(response);
-      toast.success("Badge Successfully Added");
+      showSuccess("Badge Successfully Added");
     } catch (error) {}
   };
 

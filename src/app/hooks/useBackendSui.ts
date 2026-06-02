@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useAccounts } from "@mysten/dapp-kit";
-import { toast } from "react-hot-toast";
+import { useAppSnackbar } from "@/providers/SnackbarProvider";
 import { suiApi, MintNftRequest, AddLoyaltyPointsRequest } from "@/utils/suiApi";
 
 interface MintingForm {
@@ -13,6 +13,7 @@ interface MintingForm {
 
 export const useBackendSui = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const { showSuccess, showError } = useAppSnackbar();
   const accounts = useAccounts();
   const address = accounts[0]?.address;
 
@@ -21,12 +22,12 @@ export const useBackendSui = () => {
    */
   const mintNftWithBackend = async (nftForm: MintingForm) => {
     if (!address) {
-      toast.error("Please connect your wallet first.");
+      showError("Please connect your wallet first.");
       return;
     }
 
     if (!nftForm.collection_id || !nftForm.title || !nftForm.image_url || !nftForm.attributes) {
-      toast.error("Please fill in all required fields.");
+      showError("Please fill in all required fields.");
       return;
     }
 
@@ -46,14 +47,14 @@ export const useBackendSui = () => {
 
       const result = await suiApi.mintNft(request);
       
-      toast.success("NFT minted and transferred successfully!");
+      showSuccess("NFT minted and transferred successfully!");
       console.log("Mint result:", result);
       
       return result;
     } catch (error: any) {
       console.error("Error minting NFT:", error);
       const errorMessage = error.response?.data?.message || "Failed to mint NFT";
-      toast.error(errorMessage);
+      showError(errorMessage);
       return null;
     } finally {
       setIsLoading(false);
@@ -65,7 +66,7 @@ export const useBackendSui = () => {
    */
   const addLoyaltyPoints = async (points: number) => {
     if (!address) {
-      toast.error("Please connect your wallet first.");
+      showError("Please connect your wallet first.");
       return;
     }
 
@@ -79,14 +80,14 @@ export const useBackendSui = () => {
 
       const result = await suiApi.addLoyaltyPoints(request);
       
-      toast.success(`Successfully added ${points} loyalty points!`);
+      showSuccess(`Successfully added ${points} loyalty points!`);
       console.log("Loyalty points result:", result);
       
       return result;
     } catch (error: any) {
       console.error("Error adding loyalty points:", error);
       const errorMessage = error.response?.data?.message || "Failed to add loyalty points";
-      toast.error(errorMessage);
+      showError(errorMessage);
       return null;
     } finally {
       setIsLoading(false);
@@ -98,7 +99,7 @@ export const useBackendSui = () => {
    */
   const getLoyaltyBalance = async () => {
     if (!address) {
-      toast.error("Please connect your wallet first.");
+      showError("Please connect your wallet first.");
       return null;
     }
 
@@ -109,7 +110,7 @@ export const useBackendSui = () => {
     } catch (error: any) {
       console.error("Error getting loyalty balance:", error);
       const errorMessage = error.response?.data?.message || "Failed to get loyalty balance";
-      toast.error(errorMessage);
+      showError(errorMessage);
       return null;
     }
   };
@@ -125,7 +126,7 @@ export const useBackendSui = () => {
     } catch (error: any) {
       console.error("Error getting contract info:", error);
       const errorMessage = error.response?.data?.message || "Failed to get contract info";
-      toast.error(errorMessage);
+      showError(errorMessage);
       return null;
     }
   };
@@ -140,7 +141,7 @@ export const useBackendSui = () => {
       return result;
     } catch (error: any) {
       console.error("Error testing backend connection:", error);
-      toast.error("Backend connection failed");
+      showError("Backend connection failed");
       return null;
     }
   };

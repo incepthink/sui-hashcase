@@ -191,8 +191,11 @@ const CollectionsPage: React.FC = () => {
 
             // Determine if this is a SUI chain collection
             const isBaseChain = chainType.toLowerCase() === "base";
+            const isEvent = collection.collection_type === "Event";
             const linkUrl = isBaseChain
               ? `https://hashcase.co/collections/${collectionName}/${collectionId}`
+              : isEvent
+              ? `/event/${collectionName}/${collectionId}`
               : `/collections/${collectionName}/${collectionId}`;
 
             const LinkComponent = isBaseChain ? "a" : Link;

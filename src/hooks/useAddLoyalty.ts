@@ -1,6 +1,6 @@
 import { useState } from "react";
 import axiosInstance from "@/utils/axios";
-import toast from "react-hot-toast";
+import { useAppSnackbar } from "@/providers/SnackbarProvider";
 
 type Loyalty = {
   id: number;
@@ -48,6 +48,7 @@ export const useAddLoyalty = ({
   onPointsUpdate,
   onSuccess,
 }: UseAddLoyaltyProps) => {
+  const { showSuccess, showError } = useAppSnackbar();
   const [isLoading, setIsLoading] = useState(false);
 
   // Determine required chain type based on collection
@@ -62,7 +63,7 @@ export const useAddLoyalty = ({
     walletAddress?: string;
   } => {
     if (!isUserVerified) {
-      toast.error("Please connect your wallet to continue");
+      showError("Please connect your wallet to continue");
       setOpenModal(true);
       return { isValid: false };
     }
@@ -73,16 +74,14 @@ export const useAddLoyalty = ({
     if (!hasCorrectWallet) {
       const chainName =
         requiredChain === "evm" ? "EVM (MetaMask, Phantom, Coinbase)" : "Sui";
-      toast.error(`Please connect a ${chainName} wallet for this collection`, {
-        duration: 5000,
-      });
+      showError(`Please connect a ${chainName} wallet for this collection`);
       setOpenModal(true);
       return { isValid: false };
     }
 
     const walletInfo = getWalletForChain(requiredChain);
     if (!walletInfo?.address) {
-      toast.error("Wallet address not found. Please reconnect your wallet.");
+      showError("Wallet address not found. Please reconnect your wallet.");
       return { isValid: false };
     }
 
@@ -143,7 +142,7 @@ export const useAddLoyalty = ({
       const requiredChain = getRequiredChainType();
       const chainName = requiredChain === "evm" ? "EVM" : "Sui";
 
-      toast.success(
+      showSuccess(
         `Successfully redeemed ${code} with ${chainName} wallet! +${value} points added. Total: ${newPoints} points`
       );
 
@@ -159,23 +158,23 @@ export const useAddLoyalty = ({
       console.error("Full error object:", error);
 
       if (error.response?.status === 401 || error.response?.status === 403) {
-        toast.error(
+        showError(
           "Authentication failed. Please reconnect your wallet and try again."
         );
       } else if (error.response?.data?.message?.includes("wrong wallet")) {
-        toast.error(
+        showError(
           "Incorrect wallet type connected. Please connect the appropriate wallet for this collection."
         );
       } else if (error.response?.data?.message === "Loyalty code already claimed") {
-        toast.error("This loyalty code has already been claimed.");
+        showError("This loyalty code has already been claimed.");
       } else if (error.response?.data?.message === "Loyalty code not found") {
-        toast.error("Invalid loyalty code.");
+        showError("Invalid loyalty code.");
       } else if (error.response?.data?.message?.includes("Outside availability window")) {
-        toast.error(`Code not available: ${error.response.data.message}`);
+        showError(`Code not available: ${error.response.data.message}`);
       } else if (error.response?.data?.message?.includes("You can claim this code again")) {
-        toast.error(`On cooldown: ${error.response.data.message}`);
+        showError(`On cooldown: ${error.response.data.message}`);
       } else {
-        toast.error(
+        showError(
           `Failed to redeem loyalty code: ${
             error.response?.data?.message || error.message
           }`

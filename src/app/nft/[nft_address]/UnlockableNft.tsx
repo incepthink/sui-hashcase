@@ -1,7 +1,8 @@
+"use client";
 import React from "react";
 
 import { X, Lock } from "lucide-react";
-import toast from "react-hot-toast";
+import { useAppSnackbar } from "@/providers/SnackbarProvider";
 
 interface UnlockableNft {
   isOpen: boolean;
@@ -14,10 +15,11 @@ const UnlockableNft: React.FC<UnlockableNft> = ({
   unlockableContent,
   closeModal,
 }) => {
+  const { showError } = useAppSnackbar();
   if (!isOpen) return null;
 
   const handleReveal = () => {
-    toast.error("Mint the NFT to view unlockable content");
+    showError("Mint the NFT to view unlockable content");
     closeModal();
   };
 

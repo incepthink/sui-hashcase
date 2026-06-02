@@ -4,7 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { NFTMetadata } from "@/utils/modelTypes";
 import { MapPin, Share2 } from "lucide-react";
-import toast from "react-hot-toast";
+import { useAppSnackbar } from "@/providers/SnackbarProvider";
 import axiosInstance from "@/utils/axios";
 import { useGlobalAppStore } from "@/store/globalAppStore";
 
@@ -21,6 +21,7 @@ export const NFTCard: React.FC<NFTCardProps> = ({
   collectionId,
   basePath = "/collections",
 }) => {
+  const { showSuccess, showError } = useAppSnackbar();
   // Check if this is a location-based NFT
   const hasLocation = "location" in nft && nft.location === true;
 
@@ -39,9 +40,9 @@ export const NFTCard: React.FC<NFTCardProps> = ({
         baseUrl += `?code=${data.referral_code.code}`;
       }
       await navigator.clipboard.writeText(baseUrl);
-      toast.success("Link copied to clipboard!");
+      showSuccess("Link copied to clipboard!");
     } catch {
-      toast.error("Failed to copy link");
+      showError("Failed to copy link");
     }
   };
 

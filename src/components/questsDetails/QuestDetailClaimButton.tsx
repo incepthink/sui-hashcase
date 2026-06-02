@@ -4,7 +4,7 @@
 import { useState } from "react";
 import { useNFTClaiming } from "@/hooks/useNFTClaiming";
 import { useGlobalAppStore } from "@/store/globalAppStore";
-import toast from "react-hot-toast";
+import { useAppSnackbar } from "@/providers/SnackbarProvider";
 
 interface QuestDetailClaimButtonProps {
   nftMinted: boolean;
@@ -44,6 +44,7 @@ export const QuestDetailClaimButton: React.FC<QuestDetailClaimButtonProps> = ({
   disabled: externalDisabled = false,
   metadataId,
 }) => {
+  const { showSuccess, showError } = useAppSnackbar();
   const { setOpenModal } = useGlobalAppStore();
 
   const {
@@ -57,23 +58,23 @@ export const QuestDetailClaimButton: React.FC<QuestDetailClaimButtonProps> = ({
 
   const handleClaimNFT = async () => {
     if (!isWalletConnected) {
-      toast.error("Please connect your wallet first");
+      showError("Please connect your wallet first");
       setOpenModal(true);
       return;
     }
 
     if (!nftData.recipient) {
-      toast.error("Wallet address not found");
+      showError("Wallet address not found");
       return;
     }
 
     if (!metadataId) {
-      toast.error("NFT metadata not found");
+      showError("NFT metadata not found");
       return;
     }
 
     if (!canStartClaiming(nftData.recipient, metadataId)) {
-      toast.error("Cannot start claiming at this time");
+      showError("Cannot start claiming at this time");
       return;
     }
 
@@ -94,15 +95,15 @@ export const QuestDetailClaimButton: React.FC<QuestDetailClaimButtonProps> = ({
       const result = await claimNFT(claimData);
 
       if (result.success) {
-        toast.success("NFT claimed successfully!");
+        showSuccess("NFT claimed successfully!");
         onSuccess(result.data);
         setNftMinted(true);
       } else {
-        toast.error(result.error || "Failed to claim NFT");
+        showError(result.error || "Failed to claim NFT");
       }
     } catch (error: any) {
       console.error("Error in handleClaimNFT:", error);
-      toast.error("An unexpected error occurred");
+      showError("An unexpected error occurred");
     } finally {
       setClaiming(false);
     }

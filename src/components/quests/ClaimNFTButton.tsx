@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect } from "react";
-import toast from "react-hot-toast";
+import { useAppSnackbar } from "@/providers/SnackbarProvider";
 import { useNFTMinting, MintNFTData } from "@/hooks/useNFTMinting";
 import { useGlobalAppStore } from "@/store/globalAppStore";
 
@@ -31,6 +31,7 @@ export const ClaimNFTButton: React.FC<ClaimNFTButtonProps> = ({
   chain = "sui",
   requiredChainType = "sui",
 }) => {
+  const { showError, showInfo } = useAppSnackbar();
   const { getWalletForChain, hasWalletForChain, setOpenModal } =
     useGlobalAppStore();
 
@@ -66,12 +67,12 @@ export const ClaimNFTButton: React.FC<ClaimNFTButtonProps> = ({
 
   const handleClaimNFT = async () => {
     if (nftMinted) {
-      toast("NFT already minted for today's quests!");
+      showInfo("NFT already minted for today's quests!");
       return;
     }
 
     if (completionPercentage !== 100) {
-      toast.error("Complete all quests to claim the NFT");
+      showError("Complete all quests to claim the NFT");
       return;
     }
 
@@ -81,14 +82,7 @@ export const ClaimNFTButton: React.FC<ClaimNFTButtonProps> = ({
           ? "EVM wallet (MetaMask, Phantom, Coinbase)"
           : "Sui wallet";
 
-      toast.error(`Please connect a ${chainName} to claim the NFT`, {
-        duration: 5000,
-        style: {
-          background: "#1f2937",
-          color: "#fff",
-          border: "1px solid #374151",
-        },
-      });
+      showError(`Please connect a ${chainName} to claim the NFT`);
 
       setOpenModal(true);
       return;

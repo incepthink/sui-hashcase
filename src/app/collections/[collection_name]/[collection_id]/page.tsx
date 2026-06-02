@@ -3,7 +3,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import toast from "react-hot-toast";
+import { useAppSnackbar } from "@/providers/SnackbarProvider";
 
 import { useLoyaltyPointsTransactions } from "@/app/hooks/useLoyaltyPointsTransactions";
 import { useCurrentAccount, useSuiClientQuery } from "@mysten/dapp-kit";
@@ -17,6 +17,7 @@ import LeaderboardTable from "@/components/collection/LeaderboardTable";
 import LoyaltyCodesTable from "@/components/collection/LoyaltyCodesTable";
 
 export default function CollectionPointsPage() {
+  const { showError } = useAppSnackbar();
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
@@ -106,7 +107,7 @@ export default function CollectionPointsPage() {
       }
       setPoints("");
     } else {
-      toast.error("Please enter an amount and ensure you have loyalty tokens");
+      showError("Please enter an amount and ensure you have loyalty tokens");
     }
   };
 

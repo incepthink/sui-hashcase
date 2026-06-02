@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import axiosInstance from "@/utils/axios";
 import { Flame, Clock, Calendar, Info } from "lucide-react";
-import toast from "react-hot-toast";
+import { useAppSnackbar } from "@/providers/SnackbarProvider";
 import { useGlobalAppStore } from "@/store/globalAppStore";
 import { useLoyalty } from "@/hooks/useLoyalty"; // Import the new hook
 import { useAddLoyalty } from "@/hooks/useAddLoyalty"; // Import the new hook
@@ -38,6 +38,7 @@ const LoyaltyCodesTable = ({
   onPointsUpdate,
   showStreak = true,
 }: LoyaltyCodesTableProps) => {
+  const { showError } = useAppSnackbar();
   const {
     user,
     isUserVerified,
@@ -104,7 +105,7 @@ const LoyaltyCodesTable = ({
     walletAddress?: string;
   } => {
     if (!isUserVerified) {
-      toast.error("Please connect your wallet to continue");
+      showError("Please connect your wallet to continue");
       setOpenModal(true);
       return { isValid: false };
     }
@@ -115,16 +116,14 @@ const LoyaltyCodesTable = ({
     if (!hasCorrectWallet) {
       const chainName =
         requiredChain === "evm" ? "EVM (MetaMask, Phantom, Coinbase)" : "Sui";
-      toast.error(`Please connect a ${chainName} wallet for this collection`, {
-        duration: 5000,
-      });
+      showError(`Please connect a ${chainName} wallet for this collection`);
       setOpenModal(true);
       return { isValid: false };
     }
 
     const walletInfo = getWalletForChain(requiredChain);
     if (!walletInfo?.address) {
-      toast.error("Wallet address not found. Please reconnect your wallet.");
+      showError("Wallet address not found. Please reconnect your wallet.");
       return { isValid: false };
     }
 
@@ -172,7 +171,7 @@ const LoyaltyCodesTable = ({
       console.log("Daily check-in failed:", error);
 
       if (error.response?.data?.message?.includes("wrong wallet")) {
-        toast.error(
+        showError(
           "Daily check-in failed: Incorrect wallet type connected for this collection.",
         );
       }

@@ -1,8 +1,9 @@
+"use client";
 import React, { useState } from "react";
 
 import { useCurrentAccount } from "@mysten/dapp-kit";
 import axiosInstance from "@/utils/axios";
-import { toast } from "react-hot-toast";
+import { useAppSnackbar } from "@/providers/SnackbarProvider";
 
 import { X, HandCoins, Image as ImageIcon, FileText, Tag, Sparkles } from "lucide-react";
 
@@ -21,6 +22,7 @@ const CustomNftModal: React.FC<CustomNftModalProps> = ({
   onClose,
   onMintSuccess,
 }) => {
+  const { showSuccess, showError } = useAppSnackbar();
   const currentAccount = useCurrentAccount();
 
   const [formValues, setFormValues] = useState({
@@ -87,14 +89,14 @@ const CustomNftModal: React.FC<CustomNftModalProps> = ({
 
   const handleFreeMint = async () => {
     if (!currentAccount?.address) {
-      toast.error("Please connect your wallet");
+      showError("Please connect your wallet");
       return;
     }
 
     // Validate form
     const validation = validateForm();
     if (!validation.isValid) {
-      validation.errors.forEach(error => toast.error(error));
+      validation.errors.forEach(error => showError(error));
       return;
     }
 
@@ -114,7 +116,7 @@ const CustomNftModal: React.FC<CustomNftModalProps> = ({
       );
 
       if (response.data.success) {
-        toast.success(`Custom NFT "${formValues.title}" minted successfully!`);
+        showSuccess(`Custom NFT "${formValues.title}" minted successfully!`);
         console.log("Minted NFT:", response.data);
         
         // Call the refresh callback to update the collection page
@@ -133,12 +135,12 @@ const CustomNftModal: React.FC<CustomNftModalProps> = ({
         
         onClose();
       } else {
-        toast.error(response.data.message || "Failed to mint NFT");
+        showError(response.data.message || "Failed to mint NFT");
       }
     } catch (error: any) {
       console.error("Minting failed:", error);
       const errorMessage = error.response?.data?.message || error.response?.data?.missing || "Failed to mint NFT";
-      toast.error(errorMessage);
+      showError(errorMessage);
     } finally {
       setIsLoading(false);
     }

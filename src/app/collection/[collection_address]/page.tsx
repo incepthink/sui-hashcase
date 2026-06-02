@@ -14,7 +14,7 @@ import {
   Metadata,
   MetadataSetWithAllMetadataInstances,
 } from "@/utils/modelTypes";
-import toast from "react-hot-toast";
+import { useAppSnackbar } from "@/providers/SnackbarProvider";
 
 let notused = true;
 
@@ -70,6 +70,7 @@ type Coordinates = {
 };
 
 export default function NFTPage() {
+  const { showError } = useAppSnackbar();
   const params = useParams();
   const collectionAddress = decodeURIComponent(
     String(params.collection_address || "")
@@ -261,7 +262,7 @@ export default function NFTPage() {
         console.log(
           "Backend service temporarily unavailable (502 Bad Gateway)"
         );
-        toast.error(
+        showError(
           "Backend service temporarily unavailable. Please try again later.",
           {
             duration: 5000,
@@ -270,13 +271,10 @@ export default function NFTPage() {
         );
       } else if (error.response?.status === 500) {
         console.log("Internal server error (500)");
-        toast.error("Server error occurred. Please try again later.", {
-          duration: 5000,
-          position: "top-center",
-        });
+        showError("Server error occurred. Please try again later.");
       } else {
         console.log("Network or other error:", error.message);
-        toast.error(
+        showError(
           "Failed to fetch NFTs. Please check your connection and try again.",
           {
             duration: 5000,

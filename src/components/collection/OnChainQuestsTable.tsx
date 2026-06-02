@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useCurrentAccount } from "@mysten/dapp-kit";
 import { useLoyaltyPointsTransactions } from "@/app/hooks/useLoyaltyPointsTransactions";
 import { useGlobalAppStore } from "@/store/globalAppStore";
-import { toast } from "react-hot-toast";
+import { useAppSnackbar } from "@/providers/SnackbarProvider";
 import { CircularProgressbar } from "react-circular-progressbar";
 import "react-circular-progressbar/dist/styles.css";
 
@@ -33,6 +33,7 @@ const OnChainQuestsTable = ({
 }: {
   owner_id: number;
 }) => {
+  const { showSuccess, showError } = useAppSnackbar();
   const { user, isUserVerified } = useGlobalAppStore();
   const currentAccount = useCurrentAccount();
   const { completeQuest, isLoading } = useLoyaltyPointsTransactions();
@@ -74,17 +75,17 @@ const OnChainQuestsTable = ({
 
   const handleQuestAction = async (quest: Quest) => {
     if (!isUserVerified || !user) {
-      toast.error("Please connect your wallet and verify your account first.");
+      showError("Please connect your wallet and verify your account first.");
       return;
     }
 
     if (!currentAccount?.address) {
-      toast.error("Please connect your wallet first.");
+      showError("Please connect your wallet first.");
       return;
     }
 
     if (quest.userProgress?.isCompleted) {
-      toast.error("Quest already completed!");
+      showError("Quest already completed!");
       return;
     }
 
@@ -107,7 +108,7 @@ const OnChainQuestsTable = ({
           )
         );
         
-        toast.success(`Quest completed! You earned ${quest.reward_loyalty_points} on-chain points!`);
+        showSuccess(`Quest completed! You earned ${quest.reward_loyalty_points} on-chain points!`);
       }
     } catch (error) {
       console.error("Error completing quest:", error);

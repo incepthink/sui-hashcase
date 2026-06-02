@@ -5,7 +5,7 @@ import "../globals.css";
 import { TanstackProvider } from "@/components/TanstackProvider";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { Toaster } from "react-hot-toast";
+import { SnackbarProvider } from "@/providers/SnackbarProvider";
 import WalletConnectionModal from "@/components/WalletConnectionModal";
 
 const dmSans = DM_Sans({ subsets: ["latin"] });
@@ -23,10 +23,11 @@ export default function QuestsLayout({
   return (
     <div className={clsx(dmSans.className, "antialiased")}>
       <TanstackProvider>
-        <Toaster />
-        {children}
-        <WalletConnectionModal />
-        <ToastContainer />
+        <SnackbarProvider>
+          {children}
+          <WalletConnectionModal />
+          <ToastContainer />
+        </SnackbarProvider>
       </TanstackProvider>
     </div>
   );

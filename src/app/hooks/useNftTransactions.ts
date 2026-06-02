@@ -3,7 +3,7 @@ import { Transaction } from "@mysten/sui/transactions";
 
 import { useSuiClient, useSignAndExecuteTransaction } from "@mysten/dapp-kit";
 
-import { toast } from "react-hot-toast";
+import { useAppSnackbar } from "@/providers/SnackbarProvider";
 import {
   freeMintNftHelper,
   dynamicMintNftHelper,
@@ -24,6 +24,7 @@ interface MintingForm {
 
 export const useNftTransactions = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const { showSuccess, showError } = useAppSnackbar();
 
   //needed to execute transactions
   const suiClient = useSuiClient();
@@ -32,7 +33,7 @@ export const useNftTransactions = () => {
 
   const freeMintNft = async (nftForm: MintingForm) => {
     if (!nftForm.collection_id) {
-      toast.error("Please fill in all fields.");
+      showError("Please fill in all fields.");
       return;
     }
 
@@ -61,11 +62,11 @@ export const useNftTransactions = () => {
       });
 
       console.log("Transaction Details:", txDetails);
-      toast.success("NFT Minted Successfully!");
+      showSuccess("NFT Minted Successfully!");
       return txDetails;
     } catch (error) {
       console.error("Error executing transaction:", error);
-      toast.error("Failed to mint NFT.");
+      showError("Failed to mint NFT.");
       return null;
     } finally {
       setIsLoading(false);
@@ -78,13 +79,13 @@ export const useNftTransactions = () => {
     priceAmount?: number
   ) => {
     if (!nftForm.collection_id || !address) {
-      toast.error("Please fill in all fields.");
+      showError("Please fill in all fields.");
       return null;
     }
 
     if (!nftForm.package_id) {
       console.error("❌ [PAID MINT] package_id is required for paid minting");
-      toast.error(
+      showError(
         "Contract package id (package_id) is required for paid minting."
       );
       return null;
@@ -205,11 +206,11 @@ export const useNftTransactions = () => {
       });
 
       console.log("Transaction Details:", txDetails);
-      toast.success("NFT Minted Successfully!");
+      showSuccess("NFT Minted Successfully!");
       return txDetails;
     } catch (error: any) {
       console.error("❌ [PAID MINT] Error:", error?.message || error);
-      toast.error("Failed to mint NFT.");
+      showError("Failed to mint NFT.");
       return null;
     } finally {
       setIsLoading(false);
@@ -218,7 +219,7 @@ export const useNftTransactions = () => {
 
   const claimNFT = async (collection_id: string, nft_id: string) => {
     if (!collection_id || !nft_id) {
-      toast.error("Please fill in all fields.");
+      showError("Please fill in all fields.");
       return;
     }
 
@@ -247,11 +248,11 @@ export const useNftTransactions = () => {
       });
 
       console.log("Transaction Details:", txDetails);
-      toast.success("NFT Claimed Successfully!");
+      showSuccess("NFT Claimed Successfully!");
       return txDetails;
     } catch (error) {
       console.error("Error executing transaction:", error);
-      toast.error("Failed to Claim NFT.");
+      showError("Failed to Claim NFT.");
       return null;
     } finally {
       setIsLoading(false);
@@ -260,7 +261,7 @@ export const useNftTransactions = () => {
 
   const updateNftMetadata = async (updateForm: any) => {
     if (!updateForm.collectionId || !updateForm.nftId) {
-      toast.error("Please fill in all fields.");
+      showError("Please fill in all fields.");
       return;
     }
 
@@ -274,7 +275,7 @@ export const useNftTransactions = () => {
       const PACKAGE_ID = updateForm?.packageId || updateForm?.package_id;
       if (!PACKAGE_ID) {
         console.error("❌ [UPDATE METADATA] package_id required on updateForm");
-        toast.error(
+        showError(
           "Contract package id (package_id) is required to update metadata."
         );
         return null;
@@ -322,11 +323,11 @@ export const useNftTransactions = () => {
       });
 
       console.log("Transaction Details:", txDetails);
-      toast.success("NFT Metadata Updated Successfully!");
+      showSuccess("NFT Metadata Updated Successfully!");
       return txDetails;
     } catch (error) {
       console.error("Error executing transaction:", error);
-      toast.error("Failed to update NFT Metadata.");
+      showError("Failed to update NFT Metadata.");
       return null;
     } finally {
       setIsLoading(false);
@@ -336,7 +337,7 @@ export const useNftTransactions = () => {
   // ✅ NEW - Function for admins to create update tickets
   const createUpdateTicket = async (ticketData: any) => {
     if (!ticketData.adminCapId || !ticketData.nftId || !ticketData.recipient) {
-      toast.error("Please fill in all required fields.");
+      showError("Please fill in all required fields.");
       return;
     }
 
@@ -356,7 +357,7 @@ export const useNftTransactions = () => {
       const ticketPackageId = ticketData?.package_id;
       if (!ticketPackageId) {
         console.error("❌ [CREATE TICKET] package_id required on ticketData");
-        toast.error(
+        showError(
           "Contract package id (package_id) is required to create update ticket."
         );
         return null;
@@ -392,11 +393,11 @@ export const useNftTransactions = () => {
       });
 
       console.log("Update Ticket Created:", txDetails);
-      toast.success("Update Ticket Created Successfully!");
+      showSuccess("Update Ticket Created Successfully!");
       return txDetails;
     } catch (error) {
       console.error("Error creating update ticket:", error);
-      toast.error("Failed to create update ticket.");
+      showError("Failed to create update ticket.");
       return null;
     } finally {
       setIsLoading(false);
