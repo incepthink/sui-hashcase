@@ -20,7 +20,13 @@ type Badge = {
   updatedAt: string;
 };
 
-const BadgesTable = ({ owner_id }: { owner_id: number }) => {
+const BadgesTable = ({
+  owner_id,
+  bgClassName = "bg-gradient-to-b from-[#00041f] to-[#030828]",
+}: {
+  owner_id: number;
+  bgClassName?: string;
+}) => {
   const { showSuccess } = useAppSnackbar();
   const [badges, setBadges] = useState<Badge[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -80,7 +86,7 @@ const BadgesTable = ({ owner_id }: { owner_id: number }) => {
 
   if (loading) {
     return (
-      <div className="bg-gradient-to-b from-[#00041f] to-[#030828] text-center h-[50vh] py-10 pb-16  px-4">
+      <div className={`${bgClassName} text-center h-[50vh] py-10 pb-16  px-4`}>
         <div className="text-white">Loading badges...</div>
       </div>
     );
@@ -88,7 +94,7 @@ const BadgesTable = ({ owner_id }: { owner_id: number }) => {
 
   if (!badges || badges.length === 0) {
     return (
-      <div className="bg-gradient-to-b from-[#00041f] to-[#030828] text-center py-10 pb-16  px-4 h-[50vh]">
+      <div className={`${bgClassName} text-center py-10 pb-16  px-4 h-[50vh]`}>
         <div className="text-white">No badges in this Collection</div>
       </div>
     );
@@ -105,7 +111,7 @@ const BadgesTable = ({ owner_id }: { owner_id: number }) => {
   };
 
   return (
-    <div className="bg-gradient-to-b from-[#00041f] to-[#030828]">
+    <div className={bgClassName}>
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 pb-16 ">
         {/* Header */}
         <div className="mb-6">

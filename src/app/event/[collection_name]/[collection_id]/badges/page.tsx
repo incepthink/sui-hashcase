@@ -33,5 +33,5 @@ export default function EventBadgesPage() {
     );
   }
 
-  return <BadgesTable owner_id={ownerId} />;
+  return <BadgesTable owner_id={ownerId} bgClassName="bg-[#0d0d0d]" />;
 }
