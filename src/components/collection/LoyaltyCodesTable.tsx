@@ -51,7 +51,9 @@ const LoyaltyCodesTable = ({
     setOpenModal,
   } = useGlobalAppStore();
 
-  const [offChainPointsState, setOffChainPointsState] = useState(0);
+  const [offChainPointsState, setOffChainPointsState] = useState<number | null>(
+    null,
+  );
   const [currentStreak, setCurrentStreak] = useState(0);
   const [isPageLoading, setIsPageLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
@@ -320,7 +322,7 @@ const LoyaltyCodesTable = ({
 
       {/* Loyalty Codes */}
       <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold mb-4 sm:mb-6 drop-shadow-md text-center px-2">
-        Points
+        Points: {offChainPointsState ?? "—"}
       </h1>
 
       {/* Mobile Card View */}

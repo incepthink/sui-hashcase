@@ -141,7 +141,6 @@ export default function EventPointsPage() {
           owner_id={ownerId}
           onPointsUpdate={handlePointsUpdate}
           collection={collection}
-          showStreak={false}
           theme={eventTheme}
         />
       )}
