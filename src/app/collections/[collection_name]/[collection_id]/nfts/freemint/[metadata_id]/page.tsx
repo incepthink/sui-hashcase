@@ -6,7 +6,12 @@ import ArrowB from "@/assets/images/arrowB.svg";
 import { Work_Sans } from "next/font/google";
 import notify, { notifyPromise, notifyResolve } from "@/utils/notify";
 
-import { useParams, useRouter, useSearchParams } from "next/navigation";
+import {
+  useParams,
+  useRouter,
+  useSearchParams,
+  usePathname,
+} from "next/navigation";
 import { useEffect, useState } from "react";
 import React from "react";
 
@@ -38,6 +43,10 @@ import {
   CheckCircle,
 } from "lucide-react";
 import ConnectButton from "@/components/ConnectButton";
+import {
+  collectionTheme,
+  eventTheme,
+} from "@/components/collectionShell/theme";
 
 interface Metadata {
   id: string;
@@ -69,6 +78,15 @@ export default function NFTPage() {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const pathname = usePathname();
+  // Event freemint re-exports this page; pick the matching shell theme by route
+  // so the Event flow renders dark/purple while Collection stays blue.
+  const theme = pathname?.includes("/event/") ? eventTheme : collectionTheme;
+  const isEvent = theme === eventTheme;
+  // Accent button (location-gated states) — purple on Event, blue on Collection.
+  const accentBtn = isEvent
+    ? "bg-purple-600 hover:bg-purple-700"
+    : "bg-[#4DA2FF] hover:bg-blue-700";
   const [nftData, setNftData] = useState<Metadata | null>(null);
 
   const [isLocked, setIsLocked] = useState(false);
@@ -511,10 +529,10 @@ export default function NFTPage() {
 
   if (loading) {
     return (
-      <div className="h-[70vh] bg-[#00041F] flex justify-center items-center">
+      <div className={`h-[70vh] ${theme.pageBg} flex justify-center items-center`}>
         <div className="text-center">
           <svg
-            className="animate-spin h-12 w-12 text-blue-500 mx-auto mb-4"
+            className={`animate-spin h-12 w-12 ${theme.accentText} mx-auto mb-4`}
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
             viewBox="0 0 24 24"
@@ -542,17 +560,17 @@ export default function NFTPage() {
   if (isLocked) {
     if (location.latitude === -1) {
       return (
-        <div className="bg-[#00041F] text-white flex flex-col items-center justify-center sm:py-16 py-10 px-6">
+        <div className={`${theme.pageBg} text-white flex flex-col items-center justify-center sm:py-16 py-10 px-6`}>
           <MapPin className="w-16 h-16 text-red-500 animate-bounce mb-4" />
-          <h2 className="text-2xl font-bold text-blue-100 mb-2">
+          <h2 className="text-2xl font-bold text-white mb-2">
             Location Required
           </h2>
-          <p className="text-blue-300 mb-6">
+          <p className={`${theme.accentText} mb-6`}>
             This NFT requires location verification.
           </p>
           <button
             onClick={handleRefreshLocation}
-            className="px-4 py-2 bg-[#4DA2FF] hover:bg-blue-700 rounded-md flex items-center gap-2"
+            className={`px-4 py-2 ${accentBtn} rounded-md flex items-center gap-2`}
           >
             <Globe className="w-4 h-4" />
             Enable Location
@@ -562,19 +580,19 @@ export default function NFTPage() {
     }
 
     return (
-      <div className="bg-[#00041F] text-white flex flex-col items-center justify-center sm:py-16 py-10 px-6">
+      <div className={`${theme.pageBg} text-white flex flex-col items-center justify-center sm:py-16 py-10 px-6`}>
         <div className="relative mb-6">
-          <Globe className="w-16 h-16 text-blue-400 animate-pulse" />
+          <Globe className={`w-16 h-16 ${theme.accentText} animate-pulse`} />
           <MapPinOff className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 text-red-500" />
         </div>
-        <h3 className="text-2xl font-bold text-blue-100 mb-2 flex items-center gap-2">
+        <h3 className="text-2xl font-bold text-white mb-2 flex items-center gap-2">
           <Compass className="w-6 h-6" />
           Location Restricted
         </h3>
         <p className="text-red-300 text-lg mb-2">
           Not accessible in your current region
         </p>
-        <p className="text-blue-300 text-sm mb-4">
+        <p className={`${theme.accentText} text-sm mb-4`}>
           You need to be within 15km of the NFT location
         </p>
         <p className="text-yellow-300 text-xs mb-6">
@@ -583,7 +601,7 @@ export default function NFTPage() {
         </p>
         <button
           onClick={handleRefreshLocation}
-          className="px-4 py-2 bg-[#4DA2FF] hover:bg-blue-700 rounded-md flex items-center gap-2"
+          className={`px-4 py-2 ${accentBtn} rounded-md flex items-center gap-2`}
         >
           <RefreshCw className="w-4 h-4" />
           Refresh Location
@@ -594,14 +612,14 @@ export default function NFTPage() {
 
   if (!nftData) {
     return (
-      <div className="bg-[#00041F] text-white p-6 text-center">
+      <div className={`${theme.pageBg} text-white p-6 text-center`}>
         NFT not found.
       </div>
     );
   }
 
   return (
-    <div className={`flex flex-col bg-[#00041F] ${workSans.className}`}>
+    <div className={`flex flex-col ${theme.pageBg} ${workSans.className}`}>
       <div className="flex flex-col px-6 md:px-10 max-w-6xl mx-auto w-full">
         <div className="my-12 grid grid-cols-1 lg:grid-cols-2 gap-16 items-start pb-32">
           <div className="relative flex justify-center lg:justify-start">
@@ -632,7 +650,7 @@ export default function NFTPage() {
               </p>
             </div>
 
-            <p className="md:text-xl text-base text-[#4DA2FF] leading-relaxed max-w-2xl my-6">
+            <p className={`md:text-xl text-base ${theme.detailDescText} leading-relaxed max-w-2xl my-6`}>
               {nftData.description}
             </p>
 

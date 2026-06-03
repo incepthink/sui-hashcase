@@ -17,6 +17,8 @@ import { useCollectionById } from "@/hooks/useCollections";
 
 import LeaderboardTable from "@/components/collection/LeaderboardTable";
 import LoyaltyCodesTable from "@/components/collection/LoyaltyCodesTable";
+import ContentSkeleton from "@/components/collectionShell/ContentSkeleton";
+import { eventTheme } from "@/components/collectionShell/theme";
 
 export default function EventPointsPage() {
   const { showError } = useAppSnackbar();
@@ -127,21 +129,7 @@ export default function EventPointsPage() {
   };
 
   if (isTokenLoading && hasSuiWallet && !hasEvmWallet) {
-    return (
-      <div className="w-full min-h-[70vh] flex flex-col items-center justify-center px-4 relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-1/3 h-full bg-gradient-to-r from-purple-900/20 to-transparent -skew-x-12 -translate-x-1/3" />
-        <div className="absolute bottom-0 right-0 w-1/3 h-full bg-gradient-to-l from-purple-900/20 to-transparent skew-x-12 translate-x-1/3" />
-        <div className="relative z-10 text-center">
-          <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-6" />
-          <h1 className="text-4xl font-extrabold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-purple-300 via-purple-400 to-pink-500 drop-shadow-lg leading-tight">
-            Loading...
-          </h1>
-          <p className="text-xl text-white/80 mb-8 leading-relaxed max-w-2xl">
-            Fetching your loyalty data
-          </p>
-        </div>
-      </div>
-    );
+    return <ContentSkeleton theme={eventTheme} variant="points" />;
   }
 
   if (!mounted) return null;
@@ -154,6 +142,7 @@ export default function EventPointsPage() {
           onPointsUpdate={handlePointsUpdate}
           collection={collection}
           showStreak={false}
+          theme={eventTheme}
         />
       )}
       {ownerId && <LeaderboardTable owner_id={ownerId} />}

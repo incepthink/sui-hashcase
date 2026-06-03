@@ -1,37 +1,25 @@
-// sui components/quests/QuestDetailPageContent.tsx
+// components/tasks/TaskDetailPageContent.tsx
 "use client";
 
 import { useEffect, useState, useCallback, useMemo } from "react";
-import {
-  useParams,
-  useRouter,
-  useSearchParams,
-  usePathname,
-} from "next/navigation";
-import { CheckCircle2, ClipboardList, Sparkles } from "lucide-react";
+import { useParams, useRouter, usePathname } from "next/navigation";
+import { CheckCircle2, ClipboardList, Sparkles, Coins } from "lucide-react";
 import axiosInstance from "@/utils/axios";
 import { useGlobalAppStore } from "@/store/globalAppStore";
-import {
-  useQuestById,
-  QuestWithCompletion,
-  TaskWithCompletion,
-} from "@/hooks/useQuestById";
+import { useTasksByCode } from "@/hooks/useTasksByCode";
 
 // Components
-import { ErrorScreen } from "../quests/ErrorScreen";
-import { Navigation } from "../quests/Navigation";
-import { NFTSuccessModal } from "../quests/NFTSuccessModal";
-import { QuestDetailList } from "./QuestDetailList";
-import { QuestDetailHeader } from "./QuestDetailHeader";
-import { QuestDetailClaimButton } from "./QuestDetailClaimButton";
+import { ErrorScreen } from "@/components/quests/ErrorScreen";
+import { NFTSuccessModal } from "@/components/quests/NFTSuccessModal";
+import { TaskDetailList } from "@/components/tasks/TaskDetailList";
+import { QuestDetailClaimButton } from "@/components/questsDetails/QuestDetailClaimButton";
+import { QuestTokenClaimButton } from "@/components/questsDetails/QuestTokenClaimButton";
 import ContentSkeleton from "@/components/collectionShell/ContentSkeleton";
 import EmptyState from "@/components/collectionShell/EmptyState";
 import {
   collectionTheme,
   eventTheme,
 } from "@/components/collectionShell/theme";
-
-// ===== TYPE DEFINITIONS =====
 
 interface MintedNftData {
   name: string;
@@ -77,62 +65,24 @@ interface MetadataInstance {
   updatedAt: string;
 }
 
-// ===== UTILITY FUNCTIONS =====
-
-/**
- * Transform quest data from API format to component format
- */
-const transformQuestData = (questData: QuestWithCompletion): any => {
-  const completedTasks = questData.tasksWithCompletion.filter(
-    (task) => task.isCompleted,
-  ).length;
-  const totalTasks = questData.tasksWithCompletion.length;
-  const totalPoints = questData.tasksWithCompletion.reduce(
-    (sum, task) => sum + task.reward_loyalty_points,
-    0,
-  );
-
-  return {
-    id: questData.id,
-    owner_id: questData.owner_id,
-    title: questData.title,
-    description: questData.description,
-    is_active: questData.is_active,
-    createdAt: questData.created_at,
-    updatedAt: questData.updated_at,
-    claimable_metadata: questData.claimable_metadata,
-    tasks: questData.tasksWithCompletion.map((task) => ({
-      ...task,
-      is_completed: task.isCompleted,
-    })),
-    total_tasks: totalTasks,
-    completed_tasks: completedTasks,
-    is_completed: completedTasks === totalTasks,
-    total_points: totalPoints,
-  };
-};
-
-// ===== MAIN COMPONENT =====
-
-const QuestDetailPageContent = () => {
-  // ===== ROUTER & PARAMS =====
+const TaskDetailPageContent = () => {
   const params = useParams();
   const router = useRouter();
-  const searchParams = useSearchParams();
   const pathname = usePathname();
   const isEventTheme = pathname?.startsWith("/event/");
   const theme = isEventTheme ? eventTheme : collectionTheme;
+
   const questIdParam = String(params?.id || "");
+  const taskCode = String(params?.task_code || "");
   const questId = parseInt(questIdParam);
 
-  // ===== STATE MANAGEMENT =====
   const [mounted, setMounted] = useState(false);
   const [showNftModal, setShowNftModal] = useState(false);
   const [mintedNftData, setMintedNftData] = useState<MintedNftData | null>(
-    null,
+    null
   );
   const [requiredChainType, setRequiredChainType] = useState<"sui" | "evm">(
-    "sui",
+    "sui"
   );
 
   // Metadata states
@@ -140,7 +90,6 @@ const QuestDetailPageContent = () => {
   const [metadataLoading, setMetadataLoading] = useState<boolean>(true);
   const [metadataError, setMetadataError] = useState<string>("");
 
-  // ===== GLOBAL STORE =====
   const {
     user,
     getWalletForChain,
@@ -148,44 +97,75 @@ const QuestDetailPageContent = () => {
     setOpenModal,
     nftClaiming,
     setCanMintAgain,
-    connectedWallets, // Add this line
+    connectedWallets,
   } = useGlobalAppStore();
 
-  // ===== VALIDATION & COMPUTED VALUES =====
+  // Validate questId early
   const isValidQuestId = !isNaN(questId) && questId > 0;
+
+  // Get user ID
   const userId = user?.id;
   const isValidUserId = userId && !isNaN(Number(userId)) && Number(userId) > 0;
 
-  // Get wallet info from global store - Fix the dependency
+  // Get wallet info from global store
   const walletInfo = mounted ? getWalletForChain(requiredChainType) : null;
   const walletAddress = walletInfo?.address || null;
   const isWalletConnected = mounted && hasWalletForChain(requiredChainType);
 
-  // ===== DATA FETCHING =====
+  // Use the hook to get tasks by task code
   const {
-    data: questData,
-    isLoading: questLoading,
-    refetch: refetchQuest,
-    error: questError,
-  } = useQuestById({
-    id: questId,
-    userId: userId || "temp",
+    data: tasksData,
+    isLoading: tasksLoading,
+    refetch: refetchTasks,
+    error: tasksError,
+  } = useTasksByCode({
+    taskCode,
+    userId: userId || "",
+    walletAddress: walletAddress || "",
+    enabled: mounted && !!taskCode && (!!userId || !!walletAddress),
   });
 
-  // Transform the quest data to match expected format
-  const currentQuest = useMemo(() => {
-    if (!questData) return null;
-    return transformQuestData(questData);
-  }, [questData]);
+  // Calculate quest statistics
+  const questStats = useMemo(() => {
+    if (!tasksData?.tasks) {
+      return {
+        totalTasks: 0,
+        completedTasks: 0,
+        totalPoints: 0,
+        isCompleted: false,
+      };
+    }
+
+    const totalTasks = tasksData.tasks.length;
+    const completedTasks = tasksData.tasks.filter(
+      (task) => task.is_completed
+    ).length;
+    const totalPoints = tasksData.tasks.reduce(
+      (sum, task) => sum + task.reward_loyalty_points,
+      0
+    );
+    const isCompleted = completedTasks === totalTasks && totalTasks > 0;
+
+    return {
+      totalTasks,
+      completedTasks,
+      totalPoints,
+      isCompleted,
+    };
+  }, [tasksData?.tasks]);
 
   // Get the metadata ID from the quest's claimable_metadata
-  const metadataId = currentQuest?.claimable_metadata;
+  const metadataId = tasksData?.quest?.claimable_metadata;
 
-  // ===== COMPUTED PROPERTIES =====
+  // Get token reward info
+  const hasTokenReward =
+    tasksData?.quest?.reward_token && tasksData?.quest?.reward_token_amount;
+  const tokenReward = tasksData?.quest?.reward_token;
+  const tokenAmount = Number(
+    tasksData?.quest?.reward_token_amount || 0
+  ).toFixed(2);
 
-  /**
-   * Check if it's NS Collection based on metadata
-   */
+  // Check if it's NS Collection based on metadata
   const isNSCollection = useMemo(() => {
     if (!metadata?.collection) return false;
     const collectionName = metadata.collection.name;
@@ -196,9 +176,7 @@ const QuestDetailPageContent = () => {
     );
   }, [metadata?.collection?.name]);
 
-  /**
-   * Prepare NFT data for components
-   */
+  // Prepare NFT data for components
   const nftData = useMemo(() => {
     if (!metadata) return null;
     return {
@@ -211,36 +189,18 @@ const QuestDetailPageContent = () => {
     };
   }, [metadata, walletAddress]);
 
-  /**
-   * Check if minting is disabled
-   */
-  const isMintingDisabled = nftClaiming.isMinting;
-
-  // ===== EVENT HANDLERS =====
-
-  /**
-   * Handle back navigation with fallback logic
-   */
   const handleBack = useCallback(() => {
     try {
-      const collectionId = metadata?.collection?.id || null;
-      if (collectionId) {
-        router.push(`/quests?collection_id=${collectionId}`);
-      } else {
-        router.push(`/collections`);
-      }
+      router.push(`/quests/${questId}`);
     } catch {
       if (typeof window !== "undefined" && window.history.length > 1) {
         window.history.back();
       } else {
-        router.back();
+        router.push("/loyalties");
       }
     }
-  }, [metadata?.collection?.id, router]);
+  }, [questId, router]);
 
-  /**
-   * Handle successful NFT minting
-   */
   const handleNFTMintSuccess = useCallback(
     (nftData: any) => {
       const formattedData: MintedNftData = {
@@ -253,12 +213,9 @@ const QuestDetailPageContent = () => {
       setShowNftModal(true);
       setCanMintAgain(false);
     },
-    [setCanMintAgain],
+    [setCanMintAgain]
   );
 
-  /**
-   * Fetch metadata from API
-   */
   const fetchMetadata = async () => {
     if (!walletAddress || !metadataId) return;
 
@@ -273,13 +230,12 @@ const QuestDetailPageContent = () => {
             metadata_id: metadataId,
             user_address: walletAddress,
           },
-        },
+        }
       );
 
       const { metadata_instance, can_mint_again } = response.data;
-      console.log("Fetched metadata:", metadata_instance, can_mint_again);
-
       setMetadata(metadata_instance);
+
       setCanMintAgain(can_mint_again !== undefined ? can_mint_again : true);
     } catch (error: any) {
       console.error("Error fetching metadata:", error);
@@ -289,18 +245,11 @@ const QuestDetailPageContent = () => {
     }
   };
 
-  // ===== EFFECTS =====
-
-  /**
-   * Set mounted state
-   */
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  /**
-   * Update required chain type from metadata
-   */
+  // Update required chain type from metadata
   useEffect(() => {
     if (metadata?.collection?.contract?.Chain?.chain_type) {
       const chainType =
@@ -311,21 +260,22 @@ const QuestDetailPageContent = () => {
     }
   }, [metadata?.collection?.contract?.Chain?.chain_type]);
 
-  /**
-   * Fetch metadata when dependencies are ready
-   */
+  // Fetch metadata when we have the metadata ID
   useEffect(() => {
     if (mounted && isWalletConnected && walletAddress && metadataId) {
       fetchMetadata();
     } else if (mounted && (!isWalletConnected || !metadataId)) {
       setMetadata(null);
-      setMetadataLoading(false); // Change from true to false
+      setMetadataLoading(false);
       setMetadataError("");
       setCanMintAgain(true);
     }
   }, [mounted, isWalletConnected, walletAddress, metadataId]);
 
-  // ===== RENDER CONDITIONS =====
+  const progressPercent =
+    questStats.totalTasks > 0
+      ? Math.round((questStats.completedTasks / questStats.totalTasks) * 100)
+      : 0;
 
   // Loading states
   if (!mounted) {
@@ -366,26 +316,26 @@ const QuestDetailPageContent = () => {
     );
   }
 
-  if (questLoading) {
+  if (tasksLoading) {
     return <ContentSkeleton theme={theme} variant="detail" />;
   }
 
-  if (questError || !questData) {
-    return (
-      <ErrorScreen
-        title="Quest Not Found"
-        message="The requested quest could not be found"
-        onBack={handleBack}
-        isNSCollection={isNSCollection}
-      />
-    );
-  }
+  if (tasksError || !tasksData) {
+    // Handle specific "Task not found" error
+    const errorMessage =
+      tasksError?.response?.data?.error ||
+      tasksError?.message ||
+      "The requested tasks could not be found";
+    const isTaskNotFound = errorMessage.includes("Task not found");
 
-  if (!currentQuest) {
     return (
       <ErrorScreen
-        title="Quest Not Found"
-        message="Unable to process quest data"
+        title={isTaskNotFound ? "Invalid Task Code" : "Tasks Not Found"}
+        message={
+          isTaskNotFound
+            ? `Task code "${taskCode}" was not found. Please check the task code and try again.`
+            : errorMessage
+        }
         onBack={handleBack}
         isNSCollection={isNSCollection}
       />
@@ -398,7 +348,7 @@ const QuestDetailPageContent = () => {
   }
 
   // Show error if metadata failed to load (only if we have a metadata ID)
-  if (metadataId && metadataError) {
+  if (metadataId && (metadataError || !metadata)) {
     return (
       <ErrorScreen
         title="NFT Details Not Found"
@@ -409,28 +359,29 @@ const QuestDetailPageContent = () => {
     );
   }
 
-  // ===== MAIN RENDER =====
+  const isMintingDisabled = nftClaiming.isMinting;
 
   return (
-    <div className={`py-10  pb-16`}>
-      {/* <Navigation onBack={handleBack} /> */}
-
-      <div className=" px-4 sm:px-6 lg:px-8">
+    <div className="py-10 pb-16">
+      <div className="px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto">
           {/* Page Title */}
-          <div className="text-center mb-12">
+          <div className="text-center mb-8">
             <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white">
-              {currentQuest.title}
+              {tasksData.quest.title}
             </h1>
-            {currentQuest.description && (
+            {tasksData.quest.description && (
               <p className="text-gray-400 text-sm sm:text-base mt-2">
-                {currentQuest.description}
+                {tasksData.quest.description}
               </p>
             )}
+            <div className={`mt-2 text-sm ${theme.accentText}`}>
+              Task Code: {taskCode}
+            </div>
           </div>
 
-          {/* Collection Info Banner */}
-          {/* {metadata?.collection && (
+          {/* Collection Info Banner (if metadata is loaded) */}
+          {metadata?.collection && (
             <div className="mb-6 p-4 bg-gray-800/30 rounded-lg border border-gray-600">
               <div className="flex items-center gap-3">
                 <img
@@ -452,108 +403,144 @@ const QuestDetailPageContent = () => {
                 </div>
               </div>
             </div>
-          )} */}
+          )}
 
-          {/* NFT Display Header */}
-          {nftData && <QuestDetailHeader nftData={nftData} theme={theme} />}
+          {/* Token Reward Info Banner */}
+          {hasTokenReward && tokenReward && (
+            <div className="mb-6 p-4 bg-green-800/20 rounded-lg border border-green-600/30">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center">
+                  <span className="text-white font-bold text-xs">
+                    {tokenReward.symbol.substring(0, 2)}
+                  </span>
+                </div>
+                <div>
+                  <h4 className="font-semibold text-white text-sm">
+                    This Quest contains reward tokens
+                  </h4>
+                  <p className="text-xs text-green-400">
+                    {tokenAmount} {tokenReward.symbol} • {tokenReward.name}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Combined Quest Progress Header */}
           <div className="text-center mb-8">
             <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700">
-              {/* Header */}
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
-                  {currentQuest.is_completed ? (
+                  {questStats.isCompleted ? (
                     <CheckCircle2 className="w-6 h-6 text-green-400" />
                   ) : (
                     <ClipboardList className={`w-6 h-6 ${theme.accentText}`} />
                   )}
                   <div className="text-left">
                     <h3 className="text-lg font-semibold text-white">
-                      {currentQuest.is_completed
-                        ? "Quest Completed!"
+                      {questStats.isCompleted
+                        ? "Quest Completed"
                         : "Quest Tasks"}
                     </h3>
                     <p className="text-sm text-gray-400">
-                      {currentQuest.completed_tasks} of{" "}
-                      {currentQuest.total_tasks} tasks completed
+                      {questStats.completedTasks} of {questStats.totalTasks}{" "}
+                      tasks completed
                     </p>
                   </div>
                 </div>
 
                 <div className="text-right">
                   <div className="text-lg font-bold text-white">
-                    {currentQuest.total_points} pts
+                    {questStats.totalPoints} pts
                   </div>
                   <div className="text-xs text-gray-400">Total Reward</div>
                 </div>
               </div>
 
-              {/* Progress Bar */}
               <div className="mb-4">
                 <div className="flex justify-between text-sm text-gray-400 mb-2">
                   <span>Progress</span>
-                  <span>
-                    {Math.round(
-                      (currentQuest.completed_tasks /
-                        currentQuest.total_tasks) *
-                        100,
-                    )}
-                    %
-                  </span>
+                  <span>{progressPercent}%</span>
                 </div>
                 <div className="w-full bg-gray-700 rounded-full h-2">
                   <div
                     className={`${theme.tabUnderline} h-2 rounded-full transition-all duration-500`}
-                    style={{
-                      width: `${Math.round(
-                        (currentQuest.completed_tasks /
-                          currentQuest.total_tasks) *
-                          100,
-                      )}%`,
-                    }}
+                    style={{ width: `${progressPercent}%` }}
                   />
                 </div>
               </div>
 
-              {/* NFT Reward Notice */}
-              {currentQuest.is_completed && currentQuest.claimable_metadata && (
+              {/* Reward Messages */}
+              {questStats.isCompleted &&
+              (tasksData.quest.claimable_metadata || hasTokenReward) ? (
+                <div className="mt-4 space-y-2">
+                  {tasksData.quest.claimable_metadata && (
+                    <p className="text-sm text-green-400 text-center flex items-center justify-center gap-2">
+                      <Sparkles className="w-4 h-4" />
+                      NFT reward available for claiming!
+                    </p>
+                  )}
+                  {hasTokenReward && (
+                    <p className="text-sm text-green-400 text-center flex items-center justify-center gap-2">
+                      <Coins className="w-4 h-4" />
+                      Token reward available for claiming!
+                    </p>
+                  )}
+                </div>
+              ) : (
                 <div className="mt-4">
                   <p className="text-sm text-green-400 text-center flex items-center justify-center gap-2">
                     <Sparkles className="w-4 h-4" />
-                    NFT reward available for claiming!
+                    Complete all tasks to claim your rewards!
                   </p>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Claim NFT Button */}
-          {nftData && (
-            <QuestDetailClaimButton
-              nftMinted={!nftClaiming.canMintAgain}
-              claiming={false}
-              setClaiming={() => {}}
-              setNftMinted={(minted: boolean) => setCanMintAgain(!minted)}
-              completionPercentage={Math.round(
-                (currentQuest.completed_tasks / currentQuest.total_tasks) * 100,
-              )}
-              totalQuests={1}
-              completedQuests={currentQuest.is_completed ? 1 : 0}
-              isWalletConnected={isWalletConnected}
-              nftData={nftData}
-              onSuccess={handleNFTMintSuccess}
-              requiredChainType={requiredChainType}
-              disabled={isMintingDisabled}
-              metadataId={metadataId}
-            />
-          )}
+          {/* Claim Buttons */}
+          <div className="space-y-4">
+            {/* NFT Claim Button */}
+            {nftData && (
+              <QuestDetailClaimButton
+                nftMinted={!nftClaiming.canMintAgain}
+                claiming={false}
+                setClaiming={() => {}}
+                setNftMinted={(minted: boolean) => setCanMintAgain(!minted)}
+                completionPercentage={progressPercent}
+                totalQuests={1}
+                completedQuests={questStats.isCompleted ? 1 : 0}
+                isWalletConnected={isWalletConnected}
+                nftData={nftData}
+                onSuccess={handleNFTMintSuccess}
+                requiredChainType={requiredChainType}
+                disabled={isMintingDisabled}
+                metadataId={metadataId || undefined}
+              />
+            )}
 
-          {/* Task List */}
-          <QuestDetailList
-            quest={currentQuest}
+            {/* Token Claim Button */}
+            {hasTokenReward && tokenReward && tokenAmount && (
+              <QuestTokenClaimButton
+                questId={questId}
+                tokenReward={tokenReward}
+                tokenAmount={Number(tokenAmount)}
+                completionPercentage={progressPercent}
+                isWalletConnected={isWalletConnected}
+                questCompleted={questStats.isCompleted}
+                disabled={false}
+              />
+            )}
+          </div>
+
+          {/* Task List with Completion Functionality */}
+          <TaskDetailList
+            tasks={tasksData.tasks}
+            questTitle={tasksData.quest.title}
             isWalletConnected={isWalletConnected}
             requiredChainType={requiredChainType}
+            highlightTaskCode={taskCode}
+            onTaskComplete={refetchTasks}
             theme={theme}
           />
         </div>
@@ -571,4 +558,4 @@ const QuestDetailPageContent = () => {
   );
 };
 
-export default QuestDetailPageContent;
+export default TaskDetailPageContent;

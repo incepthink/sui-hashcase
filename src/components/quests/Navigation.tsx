@@ -1,6 +1,7 @@
 // components/Navigation.tsx
 "use client";
 
+import { ArrowLeft } from "lucide-react";
 import ConnectButton from "@/components/ConnectButton";
 
 interface NavigationProps {
@@ -18,7 +19,8 @@ export const Navigation: React.FC<NavigationProps> = ({ onBack }) => {
             onClick={onBack}
             className="text-white hover:text-gray-300 font-semibold transition-colors duration-300 flex items-center gap-2 text-sm sm:text-base"
           >
-            ← Back
+            <ArrowLeft size={18} />
+            Back
           </button>
 
           {/* Connect Button - Mobile: Same row, Desktop: Positioned absolutely */}

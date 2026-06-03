@@ -106,19 +106,19 @@ export const ClaimNFTButton: React.FC<ClaimNFTButtonProps> = ({
   };
 
   const getButtonText = () => {
-    if (nftMinted) return "✓ NFT Minted";
-    if (claiming) return "🎨 Minting NFT...";
+    if (nftMinted) return "NFT Minted";
+    if (claiming) return "Minting NFT...";
     if (!isWalletConnected) {
       const chainName =
         requiredChainType === "evm" ? "EVM Wallet" : "Sui Wallet";
       return `Connect ${chainName} to Claim NFT`;
     }
-    if (completionPercentage === 100) return "🎉 Claim NFT";
+    if (completionPercentage === 100) return "Claim NFT";
     return `Complete ${totalQuests - completedQuests} more quests to Claim NFT`;
   };
 
   const getMobileButtonText = () => {
-    if (nftMinted) return "✓ NFT Minted";
+    if (nftMinted) return "NFT Minted";
     if (claiming) return "Minting...";
     if (!isWalletConnected) {
       const chainName = requiredChainType === "evm" ? "EVM" : "Sui";

@@ -2,10 +2,12 @@
 "use client";
 
 import { useState } from "react";
+import { Trophy, Repeat, CheckCircle2, Clock, ClipboardX } from "lucide-react";
 import axiosInstance from "@/utils/axios";
 import { useAppSnackbar } from "@/providers/SnackbarProvider";
 import { useGlobalAppStore } from "@/store/globalAppStore";
 import { RequirementRule, TaskWithCompletion } from "@/hooks/useTasksByCode";
+import { ShellTheme } from "@/components/collectionShell/theme";
 
 interface TaskDetailListProps {
   tasks: TaskWithCompletion[];
@@ -14,6 +16,7 @@ interface TaskDetailListProps {
   requiredChainType?: "sui" | "evm";
   highlightTaskCode?: string;
   onTaskComplete?: () => void;
+  theme: ShellTheme;
 }
 
 export const TaskDetailList: React.FC<TaskDetailListProps> = ({
@@ -23,30 +26,13 @@ export const TaskDetailList: React.FC<TaskDetailListProps> = ({
   requiredChainType = "sui",
   highlightTaskCode,
   onTaskComplete,
+  theme,
 }) => {
   const [completingTasks, setCompletingTasks] = useState<Set<number>>(
     new Set()
   );
   const { showSuccess, showError } = useAppSnackbar();
   const { setOpenModal, user } = useGlobalAppStore();
-
-  const getTaskStatusIcon = (task: TaskWithCompletion): string => {
-    if (!isWalletConnected) return "🔒";
-    return task.is_completed ? "✅" : "⏳";
-  };
-
-  const getTaskStatusText = (task: TaskWithCompletion): string => {
-    if (!isWalletConnected) return "Connect Wallet";
-    return task.is_completed ? "Completed" : "Pending";
-  };
-
-  const getTaskStatusColor = (task: TaskWithCompletion): string => {
-    if (!isWalletConnected)
-      return "text-gray-400 bg-gray-800/20 border-gray-600";
-    return task.is_completed
-      ? "text-green-400 bg-green-900/20 border-green-700"
-      : "text-blue-400 bg-blue-900/20 border-blue-700";
-  };
 
   const getTaskButton = (task: TaskWithCompletion) => {
     const isCompleting = completingTasks.has(task.id);
@@ -67,8 +53,9 @@ export const TaskDetailList: React.FC<TaskDetailListProps> = ({
     // If task is completed, show completed state
     if (task.is_completed) {
       return (
-        <span className="text-xs sm:text-sm px-3 py-2 rounded border text-green-400 bg-green-900/20 border-green-700 inline-block text-center">
-          ✅ Completed
+        <span className="inline-flex items-center gap-1.5 text-xs sm:text-sm px-3 py-2 rounded border text-green-400 bg-green-900/20 border-green-700 text-center">
+          <CheckCircle2 className="w-3.5 h-3.5" />
+          Completed
         </span>
       );
     }
@@ -87,8 +74,11 @@ export const TaskDetailList: React.FC<TaskDetailListProps> = ({
 
     // Task is pending but cannot be completed yet
     return (
-      <span className="text-xs sm:text-sm px-3 py-2 rounded border text-blue-400 bg-blue-900/20 border-blue-700 inline-block text-center">
-        ⏳ Pending
+      <span
+        className={`inline-flex items-center gap-1.5 text-xs sm:text-sm px-3 py-2 rounded border text-center ${theme.pill}`}
+      >
+        <Clock className="w-3.5 h-3.5" />
+        Pending
       </span>
     );
   };
@@ -185,8 +175,12 @@ export const TaskDetailList: React.FC<TaskDetailListProps> = ({
 
   if (activeTasks.length === 0) {
     return (
-      <div className="text-center py-12">
-        <div className="text-4xl sm:text-6xl mb-4">📝</div>
+      <div className="flex flex-col items-center text-center py-12">
+        <div
+          className={`mb-4 flex h-16 w-16 items-center justify-center rounded-full ${theme.pill}`}
+        >
+          <ClipboardX className="h-7 w-7" strokeWidth={1.75} />
+        </div>
         <h3 className="text-xl sm:text-2xl font-bold text-white mb-2">
           No Active Tasks
         </h3>
@@ -207,16 +201,13 @@ export const TaskDetailList: React.FC<TaskDetailListProps> = ({
           <div
             key={task.id}
             className={`group bg-gray-900 border rounded-lg p-3 sm:p-4 relative overflow-hidden transition-all duration-200 ${
-              isHighlighted
-                ? "border-purple-500/50 bg-purple-900/10 ring-1 ring-purple-500/30"
-                : "border-gray-700"
+              isHighlighted ? theme.highlightCard : "border-gray-700"
             }`}
           >
             <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between space-y-3 sm:space-y-0">
               {/* Task Info */}
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-2">
-                  {/* <span className="text-sm">{getTaskStatusIcon(task)}</span> */}
                   <h3 className="text-sm sm:text-base font-bold text-white">
                     {task.title}
                   </h3>
@@ -225,7 +216,9 @@ export const TaskDetailList: React.FC<TaskDetailListProps> = ({
                       Task {index + 1}
                     </span>
                     {isHighlighted && (
-                      <span className="text-xs ml-1 bg-purple-600 text-white px-2 py-1 rounded-full">
+                      <span
+                        className={`text-xs ml-1 px-2 py-1 rounded-full border ${theme.pill}`}
+                      >
                         Current
                       </span>
                     )}
@@ -240,19 +233,19 @@ export const TaskDetailList: React.FC<TaskDetailListProps> = ({
 
                 {/* Task Stats */}
                 <div className="flex flex-wrap items-center gap-3 ml-6 text-xs text-gray-500">
-                  <span className="flex items-center gap-1">
-                    <span className="text-yellow-400">🎯</span>
+                  <span className="flex items-center gap-1.5">
+                    <Trophy className="w-3.5 h-3.5 text-gray-400" />
                     {task.reward_loyalty_points} points
                   </span>
                   {task.required_completions > 1 && (
-                    <span className="flex items-center gap-1">
-                      <span className="text-blue-400">🔄</span>
+                    <span className="flex items-center gap-1.5">
+                      <Repeat className="w-3.5 h-3.5 text-gray-400" />
                       {task.required_completions} completions required
                     </span>
                   )}
                   {task.completion_count > 0 && (
-                    <span className="flex items-center gap-1">
-                      <span className="text-green-400">✓</span>
+                    <span className="flex items-center gap-1.5">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-green-400" />
                       {task.completion_count}/{task.required_completions}{" "}
                       completed
                     </span>

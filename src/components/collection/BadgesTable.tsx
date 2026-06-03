@@ -5,6 +5,8 @@ import axiosInstance from "@/utils/axios";
 import { Flame, Award, Trophy, ChevronRight } from "lucide-react";
 import { useAppSnackbar } from "@/providers/SnackbarProvider";
 import { useGlobalAppStore } from "@/store/globalAppStore";
+import ContentSkeleton from "@/components/collectionShell/ContentSkeleton";
+import { ShellTheme, collectionTheme } from "@/components/collectionShell/theme";
 
 type Badge = {
   id: number;
@@ -23,9 +25,11 @@ type Badge = {
 const BadgesTable = ({
   owner_id,
   bgClassName = "bg-gradient-to-b from-[#00041f] to-[#030828]",
+  theme = collectionTheme,
 }: {
   owner_id: number;
   bgClassName?: string;
+  theme?: ShellTheme;
 }) => {
   const { showSuccess } = useAppSnackbar();
   const [badges, setBadges] = useState<Badge[]>([]);
@@ -85,11 +89,7 @@ const BadgesTable = ({
   }, []);
 
   if (loading) {
-    return (
-      <div className={`${bgClassName} text-center h-[50vh] py-10 pb-16  px-4`}>
-        <div className="text-white">Loading badges...</div>
-      </div>
-    );
+    return <ContentSkeleton theme={theme} variant="badges" />;
   }
 
   if (!badges || badges.length === 0) {

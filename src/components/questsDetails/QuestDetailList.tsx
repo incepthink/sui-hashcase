@@ -1,7 +1,9 @@
 // components/quests/QuestDetailList.tsx
 "use client";
 
+import { Trophy, Repeat, ClipboardX } from "lucide-react";
 import { RequirementRule, TaskWithCompletion } from "@/hooks/useQuestById";
+import { ShellTheme } from "@/components/collectionShell/theme";
 
 interface Task extends TaskWithCompletion {
   is_completed?: boolean; // Legacy compatibility
@@ -27,20 +29,15 @@ interface QuestDetailListProps {
   quest: Quest;
   isWalletConnected: boolean;
   requiredChainType?: "sui" | "evm";
+  theme: ShellTheme;
 }
 
 export const QuestDetailList: React.FC<QuestDetailListProps> = ({
   quest,
   isWalletConnected,
   requiredChainType = "sui",
+  theme,
 }) => {
-  const getTaskStatusIcon = (task: Task): string => {
-    if (!isWalletConnected) return "🔒";
-    // Check both isCompleted (from backend) and is_completed (legacy)
-    const completed = task.isCompleted || task.is_completed;
-    return completed ? "✅" : "⏳";
-  };
-
   const getTaskStatusText = (task: Task): string => {
     if (!isWalletConnected) return "Connect Wallet";
     const completed = task.isCompleted || task.is_completed;
@@ -53,7 +50,7 @@ export const QuestDetailList: React.FC<QuestDetailListProps> = ({
     const completed = task.isCompleted || task.is_completed;
     return completed
       ? "text-green-400 bg-green-900/20 border-green-700"
-      : "text-blue-400 bg-blue-900/20 border-blue-700";
+      : theme.pill;
   };
 
   // Filter active tasks
@@ -61,8 +58,12 @@ export const QuestDetailList: React.FC<QuestDetailListProps> = ({
 
   if (activeTasks.length === 0) {
     return (
-      <div className="text-center py-12">
-        <div className="text-4xl sm:text-6xl mb-4">📝</div>
+      <div className="flex flex-col items-center text-center py-12">
+        <div
+          className={`mb-4 flex h-16 w-16 items-center justify-center rounded-full ${theme.pill}`}
+        >
+          <ClipboardX className="h-7 w-7" strokeWidth={1.75} />
+        </div>
         <h3 className="text-xl sm:text-2xl font-bold text-white mb-2">
           No Active Tasks
         </h3>
@@ -87,7 +88,6 @@ export const QuestDetailList: React.FC<QuestDetailListProps> = ({
               {/* Task Info */}
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-2">
-                  {/* <span className="text-sm">{getTaskStatusIcon(task)}</span> */}
                   <h3 className="text-sm sm:text-base font-bold text-white">
                     {task.title}
                   </h3>
@@ -104,13 +104,13 @@ export const QuestDetailList: React.FC<QuestDetailListProps> = ({
 
                 {/* Task Stats */}
                 <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500">
-                  <span className="flex items-center gap-1">
-                    <span className="text-yellow-400">🎯</span>
+                  <span className="flex items-center gap-1.5">
+                    <Trophy className="w-3.5 h-3.5 text-gray-400" />
                     {task.reward_loyalty_points} points
                   </span>
                   {task.required_completions > 1 && (
-                    <span className="flex items-center gap-1">
-                      <span className="text-blue-400">🔄</span>
+                    <span className="flex items-center gap-1.5">
+                      <Repeat className="w-3.5 h-3.5 text-gray-400" />
                       {task.required_completions} completions required
                     </span>
                   )}

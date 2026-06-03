@@ -2,7 +2,15 @@
 "use client";
 
 import { useEffect, useState, useCallback, useMemo } from "react";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
+import {
+  useParams,
+  useRouter,
+  useSearchParams,
+  usePathname,
+} from "next/navigation";
+import EmptyState from "@/components/collectionShell/EmptyState";
+import ContentSkeleton from "@/components/collectionShell/ContentSkeleton";
+import { collectionTheme, eventTheme } from "@/components/collectionShell/theme";
 import { useGlobalAppStore } from "@/store/globalAppStore";
 import { useCollectionById } from "@/hooks/useCollections";
 import { useQuests } from "@/hooks/useQuests";
@@ -10,7 +18,6 @@ import axiosInstance from "@/utils/axios";
 import backgroundImageHeroSection from "@/assets/images/high_rise.jpg";
 
 // Components
-import { LoadingScreen } from "./LoadingScreen";
 import { ErrorScreen } from "./ErrorScreen";
 import { Navigation } from "./Navigation";
 import { NFTDisplay } from "./NFTDisplay";
@@ -95,6 +102,9 @@ const QuestsPageContent = ({ collectionId }: any) => {
   // ===== ROUTER & NAVIGATION =====
   const router = useRouter();
   const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const isEventTheme = pathname?.startsWith("/event/");
+  const shellTheme = isEventTheme ? eventTheme : collectionTheme;
 
   // ===== GLOBAL STATE =====
   const {
@@ -357,21 +367,11 @@ const QuestsPageContent = ({ collectionId }: any) => {
 
   // Loading states
   if (!mounted) {
-    return (
-      <LoadingScreen
-        message="Loading Quests..."
-        isNSCollection={isNSCollection}
-      />
-    );
+    return <ContentSkeleton theme={shellTheme} variant="quests" />;
   }
 
   if (isCollectionLoading) {
-    return (
-      <LoadingScreen
-        message="Loading Quests..."
-        isNSCollection={isNSCollection}
-      />
-    );
+    return <ContentSkeleton theme={shellTheme} variant="quests" />;
   }
 
   if (isCollectionError || !collection) {
@@ -388,40 +388,23 @@ const QuestsPageContent = ({ collectionId }: any) => {
   // Show wallet connection required screen if not connected
   if (!isWalletConnected) {
     return (
-      <div className={`  pb-10`}>
-        {/* <Navigation onBack={handleBack} /> */}
-        <div className="pt-2 pb-6 px-4 sm:px-6 lg:px-8">
-          <div className="max-w-4xl mx-auto">
-            <div className="text-center py-12">
-              <div className="text-4xl sm:text-6xl mb-4">🔒</div>
-              <h3 className="text-xl sm:text-2xl font-bold text-white mb-4">
-                Login or Connect Wallet
-              </h3>
-              <p className="text-gray-400 text-sm sm:text-base mb-6">
-                Please Connect wallet to view quests and claim rewards
-              </p>
-              <button
-                onClick={() => setOpenModal(true)}
-                className="bg-white text-black px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
-              >
-                Connect Wallet or Login
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+      <EmptyState
+        title="Login or Connect Wallet"
+        description="Please Connect wallet to view quests and claim rewards"
+        actionLabel="Connect Wallet or Login"
+        onAction={() => setOpenModal(true)}
+        accentClassName={
+          isEventTheme
+            ? "bg-purple-500/15 text-purple-400"
+            : "bg-blue-500/15 text-blue-400"
+        }
+      />
     );
   }
 
   // Show loading screen while fetching metadata
   if (metadataLoading) {
-    return (
-      <LoadingScreen
-        message="Loading Quests..."
-        collectionName={collection?.name}
-        isNSCollection={isNSCollection}
-      />
-    );
+    return <ContentSkeleton theme={shellTheme} variant="quests" />;
   }
 
   // Show error if metadata failed to load
@@ -437,13 +420,7 @@ const QuestsPageContent = ({ collectionId }: any) => {
   }
 
   if (questsLoading) {
-    return (
-      <LoadingScreen
-        message="Loading Quests..."
-        collectionName={collection?.name}
-        isNSCollection={isNSCollection}
-      />
-    );
+    return <ContentSkeleton theme={shellTheme} variant="quests" />;
   }
 
   // ===== MAIN RENDER =====
@@ -468,6 +445,7 @@ const QuestsPageContent = ({ collectionId }: any) => {
             completionPercentage={completionPercentage}
             showProgress={mounted && isWalletConnected && !questsLoading}
             requiredChainType={requiredChainType}
+            theme={shellTheme}
           />
 
           {/* Quest List */}
@@ -476,6 +454,7 @@ const QuestsPageContent = ({ collectionId }: any) => {
             isWalletConnected={isWalletConnected}
             requiredChainType={requiredChainType}
             collection={collection}
+            theme={shellTheme}
           />
 
           {/* ========== COMMENTED OUT CLAIM NFT BUTTON ========== */}

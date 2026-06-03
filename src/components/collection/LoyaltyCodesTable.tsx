@@ -7,6 +7,8 @@ import { useGlobalAppStore } from "@/store/globalAppStore";
 import { useLoyalty } from "@/hooks/useLoyalty"; // Import the new hook
 import { useAddLoyalty } from "@/hooks/useAddLoyalty"; // Import the new hook
 import ConnectButton from "@/components/ConnectButton";
+import ContentSkeleton from "@/components/collectionShell/ContentSkeleton";
+import { ShellTheme, collectionTheme } from "@/components/collectionShell/theme";
 
 interface User {
   id: number;
@@ -30,6 +32,7 @@ interface LoyaltyCodesTableProps {
   collection: Collection;
   onPointsUpdate?: (newPoints: number) => void;
   showStreak?: boolean;
+  theme?: ShellTheme;
 }
 
 const LoyaltyCodesTable = ({
@@ -37,6 +40,7 @@ const LoyaltyCodesTable = ({
   collection,
   onPointsUpdate,
   showStreak = true,
+  theme = collectionTheme,
 }: LoyaltyCodesTableProps) => {
   const { showError } = useAppSnackbar();
   const {
@@ -50,6 +54,7 @@ const LoyaltyCodesTable = ({
   const [offChainPointsState, setOffChainPointsState] = useState(0);
   const [currentStreak, setCurrentStreak] = useState(0);
   const [isPageLoading, setIsPageLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
 
   // Use the loyalty hook
   const {
@@ -202,7 +207,9 @@ const LoyaltyCodesTable = ({
   };
 
   useEffect(() => {
-    getLoyaltyCodesAndPoints(owner_id);
+    getLoyaltyCodesAndPoints(owner_id).finally(() =>
+      setInitialLoading(false),
+    );
     fetchOffChainPoints();
 
     const requiredChain = getRequiredChainTypeLocal();
@@ -234,13 +241,23 @@ const LoyaltyCodesTable = ({
 
   const isWalletConnected = mounted && hasWalletForChain("sui");
 
+  // Initial codes fetch → shared, themed skeleton (matches NFTs/Quests/Badges)
+  if (initialLoading) {
+    return <ContentSkeleton theme={theme} variant="points" />;
+  }
+
+  // Redeem / action in-progress → blocking overlay (transaction indicator only)
+  const isActionLoading = addLoyaltyLoading || isPageLoading;
+
   return (
     <div className=" flex flex-col items-center justify-start p-4 sm:p-6 md:p-8 text-white pb-16 md:pb-16">
-      {/* Page Loading Spinner */}
-      {isCurrentlyLoading && (
+      {/* Action Loading Spinner */}
+      {isActionLoading && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 sm:p-8 flex flex-col items-center gap-4">
-            <div className="w-10 h-10 sm:w-12 sm:h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+            <div
+              className={`w-10 h-10 sm:w-12 sm:h-12 border-4 ${theme.spinnerBorder} border-t-transparent rounded-full animate-spin`}
+            ></div>
             <p className="text-white text-base sm:text-lg font-semibold">
               Loading...
             </p>

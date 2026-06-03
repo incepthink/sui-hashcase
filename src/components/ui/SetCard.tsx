@@ -8,12 +8,14 @@ import { Share2 } from "lucide-react";
 import { useAppSnackbar } from "@/providers/SnackbarProvider";
 import axiosInstance from "@/utils/axios";
 import { useGlobalAppStore } from "@/store/globalAppStore";
+import { ShellTheme, collectionTheme } from "@/components/collectionShell/theme";
 
 interface SetCardProps {
   setGroup: SetGroup;
   collectionName: string;
   collectionId: string;
   basePath?: string;
+  theme?: ShellTheme;
 }
 
 export const SetCard: React.FC<SetCardProps> = ({
@@ -21,6 +23,7 @@ export const SetCard: React.FC<SetCardProps> = ({
   collectionName,
   collectionId,
   basePath = "/collections",
+  theme = collectionTheme,
 }) => {
   const { showSuccess, showError } = useAppSnackbar();
   // Extract all images from set NFTs
@@ -59,7 +62,9 @@ export const SetCard: React.FC<SetCardProps> = ({
         setGroup.isRandomized ? "randomizedmint" : "upgradablemint"
       }/${setGroup.id}`}
     >
-      <div className="group relative bg-gradient-to-br from-[#0a0f3b] to-[#050a2e] shadow-xl rounded-xl overflow-hidden transform transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:from-[#141a52] hover:to-[#0a0f3b] cursor-pointer border border-gray-700/30 h-full">
+      <div
+        className={`group relative ${theme.cardBg} shadow-xl rounded-xl overflow-hidden transform transition-all duration-300 hover:scale-105 hover:shadow-2xl ${theme.cardHoverBg} cursor-pointer border ${theme.cardBorder} h-full`}
+      >
         {/* Image Carousel */}
         <div className="relative overflow-hidden">
           <ImageCarousel images={images} alt={setGroup.name} />
@@ -69,7 +74,9 @@ export const SetCard: React.FC<SetCardProps> = ({
         <div className="p-4 sm:p-5">
           {/* Title + Share */}
           <div className="flex items-center justify-between mb-2 gap-2">
-            <h2 className="text-lg sm:text-xl font-bold text-white group-hover:text-blue-300 transition-colors duration-300 line-clamp-1">
+            <h2
+              className={`text-lg sm:text-xl font-bold text-white ${theme.cardTitleHover} transition-colors duration-300 line-clamp-1`}
+            >
               {setGroup.name}
             </h2>
             <button
@@ -111,7 +118,7 @@ export const SetCard: React.FC<SetCardProps> = ({
                   .map((attr, index) => (
                     <span
                       key={index}
-                      className="inline-block bg-blue-500/20 text-blue-300 text-xs px-2 py-1 rounded-full border border-blue-500/30"
+                      className={`inline-block ${theme.pill} text-xs px-2 py-1 rounded-full border`}
                     >
                       {attr.trim().split(":")[1]?.trim() || attr.trim()}
                     </span>

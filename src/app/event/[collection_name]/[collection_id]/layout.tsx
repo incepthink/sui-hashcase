@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { useParams, usePathname } from "next/navigation";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useCollectionById } from "@/hooks/useCollections";
 import {
@@ -12,10 +12,16 @@ import {
   Copy,
   Check,
   X,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { useGlobalAppStore } from "@/store/globalAppStore";
 import axiosInstance from "@/utils/axios";
 import ConnectButton from "@/components/ConnectButton";
+import CollectionTabs from "@/components/collectionShell/CollectionTabs";
+import ShellSkeleton from "@/components/collectionShell/ShellSkeleton";
+import ShellError from "@/components/collectionShell/ShellError";
+import { eventTheme } from "@/components/collectionShell/theme";
 
 interface EventLayoutProps {
   children: React.ReactNode;
@@ -30,7 +36,6 @@ export default function EventLayout({ children }: EventLayoutProps) {
   useEffect(() => setMounted(true), []);
 
   const params = useParams();
-  const pathname = usePathname();
 
   const {
     collection,
@@ -63,29 +68,6 @@ export default function EventLayout({ children }: EventLayoutProps) {
     }
   }, [user]);
 
-  const tabs = [
-    {
-      id: "points",
-      label: "Points",
-      href: `/event/${params.collection_name}/${params.collection_id}`,
-    },
-    {
-      id: "quests",
-      label: "Quests",
-      href: `/event/${params.collection_name}/${params.collection_id}/quests`,
-    },
-    {
-      id: "nfts",
-      label: "NFTs",
-      href: `/event/${params.collection_name}/${params.collection_id}/nfts`,
-    },
-    {
-      id: "badges",
-      label: "Badges",
-      href: `/event/${params.collection_name}/${params.collection_id}/badges`,
-    },
-  ];
-
   const renderDescriptionWithLinks = (text: string) => {
     const urlRegex = /(https?:\/\/[^\s]+)/g;
     const parts = text.split(urlRegex);
@@ -107,35 +89,16 @@ export default function EventLayout({ children }: EventLayoutProps) {
   };
 
   if (!mounted || isCollectionLoading) {
-    return (
-      <div className="w-full min-h-[90vh] flex flex-col items-center justify-center bg-gradient-to-br from-[#000212] via-[#03082a] to-[#0a0e3a] px-4 relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-1/3 h-full bg-gradient-to-r from-purple-900/20 to-transparent -skew-x-12 -translate-x-1/3" />
-        <div className="absolute bottom-0 right-0 w-1/3 h-full bg-gradient-to-l from-purple-900/20 to-transparent skew-x-12 translate-x-1/3" />
-        <div className="relative z-10 text-center">
-          <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-6" />
-          <h1 className="text-4xl font-extrabold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-purple-300 via-purple-400 to-pink-500 drop-shadow-lg leading-tight">
-            Loading...
-          </h1>
-          <p className="text-xl text-white/80 mb-8 leading-relaxed max-w-2xl">
-            Fetching event data
-          </p>
-        </div>
-      </div>
-    );
+    return <ShellSkeleton theme={eventTheme} />;
   }
 
   if (isCollectionError || !collection) {
     return (
-      <div className="w-full min-h-[70vh] flex flex-col items-center justify-center bg-gradient-to-br from-[#000212] via-[#03082a] to-[#0a0e3a] px-4 relative overflow-hidden">
-        <div className="relative z-10 text-center">
-          <h1 className="text-4xl font-extrabold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-red-400 to-red-600 drop-shadow-lg leading-tight">
-            Event Not Found
-          </h1>
-          <p className="text-xl text-white/80 mb-8 leading-relaxed max-w-2xl">
-            The requested event could not be found.
-          </p>
-        </div>
-      </div>
+      <ShellError
+        theme={eventTheme}
+        title="Event Not Found"
+        message="The requested event could not be found."
+      />
     );
   }
 
@@ -230,7 +193,15 @@ export default function EventLayout({ children }: EventLayoutProps) {
                       onClick={() => setShowFullDesc((v) => !v)}
                       className="mt-2 text-purple-400 text-sm font-medium flex items-center gap-1 hover:text-purple-300 transition-colors"
                     >
-                      {showFullDesc ? "Show less ▲" : "Read more ▼"}
+                      {showFullDesc ? (
+                        <>
+                          Show less <ChevronUp className="w-4 h-4" />
+                        </>
+                      ) : (
+                        <>
+                          Read more <ChevronDown className="w-4 h-4" />
+                        </>
+                      )}
                     </button>
                   )}
                 </>
@@ -303,42 +274,13 @@ export default function EventLayout({ children }: EventLayoutProps) {
           </div>
         </div>
 
-        {/* ── Tabs ── */}
-        <div className="border-t border-white/10">
-          <div className=" mx-auto px-4">
-            <div className="flex gap-8">
-              {tabs.map((tab) => {
-                let isActive = false;
-                if (tab.id === "points") {
-                  isActive = pathname === tab.href;
-                } else {
-                  isActive =
-                    pathname.includes(`/${tab.id}/`) ||
-                    pathname.endsWith(`/${tab.id}`);
-                }
-                return (
-                  <Link
-                    key={tab.id}
-                    href={tab.href}
-                    className={`relative py-4 font-medium text-sm transition-colors ${
-                      isActive
-                        ? "text-purple-400"
-                        : "text-gray-400 hover:text-purple-300"
-                    }`}
-                  >
-                    {tab.label}
-                    {isActive && (
-                      <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-purple-500 rounded-t" />
-                    )}
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-        </div>
       </div>
-      {/* ── Tab Content ── */}
-      <div className="bg-[#0d0d0d]">{children}</div>
+
+      {/* ── Tabs ── */}
+      <CollectionTabs theme={eventTheme} basePath="/event" />
+
+      {/* ── Tab Content — stable min-height prevents collapse/jump ── */}
+      <div className={`${eventTheme.contentBg} min-h-[70vh]`}>{children}</div>
 
       {showReferralModal && (
         <div

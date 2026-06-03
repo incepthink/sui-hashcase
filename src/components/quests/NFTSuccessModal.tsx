@@ -2,7 +2,7 @@
 "use client";
 
 import Image, { StaticImageData } from "next/image";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 interface MintedNFTData {
@@ -93,9 +93,10 @@ export const NFTSuccessModal: React.FC<NFTSuccessModalProps> = ({
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-3 sm:top-4 right-3 sm:right-4 text-gray-400 hover:text-white transition-colors text-lg"
+          className="absolute top-3 sm:top-4 right-3 sm:right-4 text-gray-400 hover:text-white transition-colors"
+          aria-label="Close"
         >
-          ✕
+          <X size={18} />
         </button>
 
         {/* Profile Navigation Arrow */}
@@ -127,7 +128,7 @@ export const NFTSuccessModal: React.FC<NFTSuccessModalProps> = ({
           <h2 className="text-lg sm:text-xl font-bold text-white mb-2">
             {mintedNftData.name}
           </h2>
-          <p className="text-green-400 text-sm mb-4">Successfully minted! ✨</p>
+          <p className="text-green-400 text-sm mb-4">Successfully minted!</p>
 
           {/* Wallet */}
           <div className="bg-white/5 rounded-lg p-3 mb-6">
