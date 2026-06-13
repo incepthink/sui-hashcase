@@ -26,7 +26,7 @@ export default function CollectionPointsPage() {
   const params = useParams();
   const currentAccount = useCurrentAccount();
   const { address: evmAddress } = useAccount();
-  const { user } = useGlobalAppStore();
+  const { user, loyaltyPointsVersionByOwner } = useGlobalAppStore();
   const { isConnected: hasSuiWallet } = useWalletAddress();
 
   const hasEvmWallet = !!evmAddress;
@@ -36,7 +36,6 @@ export default function CollectionPointsPage() {
     "0x2::token::Token<0xdcbdbd4ef617c266d71cb8b5042d09cfcf2895bb7e05b1cbebd8adb5fc6f1f8d::loyalty_points::LOYALTY_POINTS>";
 
   const [onChainPointsState, setOnChainPointsState] = useState(0);
-  const [offChainPointsState, setOffChainPointsState] = useState(0);
   const [points, setPoints] = useState<string>("");
   const [userTokenId, setUserTokenId] = useState<string | null>(null);
 
@@ -51,11 +50,9 @@ export default function CollectionPointsPage() {
 
   // Get owner_id directly from collection data
   const ownerId = collection?.owner_id;
-
-  // Handle points update from loyalty codes
-  const handlePointsUpdate = (newPoints: number) => {
-    setOffChainPointsState(newPoints);
-  };
+  const loyaltyRefreshVersion = ownerId
+    ? loyaltyPointsVersionByOwner[ownerId] || 0
+    : 0;
 
   // Fetch token data - only for Sui wallets
   const {
@@ -125,12 +122,16 @@ export default function CollectionPointsPage() {
       {ownerId && (
         <LoyaltyCodesTable
           owner_id={ownerId}
-          onPointsUpdate={handlePointsUpdate}
           collection={collection}
           theme={collectionTheme}
         />
       )}
-      {ownerId && <LeaderboardTable owner_id={ownerId} />}
+      {ownerId && (
+        <LeaderboardTable
+          owner_id={ownerId}
+          refreshVersion={loyaltyRefreshVersion}
+        />
+      )}
     </>
   );
 }

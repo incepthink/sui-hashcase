@@ -49,14 +49,14 @@ const LoyaltyCodesTable = ({
     getWalletForChain,
     hasWalletForChain,
     setOpenModal,
+    loyaltyPointsByOwner,
+    setLoyaltyPoints,
   } = useGlobalAppStore();
 
-  const [offChainPointsState, setOffChainPointsState] = useState<number | null>(
-    null,
-  );
   const [currentStreak, setCurrentStreak] = useState(0);
   const [isPageLoading, setIsPageLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
+  const offChainPointsState = loyaltyPointsByOwner[owner_id] ?? null;
 
   // Use the loyalty hook
   const {
@@ -85,14 +85,14 @@ const LoyaltyCodesTable = ({
     setOpenModal,
     collection,
     onPointsUpdate: (newPoints) => {
-      setOffChainPointsState(newPoints);
+      setLoyaltyPoints(owner_id, newPoints, true);
       if (onPointsUpdate) {
         onPointsUpdate(newPoints);
       }
     },
     onSuccess: async () => {
       // Refresh data after successful loyalty redemption
-      await fetchOffChainPoints();
+      await fetchOffChainPoints(true);
       await getLoyaltyCodesAndPoints(owner_id);
       await getUsedLoyaltyCodes(user!.id, owner_id);
       // Update used codes immediately for UI feedback
@@ -169,7 +169,7 @@ const LoyaltyCodesTable = ({
 
       const user_achievements = checkInResponse.data.user_achievements;
       setCurrentStreak(user_achievements.current_streak);
-      setOffChainPointsState(user_achievements.total_loyalty_points);
+      setLoyaltyPoints(owner_id, user_achievements.total_loyalty_points);
 
       console.log(
         `Daily check-in successful with ${getRequiredChainTypeLocal()} wallet`,
@@ -185,16 +185,23 @@ const LoyaltyCodesTable = ({
     }
   };
 
-  const fetchOffChainPoints = async (): Promise<void> => {
+  const fetchOffChainPoints = async (
+    notifyParent = false,
+  ): Promise<void> => {
+    if (!user?.id) return;
+
     try {
       const response = await axiosInstance.get(
         "/user/achievements/get-points",
         {
-          params: { owner_id },
+          params: { user_id: user.id, owner_id },
         },
       );
       const total = (response.data?.total_points ?? response.data?.points) || 0;
-      setOffChainPointsState(total);
+      setLoyaltyPoints(owner_id, total, notifyParent);
+      if (notifyParent && onPointsUpdate) {
+        onPointsUpdate(total);
+      }
     } catch (error) {
       console.error("Error fetching off-chain points:", error);
     }

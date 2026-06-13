@@ -34,6 +34,9 @@ interface NFTClaimingState {
   canMintAgain: boolean;
 }
 
+type LoyaltyPointsMap = Record<number, number>;
+type LoyaltyPointsVersionMap = Record<number, number>;
+
 interface AppState {
   user: User | null;
   isUserVerified: boolean;
@@ -45,6 +48,8 @@ interface AppState {
   userHasInteracted: boolean;
   nftClaiming: NFTClaimingState;
   isLoggingOut: boolean; // New state for logout tracking
+  loyaltyPointsByOwner: LoyaltyPointsMap;
+  loyaltyPointsVersionByOwner: LoyaltyPointsVersionMap;
 
   // Actions
   setUser: (user: User, jwt: string) => void;
@@ -77,6 +82,14 @@ interface AppState {
 
   // Logout state actions
   setIsLoggingOut: (loggingOut: boolean) => void;
+
+  // Loyalty points actions
+  setLoyaltyPoints: (
+    ownerId: number,
+    points: number,
+    shouldNotify?: boolean
+  ) => void;
+  clearLoyaltyPoints: () => void;
 }
 
 /* ========= Helpers ========= */
@@ -108,6 +121,8 @@ export const useGlobalAppStore = create<AppState>((set, get) => ({
   authenticationLock: null,
   userHasInteracted: false,
   isLoggingOut: false, // Initialize logout state
+  loyaltyPointsByOwner: {},
+  loyaltyPointsVersionByOwner: {},
 
   nftClaiming: {
     isMinting: false,
@@ -132,6 +147,8 @@ export const useGlobalAppStore = create<AppState>((set, get) => ({
       userWalletAddress: null,
       isAuthenticating: false,
       authenticationLock: null,
+      loyaltyPointsByOwner: {},
+      loyaltyPointsVersionByOwner: {},
       nftClaiming: {
         isMinting: false,
         canMintAgain: true,
@@ -251,6 +268,8 @@ export const useGlobalAppStore = create<AppState>((set, get) => ({
       userWalletAddress: null,
       isAuthenticating: false,
       authenticationLock: null,
+      loyaltyPointsByOwner: {},
+      loyaltyPointsVersionByOwner: {},
       nftClaiming: {
         isMinting: false,
         canMintAgain: true,
@@ -328,6 +347,31 @@ export const useGlobalAppStore = create<AppState>((set, get) => ({
   // Logout state actions
   setIsLoggingOut: (loggingOut: boolean) => {
     set({ isLoggingOut: loggingOut });
+  },
+
+  setLoyaltyPoints: (ownerId, points, shouldNotify = false) => {
+    const state = get();
+    const currentVersion = state.loyaltyPointsVersionByOwner[ownerId] || 0;
+
+    set({
+      loyaltyPointsByOwner: {
+        ...state.loyaltyPointsByOwner,
+        [ownerId]: points,
+      },
+      loyaltyPointsVersionByOwner: shouldNotify
+        ? {
+            ...state.loyaltyPointsVersionByOwner,
+            [ownerId]: currentVersion + 1,
+          }
+        : state.loyaltyPointsVersionByOwner,
+    });
+  },
+
+  clearLoyaltyPoints: () => {
+    set({
+      loyaltyPointsByOwner: {},
+      loyaltyPointsVersionByOwner: {},
+    });
   },
 }));
 

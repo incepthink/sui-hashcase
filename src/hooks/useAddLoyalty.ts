@@ -35,7 +35,7 @@ interface UseAddLoyaltyProps {
   setOpenModal: (open: boolean) => void;
   collection: Collection;
   onPointsUpdate?: (newPoints: number) => void;
-  onSuccess?: () => void; // Callback for refreshing data
+  onSuccess?: () => void | Promise<void>; // Callback for refreshing data
 }
 
 export const useAddLoyalty = ({
@@ -128,12 +128,15 @@ export const useAddLoyalty = ({
           params: {
             owner_id,
             user_id: user.id,
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
           },
         }
       );
 
       let newPoints = 0;
-      if (loyaltyResponse.data.user?.total_loyalty_points) {
+      if (loyaltyResponse.data.user?.total_points !== undefined) {
+        newPoints = loyaltyResponse.data.user.total_points;
+      } else if (loyaltyResponse.data.user?.total_loyalty_points !== undefined) {
         newPoints = loyaltyResponse.data.user.total_loyalty_points;
       } else if (loyaltyResponse.data.totalPoints) {
         newPoints = loyaltyResponse.data.totalPoints;
@@ -147,12 +150,12 @@ export const useAddLoyalty = ({
       );
 
       // Call callbacks if provided
-      if (onPointsUpdate && newPoints > 0) {
+      if (onPointsUpdate) {
         onPointsUpdate(newPoints);
       }
 
       if (onSuccess) {
-        onSuccess();
+        await onSuccess();
       }
     } catch (error: any) {
       console.error("Full error object:", error);

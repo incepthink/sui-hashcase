@@ -1,6 +1,6 @@
 // sui leaderboard
 "use client";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import { LeaderboardPeriod } from "@/utils/enums";
@@ -35,10 +35,17 @@ type LeaderboardResponse = {
   userRank?: UserRank;
 };
 
-const LeaderboardTable = ({ owner_id }: { owner_id: number }) => {
+const LeaderboardTable = ({
+  owner_id,
+  refreshVersion = 0,
+}: {
+  owner_id: number;
+  refreshVersion?: number;
+}) => {
   const { showSuccess, showError } = useAppSnackbar();
   const { address: walletAddress, isConnected: isWalletConnected, type: walletType } = useWalletAddress();
   const { user } = useGlobalAppStore();
+  const hasMountedRef = useRef(false);
 
   const [period, setPeriod] = useState<LeaderboardPeriod>(
     LeaderboardPeriod.MONTHLY,
@@ -64,21 +71,14 @@ const LeaderboardTable = ({ owner_id }: { owner_id: number }) => {
   const displayStartIndex = startIndex + 1;
   const displayEndIndex = Math.min(endIndex, totalCount);
 
-  const refreshLeaderboard = async () => {
-    if (!isWalletConnected) {
-      showError("Please connect your wallet to refresh leaderboard");
-      return;
-    }
-
+  const getLeaderboardData = useCallback(async (): Promise<boolean> => {
     setIsLoading(true);
     try {
-      const userId = user?.id;
-
       // Fetch all data at once
       const response = await axiosInstance.get("/platform/new-leaderboard", {
         params: {
           owner_id: owner_id,
-          user_id: userId,
+          user_id: isWalletConnected ? user?.id : undefined,
           page: 1,
           page_size: 1000, // Fetch a large number to get all data
         },
@@ -86,66 +86,72 @@ const LeaderboardTable = ({ owner_id }: { owner_id: number }) => {
 
       const leaderboard: LeaderboardResponse = response.data.leaderboard;
       setAllLeaderboardData(leaderboard.rows || []);
-      setUserRank(leaderboard.userRank || null);
 
-      // Reset to page 1 after refresh
-      setCurrentPage(1);
+      // Only set user rank if wallet is connected
+      if (isWalletConnected) {
+        setUserRank(leaderboard.userRank || null);
+      } else {
+        setUserRank(null);
+      }
+      return true;
+    } catch (error: any) {
+      console.error("Error fetching leaderboard:", error);
+      // Fallback to basic leaderboard
+      try {
+        const response = await axiosInstance.get("/platform/leaderboard", {
+          params: {
+            owner_id: owner_id,
+            period: period,
+          },
+        });
+        const leaderboard = response.data.leaderboard;
+        setAllLeaderboardData(leaderboard);
+        setUserRank(null);
+        return true;
+      } catch (fallbackError) {
+        console.error("Fallback leaderboard also failed:", fallbackError);
+        return false;
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  }, [owner_id, isWalletConnected, user?.id, period]);
 
-      showSuccess("Leaderboard updated with latest rankings!");
+  const refreshLeaderboard = async () => {
+    if (!isWalletConnected) {
+      showError("Please connect your wallet to refresh leaderboard");
+      return;
+    }
+
+    try {
+      const didRefresh = await getLeaderboardData();
+      if (didRefresh) {
+        setCurrentPage(1);
+        showSuccess("Leaderboard updated with latest rankings!");
+      } else {
+        showError("Failed to refresh leaderboard");
+      }
     } catch (error: any) {
       console.error("Error refreshing leaderboard:", error);
       showError("Failed to refresh leaderboard");
-    } finally {
-      setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    const getLeaderboardData = async () => {
-      setIsLoading(true);
-      try {
-        // Fetch all data at once
-        const response = await axiosInstance.get("/platform/new-leaderboard", {
-          params: {
-            owner_id: owner_id,
-            user_id: isWalletConnected ? user?.id : undefined,
-            page: 1,
-            page_size: 1000, // Fetch a large number to get all data
-          },
-        });
-
-        const leaderboard: LeaderboardResponse = response.data.leaderboard;
-        setAllLeaderboardData(leaderboard.rows || []);
-
-        // Only set user rank if wallet is connected
-        if (isWalletConnected) {
-          setUserRank(leaderboard.userRank || null);
-        } else {
-          setUserRank(null);
-        }
-      } catch (error: any) {
-        console.error("Error fetching leaderboard:", error);
-        // Fallback to basic leaderboard
-        try {
-          const response = await axiosInstance.get("/platform/leaderboard", {
-            params: {
-              owner_id: owner_id,
-              period: period,
-            },
-          });
-          const leaderboard = response.data.leaderboard;
-          setAllLeaderboardData(leaderboard);
-          setUserRank(null);
-        } catch (fallbackError) {
-          console.error("Fallback leaderboard also failed:", fallbackError);
-        }
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     getLeaderboardData();
-  }, [owner_id, isWalletConnected, user?.id, period]);
+  }, [getLeaderboardData]);
+
+  useEffect(() => {
+    if (!hasMountedRef.current) {
+      hasMountedRef.current = true;
+      return;
+    }
+
+    if (refreshVersion > 0) {
+      getLeaderboardData();
+      setCurrentPage(1);
+    }
+  }, [refreshVersion, getLeaderboardData]);
 
   // Reset to page 1 when wallet connection changes
   useEffect(() => {
