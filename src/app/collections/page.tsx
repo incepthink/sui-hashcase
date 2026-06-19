@@ -8,7 +8,6 @@ import {
   ChevronDown,
   Filter,
   Search,
-  SlidersHorizontal,
   X,
 } from "lucide-react";
 
@@ -102,7 +101,6 @@ const COLLECTION_TYPES = [
   { value: "all", label: "All types" },
   { value: "NFT", label: "NFT" },
   { value: "Event", label: "Event" },
-  { value: "DaoOrg", label: "DAO / Org" },
 ];
 
 const STATUS_OPTIONS = [
@@ -257,6 +255,7 @@ const countActiveFilters = (filters: FiltersState) =>
   [
     filters.type !== "all",
     filters.chains.length,
+    /*
     filters.tags.length,
     filters.status !== "all",
     filters.mintTypes.length,
@@ -266,6 +265,7 @@ const countActiveFilters = (filters: FiltersState) =>
     filters.hasUnlockables,
     filters.hasLocationBasedNfts,
     filters.price !== "all",
+    */
   ].filter(Boolean).length;
 
 const HeaderSection = () => (
@@ -308,10 +308,17 @@ const FilterSection = ({
     <button
       type="button"
       onClick={onToggle}
-      className="flex w-full items-center justify-between gap-3 py-1 text-left"
+      className="group flex w-full items-center justify-between gap-3 py-1 text-left"
       aria-expanded={isOpen}
     >
       <span className="flex items-center gap-2 text-[0.95rem] font-semibold text-white">
+        <span
+          className={`h-2.5 w-2.5 rounded-[3px] border transition-colors ${
+            activeCount > 0
+              ? "border-[#4DA2FF] bg-[#4DA2FF]"
+              : "border-white/25 bg-white/5 group-hover:border-[#4DA2FF]/60"
+          }`}
+        />
         {title}
         {activeCount > 0 && (
           <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[#4DA2FF] px-1.5 text-[0.68rem] font-bold text-black">
@@ -374,14 +381,18 @@ const PillOption = ({
     type="button"
     onClick={onChange}
     aria-pressed={checked}
-    className={`inline-flex min-h-9 items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4DA2FF]/30 ${
+    className={`group inline-flex min-h-9 items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-semibold transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4DA2FF]/35 ${
       checked
-        ? "border-[#4DA2FF] bg-[#4DA2FF] text-white shadow-[0_0_0_1px_rgba(77,162,255,0.20)]"
-        : "border-white/15 bg-[#0d1117] text-white/70 hover:border-white/30 hover:bg-white/5 hover:text-white"
+        ? "border-[#4DA2FF] bg-[#4DA2FF] text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.16),0_0_10px_rgba(77,162,255,0.22)]"
+        : "border-white/15 bg-[#0d1117] text-white/70 hover:border-[#4DA2FF]/45 hover:bg-[#071034] hover:text-white"
     }`}
   >
     {iconSrc && (
-      <span className="relative h-4 w-4 overflow-hidden rounded-full bg-white">
+      <span
+        className={`relative h-4 w-4 overflow-hidden rounded-full ${
+          checked ? "bg-white" : "bg-white/80"
+        }`}
+      >
         <Image src={iconSrc} alt="" fill sizes="16px" className="object-cover" />
       </span>
     )}
@@ -476,6 +487,7 @@ const FiltersPanel = ({
         ))}
       </FilterSection>
 
+      {/*
       <FilterSection
         title="Categories"
         isOpen={openSections.categories}
@@ -494,6 +506,7 @@ const FiltersPanel = ({
           <p className="text-sm text-white/45">No categories yet</p>
         )}
       </FilterSection>
+      */}
 
       <FilterSection
         title="Chain"
@@ -515,6 +528,7 @@ const FiltersPanel = ({
         )}
       </FilterSection>
 
+      {/*
       <FilterSection
         title="Participation Mode"
         isOpen={openSections.participation}
@@ -577,6 +591,7 @@ const FiltersPanel = ({
           />
         ))}
       </FilterSection>
+      */}
     </div>
   );
 };
@@ -603,6 +618,7 @@ const ActiveFilters = ({
       label: chainLabel(chain),
       clear: { chains: filters.chains.filter((item) => item !== chain) },
     })),
+    /*
     ...filters.tags.map((tag) => ({
       label: tag,
       clear: { tags: filters.tags.filter((item) => item !== tag) },
@@ -642,6 +658,7 @@ const ActiveFilters = ({
           clear: { price: "all" },
         }
       : null,
+    */
   ].filter(Boolean) as { label: string; clear: Partial<FiltersState> }[];
 
   if (chips.length === 0) return null;
@@ -682,12 +699,12 @@ const NoFilteredResults = ({
   onClearAll: () => void;
 }) => (
   <div className="rounded-xl border border-white/15 bg-white/8 px-6 py-14 text-center">
-    <SlidersHorizontal className="mx-auto mb-4 h-10 w-10 text-[#4DA2FF]" />
+    <Filter className="mx-auto mb-4 h-10 w-10 text-[#4DA2FF]" />
     <h3 className="mb-2 text-xl font-semibold text-white">
       No collections match your filters
     </h3>
     <p className="mx-auto mb-6 max-w-md text-sm text-white/60">
-      Try removing a category, mint type, or participation filter to broaden the
+      Try clearing the search, collection type, or chain filter to broaden the
       results.
     </p>
     <div className="flex flex-wrap justify-center gap-3">
@@ -777,6 +794,7 @@ const CollectionsPageContent: React.FC = () => {
       if (filters.type !== "all" && collection.collection_type !== filters.type)
         return false;
       if (filters.chains.length && !filters.chains.includes(chain)) return false;
+      /*
       if (
         filters.tags.length &&
         !filters.tags.some((tag) => tags.includes(tag))
@@ -817,6 +835,7 @@ const CollectionsPageContent: React.FC = () => {
         (hasActiveParticipation(participation) || hasPointsParticipation(collection))
       )
         return false;
+      */
 
       return true;
     });
