@@ -1,11 +1,7 @@
 "use client";
 
 import { useGlobalAppStore } from "@/store/globalAppStore";
-import {
-  useZkLogin,
-  useEnokiFlow,
-  useZkLoginSession,
-} from "@mysten/enoki/react";
+import { useZkLogin, useEnokiFlow } from "@mysten/enoki/react";
 import { Wallet } from "lucide-react";
 import React, { useContext, useEffect, useState } from "react";
 import axiosInstance from "@/utils/axios";
@@ -15,25 +11,6 @@ import { ActionKind } from "@/context/context-types";
 interface ZkLoginProps {
   setOpenModal: (open: boolean) => void;
 }
-
-const decodeJwtPayload = (token?: string | null) => {
-  if (!token) return null;
-
-  try {
-    const payload = token.split(".")[1];
-    if (!payload) return null;
-
-    const base64 = payload.replace(/-/g, "+").replace(/_/g, "/");
-    const padded = base64.padEnd(
-      base64.length + ((4 - (base64.length % 4)) % 4),
-      "="
-    );
-
-    return JSON.parse(window.atob(padded)) as { email?: string };
-  } catch {
-    return null;
-  }
-};
 
 const ZkLogin: React.FC<ZkLoginProps> = ({ setOpenModal }) => {
   const {
@@ -46,7 +23,6 @@ const ZkLogin: React.FC<ZkLoginProps> = ({ setOpenModal }) => {
   } = useGlobalAppStore();
 
   const { address } = useZkLogin();
-  const zkLoginSession = useZkLoginSession();
   const enokiFlow = useEnokiFlow();
   const { state, dispatch } = useContext(AppContext);
 
@@ -57,14 +33,8 @@ const ZkLogin: React.FC<ZkLoginProps> = ({ setOpenModal }) => {
     if (isUserVerified || !address) return;
 
     try {
-      const session = await enokiFlow.getSession();
-      const jwt = session?.jwt ?? zkLoginSession?.jwt;
-      const email = decodeJwtPayload(jwt)?.email;
-
       const res = await axiosInstance.post("auth/zk-login/login", {
         address: address,
-        email,
-        jwt,
       });
       console.log("AUTH RES", res);
 
